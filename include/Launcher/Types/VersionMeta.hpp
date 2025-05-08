@@ -16,8 +16,8 @@ using json = nlohmann::json;
 
 struct VersionMeta {
     const string id;
-    const system_clock::time_point releaseTime;
-    const system_clock::time_point time;
+    const string releaseTime;
+    const string time;
     const string sha1;
     const unsigned int complianceLevel;
 
