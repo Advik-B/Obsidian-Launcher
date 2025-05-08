@@ -4,7 +4,6 @@
 
 #include <Launcher/Types/VersionMeta.hpp>
 
-#include <date/date.h>
 #include <date/tz.h>
 #include <chrono>
 
@@ -18,7 +17,7 @@ VersionMeta VersionMeta::from_json(json j) {
 
     const auto timePoint = j["time"].get<std::string>();
     const auto releaseTimePoint = j["releaseTime"].get<std::string>();
-    
+
     return VersionMeta{
         id,
         releaseTimePoint,
