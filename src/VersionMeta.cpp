@@ -16,24 +16,9 @@ VersionMeta VersionMeta::from_json(json j) {
     const auto sha1 = j["sha1"].get<std::string>();
     const auto complianceLevel = j["complianceLevel"].get<unsigned int>();
 
-    const auto timeStr = j["time"].get<std::string>();
-    const auto releaseTimeStr = j["releaseTime"].get<std::string>();
-
-    // Parse ISO8601 time strings (e.g. 2022-03-10T09:51:38+00:00)
-    std::chrono::sys_time<seconds> timePoint;
-    std::istringstream in1{timeStr};
-    in1 >> date::parse("%FT%T%z", timePoint);
-    if (in1.fail()) {
-        throw std::runtime_error{"failed to parse time string"};
-    }
-
-    std::chrono::sys_time<seconds> releaseTimePoint;
-    std::istringstream in2{releaseTimeStr};
-    in2 >> date::parse("%FT%T%z", releaseTimePoint);
-    if (in2.fail()) {
-        throw std::runtime_error{"failed to parse releaseTime string"};
-    }
-
+    const auto timePoint = j["time"].get<std::string>();
+    const auto releaseTimePoint = j["releaseTime"].get<std::string>();
+    
     return VersionMeta{
         id,
         releaseTimePoint,
