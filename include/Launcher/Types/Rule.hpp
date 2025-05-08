@@ -20,9 +20,9 @@ enum class RuleAction {
 typedef std::vector<std::pair<std::string, bool>> Features;
 
 struct Rule {
-    RuleAction action;
-    optional<OS> os;
-    optional<Features> features;
+    const RuleAction action;
+    const optional<OS> os;
+    const optional<Features> features;
 };
 
 #endif //RULE_HPP
