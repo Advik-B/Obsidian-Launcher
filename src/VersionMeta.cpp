@@ -3,13 +3,10 @@
 //
 
 #include <Launcher/Types/VersionMeta.hpp>
-
-#include <date/tz.h>
 #include <chrono>
 
 VersionMeta VersionMeta::from_json(json j) {
     using namespace std::chrono;
-    using namespace date;
 
     const auto id = j["id"].get<std::string>();
     const auto sha1 = j["sha1"].get<std::string>();
