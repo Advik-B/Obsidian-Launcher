@@ -8,7 +8,7 @@
 #include <string>
 
 struct Library {
-    std::string name;
+    const std::string name;
 };
 
 #endif //LIBRARY_HPP
