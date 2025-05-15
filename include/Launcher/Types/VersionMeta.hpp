@@ -10,16 +10,14 @@
 #include <nlohmann/json.hpp>
 
 using std::string;
-using std::chrono::system_clock;
-
 using json = nlohmann::json;
 
 struct VersionMeta {
-    const string id;
-    const string releaseTime;
-    const string time;
-    const string sha1;
-    const unsigned int complianceLevel;
+    string id;
+    string releaseTime;
+    string time;
+    string sha1;
+    unsigned int complianceLevel;
 
     static VersionMeta from_json(json j);
 };
