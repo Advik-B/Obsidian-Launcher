@@ -29,9 +29,8 @@ FetchContent_MakeAvailable(json)
 #)
 #FetchContent_MakeAvailable(backward)
 
-add_executable(MinecraftLauncher src/main.cpp src/VersionMeta.cpp)
+add_executable(MinecraftLauncher src/main.cpp src/VersionMeta.cpp src/AssetIndex.cpp src/JavaVersion.cpp src/Library.cpp src/MinecraftJAR.cpp src/OperatingSystem.cpp src/Rule.cpp src/Version.cpp src/VersionArguments.cpp src/VersionLogging.cpp)
 target_include_directories(MinecraftLauncher PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_include_directories(MinecraftLauncher PRIVATE ${date_SOURCE_DIR}/include)
 
 # If you want time zone support (e.g., parse "%z"), enable this:
 target_compile_definitions(MinecraftLauncher PRIVATE HAS_STRING_VIEW)
