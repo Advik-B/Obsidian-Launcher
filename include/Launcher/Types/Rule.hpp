@@ -7,22 +7,28 @@
 
 #include <string>
 #include <optional>
-#include <vector>
+#include <map>
 #include <Launcher/Types/OS.hpp>
+#include <nlohmann/json.hpp>
 
 using std::optional;
+using json = nlohmann::json;
 
 enum class RuleAction {
     ALLOW = 1,
     DISALLOW = 2,
 };
 
-typedef std::vector<std::pair<std::string, bool>> Features;
+RuleAction string_to_rule_action(const std::string& s);
+
+typedef std::map<std::string, bool> Features;
 
 struct Rule {
-    const RuleAction action;
-    const optional<OS> os;
-    const optional<Features> features;
+    RuleAction action;
+    optional<OS> os;
+    optional<Features> features;
+
+    static Rule from_json(const json& j);
 };
 
 #endif //RULE_HPP
