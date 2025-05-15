@@ -5,13 +5,18 @@
 #ifndef ASSETINDEX_HPP
 #define ASSETINDEX_HPP
 #include <string>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 struct AssetIndex {
-    const std::string id;
-    const std::string sha1;
-    const size_t size;
-    const size_t totalSize;
-    const std::string url;
+    std::string id;
+    std::string sha1;
+    size_t size;
+    size_t totalSize;
+    std::string url;
+
+    static AssetIndex from_json(const json& j);
 };
 
 #endif //ASSETINDEX_HPP
