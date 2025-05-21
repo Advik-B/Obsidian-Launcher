@@ -1,9 +1,9 @@
 // src/JavaDownloader.cpp
 #include <Launcher/JavaDownloader.hpp>
 #include <Launcher/Utils/OS.hpp>
-#include <Launcher/Utils/sha1.hpp> // For SHA1 checksum
+#include <Launcher/Utils/Crypto.hpp>
+#include <Launcher/Http.hpp> // <--- Use the HTTP wrapper
 
-#include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <fstream>
@@ -17,28 +17,28 @@ JavaDownloader::JavaDownloader() = default;
 
 nlohmann::json JavaDownloader::fetchMojangJavaManifest() {
     const std::string javaManifestUrl = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
-    cpr::Response r_manifest = cpr::Get(cpr::Url{javaManifestUrl});
+    cpr::Response r_manifest = Http::Get(cpr::Url{javaManifestUrl}); // Use wrapper
     if (r_manifest.status_code != 200) {
         std::cerr << "Failed to download Java runtime manifest: " << r_manifest.status_code << std::endl;
         std::cerr << "URL: " << javaManifestUrl << std::endl;
         std::cerr << "Error: " << r_manifest.error.message << std::endl;
-        if (!r_manifest.text.empty()) {
+        if (!r_manifest.text.empty() && r_manifest.status_code >= 400) {
             std::cerr << "Response: " << r_manifest.text << std::endl;
         }
-        return nullptr; // Indicate failure
+        return nullptr;
     }
     try {
         return json::parse(r_manifest.text);
     } catch (const json::parse_error& e) {
         std::cerr << "Failed to parse Java runtime manifest: " << e.what() << std::endl;
-        return nullptr; // Indicate failure
+        return nullptr;
     }
 }
 
 std::filesystem::path JavaDownloader::downloadJavaForMinecraftVersionMojang(const Version& mcVersion, const std::filesystem::path& baseDownloadDir) {
     if (!mcVersion.javaVersion) {
         std::cout << "Minecraft version " << mcVersion.id << " does not specify a Java version. Skipping Java download via Mojang." << std::endl;
-        return ""; // Empty path signifies no download or failure
+        return "";
     }
 
     const auto& requiredJava = *mcVersion.javaVersion;
@@ -54,7 +54,7 @@ std::filesystem::path JavaDownloader::downloadJavaForMinecraftVersionMojang(cons
     Utils::Architecture currentArch = Utils::getCurrentArch();
     std::string osArchKey = Utils::getOSStringForJavaManifest(currentOS, currentArch);
 
-    if (osArchKey == "unknown-os-arch-mojang") { // Updated fallback string
+    if (osArchKey == "unknown-os-arch-mojang") {
         std::cerr << "Mojang Manifest - Cannot determine OS/Arch string. OS: "
                   << static_cast<int>(currentOS) << ", Arch: " << static_cast<int>(currentArch) << std::endl;
         return "";
@@ -72,8 +72,31 @@ std::filesystem::path JavaDownloader::downloadJavaForMinecraftVersionMojang(cons
     std::string expectedSha1;
 
     for (const auto& entry : componentVersions) {
-        if (entry.contains("version") && entry.at("version").contains("name") &&
-            entry.at("version").at("name").get<unsigned int>() == requiredJava.majorVersion) {
+        unsigned int entryMajorVersion = 0;
+        if (entry.contains("version") && entry.at("version").contains("name")) {
+            const auto& name_json = entry.at("version").at("name");
+            if (name_json.is_number_unsigned()) {
+                entryMajorVersion = name_json.get<unsigned int>();
+            } else if (name_json.is_string()) {
+                try {
+                    entryMajorVersion = static_cast<unsigned int>(std::stoul(name_json.get<std::string>()));
+                } catch (const std::exception&) {
+                    std::string name_str = name_json.get<std::string>();
+                    size_t dot_pos = name_str.find('.');
+                    try {
+                        if (dot_pos != std::string::npos) {
+                           entryMajorVersion = static_cast<unsigned int>(std::stoul(name_str.substr(0, dot_pos)));
+                        } else {
+                           entryMajorVersion = static_cast<unsigned int>(std::stoul(name_str)); // If no dot, try full string
+                        }
+                    } catch (const std::exception& e_parse) {
+                         std::cerr << "Warning: Could not parse major version from string: " << name_str << " (" << e_parse.what() << ")" << std::endl;
+                    }
+                }
+            }
+        }
+
+        if (entryMajorVersion == requiredJava.majorVersion) {
             if (entry.contains("manifest") && entry.at("manifest").contains("url") && entry.at("manifest").contains("sha1")) {
                 downloadUrl = entry.at("manifest").at("url").get<std::string>();
                 expectedSha1 = entry.at("manifest").at("sha1").get<std::string>();
@@ -101,26 +124,31 @@ std::filesystem::path JavaDownloader::downloadJavaForMinecraftVersionMojang(cons
     std::filesystem::path downloadPath = baseDownloadDir / filename;
 
     std::cout << "Mojang Manifest - Downloading Java to: " << downloadPath.string() << "..." << std::endl;
-    std::ofstream outFile(downloadPath, std::ios::binary);
-    if (!outFile.is_open()) {
-        std::cerr << "Failed to open file for writing: " << downloadPath.string() << std::endl;
-        return "";
-    }
+    // Use Http::Download which takes a path
+    cpr::Response r_download = Http::Download(downloadPath, cpr::Url{downloadUrl});
 
-    cpr::Response r_download = cpr::Download(outFile, cpr::Url{downloadUrl});
-    outFile.close();
-
-    if (r_download.status_code != 200 || !r_download.error.message.empty()) {
+    if (r_download.status_code != 200 || !r_download.error.message.empty()) { // Check error message too
         std::cerr << "Mojang Manifest - Failed to download Java archive: " << r_download.status_code << std::endl;
         std::cerr << "URL: " << downloadUrl << std::endl;
         std::cerr << "Error: " << r_download.error.message << std::endl;
-        std::filesystem::remove(downloadPath);
+        if (!r_download.text.empty() && r_download.status_code >= 400) {
+            std::cerr << "Response Body: " << r_download.text << std::endl;
+        }
+        // Http::Download wrapper already tries to remove on failure if file was opened.
+        // If the wrapper couldn't open the file, downloadPath might not exist.
+        if(std::filesystem::exists(downloadPath)) std::filesystem::remove(downloadPath);
         return "";
     }
     std::cout << "Mojang Manifest - Java downloaded successfully." << std::endl;
 
     std::cout << "Mojang Manifest - Verifying SHA1 hash..." << std::endl;
-    std::string actualSha1 = SHA1::from_file(downloadPath.string());
+    std::string actualSha1 = Utils::calculateFileSHA1(downloadPath.string());
+
+    if (actualSha1.empty()) {
+        std::cerr << "Mojang Manifest - SHA1 calculation failed for " << downloadPath.string() << std::endl;
+        std::filesystem::remove(downloadPath);
+        return "";
+    }
     if (actualSha1 != expectedSha1) {
         std::cerr << "Mojang Manifest - SHA1 hash mismatch!" << std::endl;
         std::cerr << "Expected: " << expectedSha1 << std::endl;
@@ -162,13 +190,13 @@ std::filesystem::path JavaDownloader::downloadJavaForSpecificVersionAdoptium(con
     };
 
     std::cout << "Adoptium API - Querying: " << apiUrl << std::endl;
-    cpr::Response r_api = cpr::Get(cpr::Url{apiUrl}, params);
+    cpr::Response r_api = Http::Get(cpr::Url{apiUrl}, params); // Use wrapper
 
     if (r_api.status_code != 200) {
         std::cerr << "Adoptium API - Failed to query: " << r_api.status_code << std::endl;
         std::cerr << "URL: " << apiUrl << " Params: arch=" << adoptiumArch << ", os=" << adoptiumOS << std::endl;
         std::cerr << "Error: " << r_api.error.message << std::endl;
-        if(!r_api.text.empty()){ std::cerr << "Response: " << r_api.text << std::endl; }
+        if(!r_api.text.empty() && r_api.status_code >= 400){ std::cerr << "Response: " << r_api.text << std::endl; }
         return "";
     }
 
@@ -188,7 +216,7 @@ std::filesystem::path JavaDownloader::downloadJavaForSpecificVersionAdoptium(con
     }
 
     const json& firstBuild = apiResponseJson[0];
-    if (!firstBuild.contains("binary") || !firstBuild["binary"].contains("package") ||
+     if (!firstBuild.contains("binary") || !firstBuild["binary"].contains("package") ||
         !firstBuild["binary"]["package"].contains("link") ||
         !firstBuild["binary"]["package"].contains("name") ||
         !firstBuild["binary"]["package"].contains("checksum")) {
@@ -214,46 +242,39 @@ std::filesystem::path JavaDownloader::downloadJavaForSpecificVersionAdoptium(con
     std::filesystem::path downloadPath = baseDownloadDir / filename;
 
     std::cout << "Adoptium API - Downloading Java to: " << downloadPath.string() << "..." << std::endl;
-    std::ofstream outFile(downloadPath, std::ios::binary);
-    if (!outFile.is_open()) {
-        std::cerr << "Failed to open file for writing: " << downloadPath.string() << std::endl;
-        return "";
-    }
+    // Use Http::Download which takes a path
+    cpr::Response r_download = Http::Download(downloadPath, cpr::Url{downloadUrl});
 
-    cpr::Response r_download = cpr::Download(outFile, cpr::Url{downloadUrl});
-    outFile.close();
-
-    if (r_download.status_code != 200 || !r_download.error.message.empty()) {
+    if (r_download.status_code != 200 || !r_download.error.message.empty()) { // Check error message too
         std::cerr << "Adoptium API - Failed to download Java archive: " << r_download.status_code << std::endl;
         std::cerr << "URL: " << downloadUrl << std::endl;
         std::cerr << "Error: " << r_download.error.message << std::endl;
         if (!r_download.text.empty() && r_download.status_code >=400) {
              std::cerr << "Response Body: " << r_download.text << std::endl;
         }
-        std::filesystem::remove(downloadPath);
+        if(std::filesystem::exists(downloadPath)) std::filesystem::remove(downloadPath);
         return "";
     }
     std::cout << "Adoptium API - Java downloaded successfully." << std::endl;
 
-    std::cout << "Adoptium API - Verifying checksum (Note: API provides SHA256, current lib is SHA1)..." << std::endl;
-    std::string actualSha1 = SHA1::from_file(downloadPath.string()); // This is SHA1
-    std::cout << "Expected SHA256: " << expectedSha256 << std::endl;
-    std::cout << "Calculated SHA1: " << actualSha1 << std::endl;
-    // This comparison is NOT truly valid due to SHA1 vs SHA256.
-    // For now, we'll proceed. Proper SHA256 check is needed.
-    if (actualSha1 != expectedSha256) { // This will almost always be true (mismatch)
-        std::cout << "[INFO] Checksum mismatch is expected (SHA1 vs SHA256)." << std::endl;
-        std::cout << "[TODO] Implement SHA256 verification." << std::endl;
-        // If you want to enforce this (even incorrectly for now), you'd return ""
-        // return "";
-    } else {
-         std::cout << "Checksum (SHA1 vs SHA256) matches (unlikely)." << std::endl;
+    std::cout << "Adoptium API - Verifying SHA256 hash..." << std::endl;
+    std::string actualSha256 = Utils::calculateFileSHA256(downloadPath.string());
+    if (actualSha256.empty()) {
+        std::cerr << "Adoptium API - SHA256 calculation failed for " << downloadPath.string() << std::endl;
+        std::filesystem::remove(downloadPath);
+        return "";
     }
 
-
-    std::cout << "Adoptium API - Java archive downloaded: " << downloadPath.string() << std::endl;
+    if (actualSha256 != expectedSha256) {
+        std::cerr << "Adoptium API - SHA256 hash mismatch!" << std::endl;
+        std::cerr << "Expected: " << expectedSha256 << std::endl;
+        std::cerr << "Actual:   " << actualSha256 << std::endl;
+        std::filesystem::remove(downloadPath);
+        return "";
+    }
+    std::cout << "Adoptium API - SHA256 hash verified." << std::endl;
+    std::cout << "Adoptium API - Java archive downloaded and verified: " << downloadPath.string() << std::endl;
     return downloadPath;
 }
-
 
 } // namespace Launcher
