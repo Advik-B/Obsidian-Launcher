@@ -88,6 +88,7 @@ add_custom_target(embed_cert DEPENDS ${CACERT_HEADER})
 ### Target ###
 add_executable(
         MinecraftLauncher
+        ${CACERT_HEADER}
         src/main.cpp
         src/VersionMeta.cpp
         src/AssetIndex.cpp
@@ -101,7 +102,8 @@ add_executable(
         src/VersionLogging.cpp
         src/OSUtil.cpp
         src/JavaDownloader.cpp
-        ${CACERT_HEADER}  # Ensure it's treated as a source
+        src/Crypto.cpp
+        src/Http.cpp  # Ensure it's treated as a source
 )
 
 target_include_directories(MinecraftLauncher PRIVATE
