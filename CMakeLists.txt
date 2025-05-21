@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 4.0)
-project(MinecraftLauncher)
+project(ObsidianLauncher)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -87,7 +87,7 @@ add_custom_target(embed_cert DEPENDS ${CACERT_HEADER})
 
 ### Target ###
 add_executable(
-        MinecraftLauncher
+        ObsidianLauncher
         ${CACERT_HEADER}
         src/main.cpp
         src/VersionMeta.cpp
@@ -104,18 +104,22 @@ add_executable(
         src/JavaDownloader.cpp
         src/Crypto.cpp
         src/Http.cpp  # Ensure it's treated as a source
+        src/JavaManager.cpp
 )
 
-target_include_directories(MinecraftLauncher PRIVATE
+# Rename the final exe
+set_target_properties(ObsidianLauncher PROPERTIES OUTPUT_NAME "Obsidian Launcher")
+
+target_include_directories(ObsidianLauncher PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_BINARY_DIR}/include
 )
 
-add_dependencies(MinecraftLauncher embed_cert)
+add_dependencies(ObsidianLauncher embed_cert)
 
-target_compile_definitions(MinecraftLauncher PRIVATE HAS_STRING_VIEW)
+target_compile_definitions(ObsidianLauncher PRIVATE HAS_STRING_VIEW)
 
-target_link_libraries(MinecraftLauncher
+target_link_libraries(ObsidianLauncher
         PRIVATE cpr::cpr
         nlohmann_json::nlohmann_json
         OpenSSL::SSL
