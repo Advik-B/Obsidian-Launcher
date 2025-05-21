@@ -1,80 +1,126 @@
+// src/main.cpp
 #include <iostream>
-#include <iomanip>
 #include <string>
-#include <sstream>
-#include <cpr/cpr.h>
-#include <openssl/evp.h>
-#include <cacert_pem.h>
+#include <vector>
+#include <optional>
+#include <filesystem> // For std::filesystem::path
 
-// Function to calculate SHA-512 hash of a string
-std::string sha512_string(const std::string& input) {
-    EVP_MD_CTX* context = EVP_MD_CTX_new();
-    EVP_DigestInit_ex(context, EVP_sha512(), nullptr);
-    EVP_DigestUpdate(context, input.data(), input.size());
+// Remove direct cpr/cpr.h include if only using the wrapper
+// #include <cpr/cpr.h>
+#include <nlohmann/json.hpp>
 
-    unsigned char hash[EVP_MAX_MD_SIZE];
-    unsigned int hash_length = 0;
-    EVP_DigestFinal_ex(context, hash, &hash_length);
-    EVP_MD_CTX_free(context);
+#include <Launcher/Http.hpp> // Our HTTP wrapper
+#include <Launcher/Types/Version.hpp>
+#include <Launcher/Types/VersionMeta.hpp>
+#include <Launcher/JavaDownloader.hpp>
 
-    std::stringstream ss;
-    for (unsigned int i = 0; i < hash_length; ++i) {
-        ss << std::hex << std::setw(2) << std::setfill('0')
-           << static_cast<int>(hash[i]);
-    }
-    return ss.str();
-}
+using json = nlohmann::json;
 
-void print_usage() {
-    std::cout << "Usage:\n"
-              << "  cpr_ssl_test <url>\n";
-}
+int main() {
+    // No explicit initialization of SSL opts needed here anymore
+    // if Http.cpp handles it statically.
 
-int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        print_usage();
-        return 1;
-    }
-
-    const std::string url = argv[1];
-    std::cout << "Downloading from URL: " << url << std::endl;
-
-    // Prepare SSL options to point at your cacert.pem
-    cpr::SslOptions sslOpts = cpr::Ssl(
-        cpr::ssl::CaBuffer{cacert_pem}
-    );
-
-    // Create session
-    cpr::Session session;
-    session.SetUrl(cpr::Url{url});
-    session.SetTimeout(cpr::Timeout{30000});
-    session.SetSslOptions(sslOpts);
-
-    // Perform GET
-    cpr::Response response = session.Get();
-
-    // Check status
-    if (response.error || response.status_code != 200) {
-        std::cerr << "\nError: HTTP failed ("
-                  << response.status_code << ")\n";
-        if (!response.error.message.empty()) {
-            std::cerr << "  Details: " << response.error.message << "\n";
+    // Fetch the main version manifest from Mojang using the wrapper
+    cpr::Response manifest_response = Launcher::Http::Get(cpr::Url{"https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"});
+    if (manifest_response.status_code != 200) {
+        std::cerr << "Failed to fetch version manifest: " << manifest_response.status_code
+                  << " - " << manifest_response.error.message << std::endl;
+        if(!manifest_response.text.empty() && manifest_response.status_code >= 400) {
+            std::cerr << "Response Body: " << manifest_response.text << std::endl;
         }
         return 1;
     }
+    json manifest_json;
+    try {
+        manifest_json = json::parse(manifest_response.text);
+    } catch (const json::parse_error& e) {
+        std::cerr << "Failed to parse version manifest JSON: " << e.what() << std::endl;
+        return 1;
+    }
 
-    std::cout << "\nDownload complete!\n"
-              << "Response size: " << response.text.size() << " bytes\n";
+    // --- Select a Minecraft version to process ---
+    std::string version_id_to_parse = "1.20.4";
+    // ... (rest of version selection logic) ...
+     std::string version_url;
+    if (manifest_json.contains("versions") && manifest_json["versions"].is_array()) {
+        for (const auto& ver_meta_json : manifest_json["versions"]) {
+            if (ver_meta_json.contains("id") && ver_meta_json["id"].get<std::string>() == version_id_to_parse) {
+                if (ver_meta_json.contains("url")) {
+                    version_url = ver_meta_json["url"].get<std::string>();
+                    break;
+                }
+            }
+        }
+    }
 
-    // Hash and print
-    std::cout << "Calculating SHA-512 hash...\n";
-    std::string hash = sha512_string(response.text);
-    std::cout << "SHA-512: " << hash << "\n";
+    if (version_url.empty()) {
+        std::cerr << "Version " << version_id_to_parse << " not found or URL missing in manifest." << std::endl;
+        return 1;
+    }
 
-    // Optional: print headers
-    std::cout << "\nResponse headers:\n";
-    for (const auto& h : response.header) {
-        std::cout << h.first << ": " << h.second << "\n";
+
+    // Fetch the detailed JSON for the selected Minecraft version
+    std::cout << "Fetching version details for " << version_id_to_parse << " from " << version_url << std::endl;
+    cpr::Response version_details_response = Launcher::Http::Get(cpr::Url{version_url});
+    if (version_details_response.status_code != 200) {
+        std::cerr << "Failed to fetch version details for " << version_id_to_parse << ": "
+                  << version_details_response.status_code << " - " << version_details_response.error.message << std::endl;
+        if(!version_details_response.text.empty() && version_details_response.status_code >= 400) {
+            std::cerr << "Response Body: " << version_details_response.text << std::endl;
+        }
+        return 1;
+    }
+    json version_data_json;
+    try {
+        version_data_json = json::parse(version_details_response.text);
+    } catch(const json::parse_error& e) {
+        std::cerr << "Failed to parse version JSON for " << version_id_to_parse << ": " << e.what() << std::endl;
+        return 1;
+    }
+
+    Version parsed_minecraft_version = Version::from_json(version_data_json);
+
+    std::cout << "Successfully parsed Minecraft version: " << parsed_minecraft_version.id << std::endl;
+    if (parsed_minecraft_version.javaVersion) {
+        std::cout << "  Requires Java Component: " << parsed_minecraft_version.javaVersion->component
+                  << ", Major Version: " << parsed_minecraft_version.javaVersion->majorVersion << std::endl;
+    } else {
+        std::cout << "  No specific Java version explicitly listed in this version's manifest." << std::endl;
+    }
+
+    // --- Java Download Logic ---
+    Launcher::JavaDownloader java_downloader;
+    std::filesystem::path java_runtimes_base_dir = "./java_runtimes";
+    std::filesystem::path downloaded_java_archive_path;
+
+    if (parsed_minecraft_version.javaVersion) {
+        const auto& required_java = *parsed_minecraft_version.javaVersion;
+
+        std::cout << "\n--- Attempting Java Download via Adoptium API ---" << std::endl;
+        downloaded_java_archive_path = java_downloader.downloadJavaForSpecificVersionAdoptium(required_java, java_runtimes_base_dir / "adoptium");
+
+        if (downloaded_java_archive_path.empty()) {
+            std::cerr << "Java download via Adoptium API failed or was skipped for "
+                      << required_java.component << " v" << required_java.majorVersion << "." << std::endl;
+
+            std::cout << "\n--- Attempting Java Download via Mojang Manifest as fallback/alternative ---" << std::endl;
+            downloaded_java_archive_path = java_downloader.downloadJavaForMinecraftVersionMojang(parsed_minecraft_version, java_runtimes_base_dir / "mojang");
+
+            if (downloaded_java_archive_path.empty()) {
+                std::cerr << "Java download via Mojang Manifest also failed or was skipped for "
+                          << required_java.component << " v" << required_java.majorVersion << "." << std::endl;
+            }
+        }
+    } else {
+        std::cout << "\nNo specific Java version required by " << parsed_minecraft_version.id
+                  << " in its manifest. Consider using a default (e.g., Java 17)." << std::endl;
+    }
+
+    if (!downloaded_java_archive_path.empty()) {
+        std::cout << "\nJava runtime archive is available at: " << downloaded_java_archive_path.string() << std::endl;
+        std::cout << "Next steps would be to extract this archive to a suitable location and use it to launch Minecraft." << std::endl;
+    } else {
+        std::cout << "\nFailed to obtain a suitable Java runtime for Minecraft version " << parsed_minecraft_version.id << std::endl;
     }
 
     return 0;
