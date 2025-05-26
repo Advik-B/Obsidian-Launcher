@@ -16,7 +16,7 @@ HttpManager::HttpManager() {
         m_logger->info("Configuring global SslOptions with embedded CA cert buffer (length: {}).", strlen(cacert_pem));
         m_globalSslOptions = cpr::Ssl(
             // cpr::ssl::CaBuffer{cacert_pem},
-            cpr::VerifySsl{false} // DISABLING SSL BECAUSE WE CAN'T FUCKING HAVE NICE THINGS RIGHT!??
+            // // DISABLING SSL BECAUSE WE CAN'T FUCKING HAVE NICE THINGS RIGHT!??
         );
     } else {
         m_logger->error("HttpManager: Embedded cacert_pem is null or empty! SSL/TLS will likely fail or use system CAs.");
@@ -34,6 +34,7 @@ HttpManager::~HttpManager() {
 cpr::Session HttpManager::CreateSession() const {
     cpr::Session session;
     session.SetSslOptions(m_globalSslOptions);
+    session.SetVerifySsl(false); // Disable SSL verification
     // Set other defaults if you have them (e.g., timeout, default user-agent)
     // session.SetUserAgent("MyLauncher/1.0");
     return session;
