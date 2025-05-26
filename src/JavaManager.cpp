@@ -13,7 +13,7 @@ namespace Launcher {
 JavaManager::JavaManager(const Config& config, HttpManager& httpManager)
     : m_config(config),
       m_httpManager(httpManager),
-      m_javaDownloader(m_httpManager) { // Pass HttpManager to JavaDownloader
+      m_javaDownloader(m_httpManager) {
     m_logger = Utils::Logger::GetOrCreateLogger("JavaManager");
     m_logger->trace("Initializing...");
     if (!std::filesystem::exists(m_config.javaRuntimesDir)) {
@@ -80,14 +80,13 @@ std::optional<JavaRuntime> JavaManager::ensureJavaForMinecraftVersion(const Vers
         std::filesystem::path javaExePath = findJavaExecutable(extractionTargetDir);
 
         if (!javaExePath.empty()) {
-            std::filesystem::path effectiveHome = javaExePath.parent_path().parent_path();
-            if (!std::filesystem::exists(effectiveHome / "lib")) {
-                effectiveHome = extractionTargetDir;
-                 m_logger->warn("Could not reliably determine effective Java home from executable path {}. Using extraction target {}.", javaExePath.string(), extractionTargetDir.string());
-            }
+            std::filesystem::path effectiveJavaHome = javaExePath.parent_path().parent_path();
 
-            JavaRuntime newRuntime = {effectiveHome, javaExePath, requiredJava.majorVersion, requiredJava.component, sourceApi};
+            JavaRuntime newRuntime = {effectiveJavaHome, javaExePath, requiredJava.majorVersion, requiredJava.component, sourceApi};
             m_availableRuntimes.push_back(newRuntime);
+
+            m_logger->info("Successfully configured Java runtime: Component={}, Version={}, Source={}, Home='{}', Executable='{}'",
+                newRuntime.componentName, newRuntime.majorVersion, newRuntime.source, newRuntime.homePath.string(), newRuntime.javaExecutablePath.string());
 
             std::error_code ec_remove;
             std::filesystem::remove(downloadedArchivePath, ec_remove);
@@ -98,15 +97,20 @@ std::optional<JavaRuntime> JavaManager::ensureJavaForMinecraftVersion(const Vers
             }
             return newRuntime;
         } else {
-            m_logger->error("Failed to find Java executable in {}", extractionTargetDir.string());
+            m_logger->error("Failed to find Java executable in the extracted archive at {}", extractionTargetDir.string());
         }
     } else {
         m_logger->error("Failed to extract Java archive {}", downloadedArchivePath.string());
     }
 
     if(std::filesystem::exists(downloadedArchivePath)) {
-        std::filesystem::remove(downloadedArchivePath);
-        m_logger->info("Cleaned up downloaded archive after failure: {}", downloadedArchivePath.string());
+        std::error_code ec_remove_fail;
+        std::filesystem::remove(downloadedArchivePath, ec_remove_fail);
+        if(ec_remove_fail) {
+             m_logger->warn("Cleanup: Failed to remove archive {} after failure: {}", downloadedArchivePath.string(), ec_remove_fail.message());
+        } else {
+             m_logger->info("Cleaned up downloaded archive after failure: {}", downloadedArchivePath.string());
+        }
     }
     return std::nullopt;
 }
@@ -131,51 +135,81 @@ bool JavaManager::extractJavaArchive(const std::filesystem::path& archivePath, c
     } catch (const std::exception& e) {
         m_logger->error("Error extracting archive {}: {}", archivePath.string(), e.what());
         if (std::filesystem::exists(extractionDir)) {
-            std::filesystem::remove_all(extractionDir);
+            std::error_code ec;
+            std::filesystem::remove_all(extractionDir, ec);
+            if(ec) m_logger->warn("Failed to cleanup extraction directory {} after error: {}", extractionDir.string(), ec.message());
         }
         return false;
     }
 }
 
-std::filesystem::path JavaManager::findJavaExecutable(const std::filesystem::path& extractedJavaBaseDir) {
-    m_logger->trace("Attempting to find Java executable in/under: {}", extractedJavaBaseDir.string());
+std::filesystem::path JavaManager::findJavaExecutable(const std::filesystem::path& extractionBaseDir) {
+    m_logger->trace("Attempting to find Java executable in/under base extraction directory: {}", extractionBaseDir.string());
 
-    std::filesystem::path currentSearchDir = extractedJavaBaseDir;
+    std::filesystem::path javaHomePath = extractionBaseDir;
 
-    if (std::filesystem::exists(extractedJavaBaseDir) && std::filesystem::is_directory(extractedJavaBaseDir)) {
+    if (!std::filesystem::exists(extractionBaseDir) || !std::filesystem::is_directory(extractionBaseDir)) {
+        m_logger->error("Provided Java base directory {} does not exist or is not a directory.", extractionBaseDir.string());
+        return "";
+    }
+
+    std::filesystem::path potentialBinDir = extractionBaseDir / "bin";
+    bool foundBinDirectly = std::filesystem::exists(potentialBinDir) && std::filesystem::is_directory(potentialBinDir);
+
+    if (!foundBinDirectly) {
+        m_logger->trace("'bin' not directly under {}. Looking for a suitable subdirectory.", extractionBaseDir.string());
         std::vector<std::filesystem::path> subdirs;
-        for (const auto& entry : std::filesystem::directory_iterator(extractedJavaBaseDir)) {
+        for (const auto& entry : std::filesystem::directory_iterator(extractionBaseDir)) {
             if (entry.is_directory()) {
                 subdirs.push_back(entry.path());
             }
         }
+
         if (subdirs.size() == 1) {
-            if (std::filesystem::exists(subdirs[0] / "bin") || std::filesystem::exists(subdirs[0] / "release")) {
-                 m_logger->trace("Archive extracted into a root folder: {}. Searching within.", subdirs[0].filename().string());
-                currentSearchDir = subdirs[0];
+            m_logger->info("Found single subdirectory '{}' in extraction path. Assuming it's the Java home.", subdirs[0].filename().string());
+            javaHomePath = subdirs[0];
+        } else if (subdirs.size() > 1) {
+            m_logger->warn("Multiple subdirectories found in {}. Attempting to find a likely Java home.", extractionBaseDir.string());
+            bool foundLikelyHome = false;
+            for (const auto& subdir : subdirs) {
+                if (std::filesystem::exists(subdir / "bin") && std::filesystem::is_directory(subdir / "bin")) {
+                    m_logger->info("Found likely Java home in subdirectory: {}", subdir.string());
+                    javaHomePath = subdir;
+                    foundLikelyHome = true;
+                    break;
+                }
+                if (std::filesystem::exists(subdir / "release") && std::filesystem::is_regular_file(subdir / "release")) {
+                     m_logger->info("Found 'release' file in subdirectory, assuming Java home: {}", subdir.string());
+                     javaHomePath = subdir;
+                     foundLikelyHome = true;
+                     break;
+                }
             }
-        } else if (subdirs.empty()) {
-             m_logger->trace("No subdirectories in {}, searching directly.", extractedJavaBaseDir.string());
+            if (!foundLikelyHome) {
+                m_logger->error("Could not determine the correct Java home among multiple subdirectories in {}.", extractionBaseDir.string());
+                return "";
+            }
         } else {
-            m_logger->trace("Multiple subdirectories in {}, searching directly in base first.", extractedJavaBaseDir.string());
+            m_logger->error("No subdirectories and no 'bin' directory found directly in {}.", extractionBaseDir.string());
+            return "";
         }
     } else {
-        m_logger->error("Provided Java base directory {} does not exist or is not a directory.", extractedJavaBaseDir.string());
-        return "";
+        m_logger->trace("'bin' directory found directly under {}. Using this as Java home.", extractionBaseDir.string());
     }
 
-    std::filesystem::path binDir = currentSearchDir / "bin";
+    m_logger->trace("Effective Java home path for searching 'bin': {}", javaHomePath.string());
+    std::filesystem::path binDir = javaHomePath / "bin";
 
     if (Utils::getCurrentOS() == Utils::OperatingSystem::MACOS) {
-        std::filesystem::path macOSBinDir = currentSearchDir / "Contents" / "Home" / "bin";
+        std::filesystem::path macOSBinDir = javaHomePath / "Contents" / "Home" / "bin";
         if (std::filesystem::exists(macOSBinDir) && std::filesystem::is_directory(macOSBinDir)) {
             binDir = macOSBinDir;
-            m_logger->trace("Using macOS specific JRE structure: {}", binDir.string());
+            m_logger->info("Using macOS specific JRE structure for bin: {}", binDir.string());
         }
     }
 
     if (!std::filesystem::exists(binDir) || !std::filesystem::is_directory(binDir)) {
-        m_logger->error("'bin' directory not found in potential Java home: {}", currentSearchDir.string());
+        m_logger->error("'bin' directory not found in resolved Java home: {}", javaHomePath.string());
         return "";
     }
 
@@ -209,24 +243,24 @@ void JavaManager::scanForExistingRuntimes() {
     m_logger->info("Scanning for existing Java runtimes in {}...", m_config.javaRuntimesDir.string());
     for (const auto& entry : std::filesystem::directory_iterator(m_config.javaRuntimesDir)) {
         if (entry.is_directory() && entry.path().filename().string().rfind("_downloads", 0) != 0) {
-            std::filesystem::path javaHomeCandidate = entry.path();
-            m_logger->trace("Scanning potential Java home: {}", javaHomeCandidate.string());
+            std::filesystem::path extractionCandidateDir = entry.path();
+            m_logger->trace("Scanning potential Java extraction directory: {}", extractionCandidateDir.string());
 
-            std::filesystem::path javaExe = findJavaExecutable(javaHomeCandidate);
+            std::filesystem::path javaExe = findJavaExecutable(extractionCandidateDir);
 
             if (!javaExe.empty()) {
-                std::string dirName = javaHomeCandidate.filename().string();
+                std::string dirName = extractionCandidateDir.filename().string();
                 std::string source = "unknown";
                 std::string component = "unknown";
                 unsigned int majorVersion = 0;
 
                 size_t last_underscore = dirName.rfind('_');
-                if (last_underscore != std::string::npos) {
+                if (last_underscore != std::string::npos && last_underscore < dirName.length() - 1) {
                     try {
                         majorVersion = std::stoul(dirName.substr(last_underscore + 1));
                         std::string prefix = dirName.substr(0, last_underscore);
                         size_t first_underscore = prefix.find('_');
-                        if (first_underscore != std::string::npos) {
+                        if (first_underscore != std::string::npos && first_underscore < prefix.length() -1 ) {
                             source = prefix.substr(0, first_underscore);
                             component = prefix.substr(first_underscore + 1);
                         } else {
@@ -238,18 +272,20 @@ void JavaManager::scanForExistingRuntimes() {
                          majorVersion = 0;
                     }
                 } else {
-                     m_logger->warn("Could not parse runtime details from directory name: {}", dirName);
+                     m_logger->warn("Could not parse runtime details from directory name (expected '[source_]component_version'): {}", dirName);
                 }
 
-                if (majorVersion > 0 && component != "unknown") {
-                    std::filesystem::path effectiveHome = javaExe.parent_path().parent_path();
-                    m_logger->info("Discovered existing runtime: Component '{}', Version '{}' (Source: '{}') at {}", component, majorVersion, source, effectiveHome.string());
-                    m_availableRuntimes.push_back({effectiveHome, javaExe, majorVersion, component, source});
+                if (majorVersion > 0 && component != "unknown" && !component.empty()) {
+                    std::filesystem::path effectiveJavaHome = javaExe.parent_path().parent_path();
+                    m_logger->info("Discovered existing runtime: Component '{}', Version '{}' (Source: '{}') at Home='{}', Exe='{}'",
+                        component, majorVersion, source, effectiveJavaHome.string(), javaExe.string());
+                    m_availableRuntimes.push_back({effectiveJavaHome, javaExe, majorVersion, component, source});
                 } else {
-                    m_logger->warn("Found Java executable in {} but could not determine full details from directory name. Skipping.", javaHomeCandidate.string());
+                    m_logger->warn("Found Java executable in {} but could not determine full details from directory name '{}'. Skipping.",
+                        extractionCandidateDir.string(), dirName);
                 }
             } else {
-                 m_logger->trace("No Java executable found in candidate directory: {}", javaHomeCandidate.string());
+                 m_logger->trace("No Java executable found in candidate directory structure: {}", extractionCandidateDir.string());
             }
         }
     }
