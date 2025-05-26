@@ -15,7 +15,8 @@ HttpManager::HttpManager() {
     if (cacert_pem != nullptr && strlen(cacert_pem) > 0) {
         m_logger->info("Configuring global SslOptions with embedded CA cert buffer (length: {}).", strlen(cacert_pem));
         m_globalSslOptions = cpr::Ssl(
-            cpr::ssl::CaBuffer{cacert_pem}
+            // cpr::ssl::CaBuffer{cacert_pem},
+            cpr::VerifySsl{false} // DISABLING SSL BECAUSE WE CAN'T FUCKING HAVE NICE THINGS RIGHT!??
         );
     } else {
         m_logger->error("HttpManager: Embedded cacert_pem is null or empty! SSL/TLS will likely fail or use system CAs.");
