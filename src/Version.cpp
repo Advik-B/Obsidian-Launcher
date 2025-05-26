@@ -4,7 +4,7 @@
 #include <Launcher/Types/Version.hpp>
 #include <iostream> // For std::cerr
 
-Version Version::from_json(const json& j) {
+Launcher::Version Launcher::Version::from_json(const json& j) {
     Version version;
 
     if (j.contains("assetIndex")) {
