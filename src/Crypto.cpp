@@ -1,125 +1,124 @@
 // src/Utils/Crypto.cpp
 #include <Launcher/Utils/Crypto.hpp>
+#include <Launcher/Utils/Logger.hpp> // Ensure this is included
 
-#include <openssl/sha.h>   // For SHA1_... functions
-#include <openssl/evp.h>   // For EVP_MD_CTX, EVP_sha256, etc. (modern interface)
+#include <openssl/sha.h>
+#include <openssl/evp.h>
 #include <fstream>
 #include <vector>
-#include <iomanip>     // For std::setw, std::setfill
-#include <sstream>     // For std::ostringstream
-#include <iostream>    // For std::cerr
+#include <iomanip>
+#include <sstream>
 
-namespace Launcher {
-namespace Utils {
+namespace Launcher::Utils {
 
-// Helper function to convert raw hash bytes to a hexadecimal string
-static std::string bytesToHexString(const unsigned char* bytes, size_t len) {
-    std::ostringstream ss;
-    ss << std::hex << std::setfill('0');
-    for (size_t i = 0; i < len; ++i) {
-        ss << std::setw(2) << static_cast<int>(bytes[i]);
-    }
-    return ss.str();
-}
-
-std::string calculateFileSHA1(const std::string& filePath) {
-    std::ifstream file(filePath, std::ios::binary);
-    if (!file.is_open()) {
-        std::cerr << "Crypto Error: Could not open file for SHA1 calculation: " << filePath << std::endl;
-        return "";
+    // Helper function to convert raw hash bytes to a hexadecimal string (no logging needed here)
+    static std::string bytesToHexString(const unsigned char *bytes, size_t len) {
+        std::ostringstream ss;
+        ss << std::hex << std::setfill('0');
+        for (size_t i = 0; i < len; ++i) {
+            ss << std::setw(2) << static_cast<int>(bytes[i]);
+        }
+        return ss.str();
     }
 
-    SHA_CTX sha1Context;
-    if (!SHA1_Init(&sha1Context)) {
-        std::cerr << "Crypto Error: SHA1_Init failed." << std::endl;
-        // Note: OpenSSL errors can be retrieved using ERR_print_errors_fp(stderr); for more details
-        return "";
-    }
+    std::string calculateFileSHA1(const std::string &filePath) {
+        // No class-specific logger here, use CORE_LOG or a generic "Crypto" named logger if preferred
+        CORE_LOG_TRACE("[Crypto] Calculating SHA1 for file: {}", filePath);
+        std::ifstream file(filePath, std::ios::binary);
+        if (!file.is_open()) {
+            CORE_LOG_ERROR("[Crypto] Could not open file for SHA1 calculation: {}", filePath);
+            return "";
+        }
 
-    constexpr size_t bufferSize = 4096;
-    std::vector<char> buffer(bufferSize); // Using std::vector for safer buffer management
+        SHA_CTX sha1Context;
+        if (!SHA1_Init(&sha1Context)) {
+            CORE_LOG_ERROR("[Crypto] SHA1_Init failed for file: {}.", filePath);
+            return "";
+        }
 
-    while (file.good()) {
-        file.read(buffer.data(), bufferSize);
-        std::streamsize bytesRead = file.gcount();
-        if (bytesRead > 0) {
-            if (!SHA1_Update(&sha1Context, buffer.data(), static_cast<size_t>(bytesRead))) {
-                std::cerr << "Crypto Error: SHA1_Update failed." << std::endl;
-                return "";
+        constexpr size_t bufferSize = 4096;
+        std::vector<char> buffer(bufferSize);
+
+        while (file.good()) {
+            file.read(buffer.data(), bufferSize);
+            std::streamsize bytesRead = file.gcount();
+            if (bytesRead > 0) {
+                if (!SHA1_Update(&sha1Context, buffer.data(), static_cast<size_t>(bytesRead))) {
+                    CORE_LOG_ERROR("[Crypto] SHA1_Update failed for file: {}", filePath);
+                    file.close();
+                    return "";
+                }
             }
         }
-    }
-    // No need to check file.eof() or file.fail() explicitly here,
-    // gcount() handles the last partial read correctly.
-    file.close();
+        file.close();
 
-    unsigned char hash[SHA_DIGEST_LENGTH];
-    if (!SHA1_Final(hash, &sha1Context)) {
-        std::cerr << "Crypto Error: SHA1_Final failed." << std::endl;
-        return "";
-    }
-
-    return bytesToHexString(hash, SHA_DIGEST_LENGTH);
-}
-
-std::string calculateFileSHA256(const std::string& filePath) {
-    std::ifstream file(filePath, std::ios::binary);
-    if (!file.is_open()) {
-        std::cerr << "Crypto Error: Could not open file for SHA256 calculation: " << filePath << std::endl;
-        return "";
+        unsigned char hash[SHA_DIGEST_LENGTH];
+        if (!SHA1_Final(hash, &sha1Context)) {
+            CORE_LOG_ERROR("[Crypto] SHA1_Final failed for file: {}", filePath);
+            return "";
+        }
+        std::string hexHash = bytesToHexString(hash, SHA_DIGEST_LENGTH);
+        CORE_LOG_TRACE("[Crypto] SHA1 for {}: {}", filePath, hexHash);
+        return hexHash;
     }
 
-    // EVP (Envelope) interface is generally preferred for new code in OpenSSL
-    // as it's more flexible and supports a wider range of algorithms.
-    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
-    if (mdctx == nullptr) {
-        std::cerr << "Crypto Error: EVP_MD_CTX_new failed." << std::endl;
-        return "";
-    }
+    std::string calculateFileSHA256(const std::string &filePath) {
+        CORE_LOG_TRACE("[Crypto] Calculating SHA256 for file: {}", filePath);
+        std::ifstream file(filePath, std::ios::binary);
+        if (!file.is_open()) {
+            CORE_LOG_ERROR("[Crypto] Could not open file for SHA256 calculation: {}", filePath);
+            return "";
+        }
 
-    // Initialize the digest context for SHA256
-    if (1 != EVP_DigestInit_ex(mdctx, EVP_sha256(), nullptr)) {
-        std::cerr << "Crypto Error: EVP_DigestInit_ex for SHA256 failed." << std::endl;
-        EVP_MD_CTX_free(mdctx); // Clean up context
-        return "";
-    }
+        EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+        if (mdctx == nullptr) {
+            CORE_LOG_ERROR("[Crypto] EVP_MD_CTX_new failed for SHA256 on file: {}", filePath);
+            file.close(); // Close file before returning
+            return "";
+        }
 
-    constexpr size_t bufferSize = 4096;
-    std::vector<char> buffer(bufferSize);
+        if (1 != EVP_DigestInit_ex(mdctx, EVP_sha256(), nullptr)) {
+            CORE_LOG_ERROR("[Crypto] EVP_DigestInit_ex for SHA256 failed on file: {}", filePath);
+            EVP_MD_CTX_free(mdctx);
+            file.close();
+            return "";
+        }
 
-    while (file.good()) {
-        file.read(buffer.data(), bufferSize);
-        std::streamsize bytesRead = file.gcount();
-        if (bytesRead > 0) {
-            if (1 != EVP_DigestUpdate(mdctx, buffer.data(), static_cast<size_t>(bytesRead))) {
-                std::cerr << "Crypto Error: EVP_DigestUpdate failed." << std::endl;
-                EVP_MD_CTX_free(mdctx);
-                return "";
+        constexpr size_t bufferSize = 4096;
+        std::vector<char> buffer(bufferSize);
+
+        while (file.good()) {
+            file.read(buffer.data(), bufferSize);
+            std::streamsize bytesRead = file.gcount();
+            if (bytesRead > 0) {
+                if (1 != EVP_DigestUpdate(mdctx, buffer.data(), static_cast<size_t>(bytesRead))) {
+                    CORE_LOG_ERROR("[Crypto] EVP_DigestUpdate failed for SHA256 on file: {}", filePath);
+                    EVP_MD_CTX_free(mdctx);
+                    file.close();
+                    return "";
+                }
             }
         }
-    }
-    file.close();
+        file.close();
 
-    unsigned char hash[EVP_MAX_MD_SIZE]; // EVP_MAX_MD_SIZE is sufficiently large for all EVP digests
-    unsigned int hashLen = 0; // Will be filled by EVP_DigestFinal_ex
+        unsigned char hash[EVP_MAX_MD_SIZE];
+        unsigned int hashLen = 0;
 
-    if (1 != EVP_DigestFinal_ex(mdctx, hash, &hashLen)) {
-        std::cerr << "Crypto Error: EVP_DigestFinal_ex failed." << std::endl;
+        if (1 != EVP_DigestFinal_ex(mdctx, hash, &hashLen)) {
+            CORE_LOG_ERROR("[Crypto] EVP_DigestFinal_ex failed for SHA256 on file: {}", filePath);
+            EVP_MD_CTX_free(mdctx);
+            return "";
+        }
         EVP_MD_CTX_free(mdctx);
-        return "";
+
+        if (hashLen != SHA256_DIGEST_LENGTH) {
+            CORE_LOG_WARN("[Crypto] SHA256 digest length is {}, expected {} for file: {}", hashLen,
+                          SHA256_DIGEST_LENGTH, filePath);
+        }
+
+        std::string hexHash = bytesToHexString(hash, hashLen);
+        CORE_LOG_TRACE("[Crypto] SHA256 for {}: {}", filePath, hexHash);
+        return hexHash;
     }
-    EVP_MD_CTX_free(mdctx); // Clean up the context
 
-    // Ensure hashLen is within expected bounds for SHA256 if needed, though EVP_MAX_MD_SIZE handles it.
-    // For SHA256, hashLen should be SHA256_DIGEST_LENGTH (32 bytes).
-    if (hashLen != SHA256_DIGEST_LENGTH) {
-         // This case should ideally not happen if EVP_sha256() was used correctly.
-        std::cerr << "Crypto Warning: SHA256 digest length is " << hashLen << ", expected " << SHA256_DIGEST_LENGTH << std::endl;
-    }
-
-
-    return bytesToHexString(hash, hashLen);
-}
-
-} // namespace Utils
-} // namespace Launcher
+} // namespace Launcher::Utils
