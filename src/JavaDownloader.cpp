@@ -1,19 +1,18 @@
 // src/JavaDownloader.cpp
 #include <Launcher/JavaDownloader.hpp>
+#include <Launcher/HttpManager.hpp>
 #include <Launcher/Utils/OS.hpp>
 #include <Launcher/Utils/Crypto.hpp>
-#include <Launcher/Http.hpp>
 #include <Launcher/Utils/Logger.hpp>
 
-#include <nlohmann/json.hpp> // Full include for json::parse and usage
+#include <nlohmann/json.hpp>
 #include <fstream>
 #include <filesystem>
 
-// using json = nlohmann::json; // Already in Http.hpp and Version.hpp if included, but fine here
-
 namespace Launcher {
 
-JavaDownloader::JavaDownloader() {
+JavaDownloader::JavaDownloader(HttpManager& httpManager)
+    : m_httpManager(httpManager) {
     m_logger = Utils::Logger::GetOrCreateLogger("JavaDownloader");
     m_logger->trace("Initialized.");
 }
@@ -21,15 +20,18 @@ JavaDownloader::JavaDownloader() {
 nlohmann::json JavaDownloader::fetchMojangJavaManifest() {
     const std::string javaManifestUrl = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
     m_logger->info("Fetching Mojang Java runtime manifest from: {}", javaManifestUrl);
-    cpr::Response r_manifest = Http::Get(cpr::Url{javaManifestUrl}); // Http::Get now logs trace
+
+    cpr::Response r_manifest = m_httpManager.Get(cpr::Url{javaManifestUrl});
+
     if (r_manifest.status_code != 200) {
-        m_logger->error("Failed to download Java runtime manifest. Status: {}, URL: {}, Error: {}", r_manifest.status_code, javaManifestUrl, r_manifest.error.message);
+        m_logger->error("Failed to download Java runtime manifest. Status: {}, URL: {}, Error: \"{}\"",
+            r_manifest.status_code, javaManifestUrl, r_manifest.error.message);
         if (!r_manifest.text.empty() && r_manifest.status_code >= 400) {
-            m_logger->error("Response: {}", r_manifest.text);
+            m_logger->error("Response Body: {}", r_manifest.text);
         }
         return nullptr;
     }
-    m_logger->info("Successfully fetched Mojang Java manifest.");
+    m_logger->info("Successfully fetched Mojang Java manifest ({} bytes).", r_manifest.text.length());
     try {
         return nlohmann::json::parse(r_manifest.text);
     } catch (const nlohmann::json::parse_error& e) {
@@ -49,7 +51,7 @@ std::filesystem::path JavaDownloader::downloadJavaForMinecraftVersionMojang(cons
 
     nlohmann::json javaManifestJson = fetchMojangJavaManifest();
     if (javaManifestJson.is_null()) {
-        return ""; // fetchMojangJavaManifest already logged the error
+        return "";
     }
 
     Utils::OperatingSystem currentOS = Utils::getCurrentOS();
@@ -90,7 +92,7 @@ std::filesystem::path JavaDownloader::downloadJavaForMinecraftVersionMojang(cons
                            entryMajorVersion = static_cast<unsigned int>(std::stoul(name_str));
                         }
                     } catch (const std::exception& e_parse) {
-                         m_logger->warn("Could not parse major version from string: {} ({})", name_str, e_parse.what());
+                         m_logger->warn("Could not parse major version from string in Mojang manifest: {} ({})", name_str, e_parse.what());
                     }
                 }
             }
@@ -122,15 +124,16 @@ std::filesystem::path JavaDownloader::downloadJavaForMinecraftVersionMojang(cons
     std::filesystem::path downloadPath = baseDownloadDir / filename;
 
     m_logger->info("Mojang Manifest - Downloading Java to: {}...", downloadPath.string());
-    cpr::Response r_download = Http::Download(downloadPath, cpr::Url{downloadUrl});
+    cpr::Response r_download = m_httpManager.Download(downloadPath, cpr::Url{downloadUrl});
 
     if (r_download.status_code != 200 || !r_download.error.message.empty()) {
-        m_logger->error("Mojang Manifest - Java archive download failed for URL: {}", downloadUrl); // Http::Download already logged details
+        // HttpManager::Download already logs detailed errors
+        m_logger->error("Mojang Manifest - Java archive download failed for URL: {}", downloadUrl);
         return "";
     }
     m_logger->info("Mojang Manifest - Java downloaded successfully.");
 
-    m_logger->info("Mojang Manifest - Verifying SHA1 hash...");
+    m_logger->info("Mojang Manifest - Verifying SHA1 hash for {}...", downloadPath.filename().string());
     std::string actualSha1 = Utils::calculateFileSHA1(downloadPath.string());
 
     if (actualSha1.empty()) {
@@ -143,7 +146,7 @@ std::filesystem::path JavaDownloader::downloadJavaForMinecraftVersionMojang(cons
         if(std::filesystem::exists(downloadPath)) std::filesystem::remove(downloadPath);
         return "";
     }
-    m_logger->info("Mojang Manifest - SHA1 hash verified.");
+    m_logger->info("Mojang Manifest - SHA1 hash verified for {}.", downloadPath.filename().string());
     m_logger->info("Mojang Manifest - Java archive downloaded and verified: {}", downloadPath.string());
     return downloadPath;
 }
@@ -176,14 +179,15 @@ std::filesystem::path JavaDownloader::downloadJavaForSpecificVersionAdoptium(con
     };
 
     m_logger->info("Adoptium API - Querying: {} with params: arch={}, os={}", apiUrl, adoptiumArch, adoptiumOS);
-    cpr::Response r_api = Http::Get(cpr::Url{apiUrl}, params);
+    cpr::Response r_api = m_httpManager.Get(cpr::Url{apiUrl}, params);
 
     if (r_api.status_code != 200) {
-        m_logger->error("Adoptium API - Failed to query. Status: {}, URL: {}, Error: {}", r_api.status_code, apiUrl, r_api.error.message);
-        if(!r_api.text.empty() && r_api.status_code >= 400){ m_logger->error("Response: {}", r_api.text); }
+        m_logger->error("Adoptium API - Failed to query. Status: {}, URL: {}, Error: \"{}\"",
+            r_api.status_code, apiUrl, r_api.error.message);
+        if(!r_api.text.empty() && r_api.status_code >= 400){ m_logger->error("Response Body: {}", r_api.text); }
         return "";
     }
-    m_logger->info("Adoptium API - Successfully queried API.");
+    m_logger->info("Adoptium API - Successfully queried API ({} bytes).", r_api.text.length());
 
     nlohmann::json apiResponseJson;
     try {
@@ -194,7 +198,7 @@ std::filesystem::path JavaDownloader::downloadJavaForSpecificVersionAdoptium(con
     }
 
     if (!apiResponseJson.is_array() || apiResponseJson.empty()) {
-        m_logger->error("Adoptium API - No suitable builds or unexpected format. Response: {}", apiResponseJson.dump(2));
+        m_logger->error("Adoptium API - No suitable builds found or unexpected format. Response: {}", apiResponseJson.dump(2));
         return "";
     }
 
@@ -203,7 +207,7 @@ std::filesystem::path JavaDownloader::downloadJavaForSpecificVersionAdoptium(con
         !firstBuild["binary"]["package"].contains("link") ||
         !firstBuild["binary"]["package"].contains("name") ||
         !firstBuild["binary"]["package"].contains("checksum")) {
-        m_logger->error("Adoptium API - Response missing required fields. Build Entry: {}", firstBuild.dump(2));
+        m_logger->error("Adoptium API - Response JSON missing required fields. Build Entry: {}", firstBuild.dump(2));
         return "";
     }
 
@@ -223,7 +227,7 @@ std::filesystem::path JavaDownloader::downloadJavaForSpecificVersionAdoptium(con
     std::filesystem::path downloadPath = baseDownloadDir / filename;
 
     m_logger->info("Adoptium API - Downloading Java to: {}...", downloadPath.string());
-    cpr::Response r_download = Http::Download(downloadPath, cpr::Url{downloadUrl});
+    cpr::Response r_download = m_httpManager.Download(downloadPath, cpr::Url{downloadUrl});
 
     if (r_download.status_code != 200 || !r_download.error.message.empty()) {
         m_logger->error("Adoptium API - Java archive download failed for URL: {}", downloadUrl);
@@ -231,7 +235,7 @@ std::filesystem::path JavaDownloader::downloadJavaForSpecificVersionAdoptium(con
     }
     m_logger->info("Adoptium API - Java downloaded successfully.");
 
-    m_logger->info("Adoptium API - Verifying SHA256 hash...");
+    m_logger->info("Adoptium API - Verifying SHA256 hash for {}...", downloadPath.filename().string());
     std::string actualSha256 = Utils::calculateFileSHA256(downloadPath.string());
     if (actualSha256.empty()) {
         m_logger->error("Adoptium API - SHA256 calculation failed for {}", downloadPath.string());
@@ -244,7 +248,7 @@ std::filesystem::path JavaDownloader::downloadJavaForSpecificVersionAdoptium(con
         if(std::filesystem::exists(downloadPath)) std::filesystem::remove(downloadPath);
         return "";
     }
-    m_logger->info("Adoptium API - SHA256 hash verified.");
+    m_logger->info("Adoptium API - SHA256 hash verified for {}.", downloadPath.filename().string());
     m_logger->info("Adoptium API - Java archive downloaded and verified: {}", downloadPath.string());
     return downloadPath;
 }
