@@ -1,10 +1,14 @@
-//
-// Created by Advik on 10-05-2025.
-//
+// src/Version.cpp
 #include <Launcher/Types/Version.hpp>
-#include <iostream> // For std::cerr
+#include <Launcher/Utils/Logger.hpp>
 
-Launcher::Version Launcher::Version::from_json(const json& j) {
+namespace Launcher {
+
+Version Version::from_json(const nlohmann::json& j) {
+    // Use a temporary logger for this static method or pass one if it becomes complex
+    // For now, CORE_LOG is fine for a static utility function like this.
+    // Or: static auto s_logger = Utils::Logger::GetOrCreateLogger("VersionParser");
+    CORE_LOG_TRACE("[VersionParser] Parsing version JSON for ID: {}", j.value("id", "UNKNOWN_VERSION_ID"));
     Version version;
 
     if (j.contains("assetIndex")) {
@@ -23,7 +27,7 @@ Launcher::Version Launcher::Version::from_json(const json& j) {
                 MinecraftJARType type = string_to_minecraft_jar_type(key);
                 version.downloads[type] = DownloadDetails::from_json(val_json);
             } catch (const std::runtime_error& e) {
-                std::cerr << "Warning: Skipping unknown download type '" << key << "': " << e.what() << std::endl;
+                CORE_LOG_WARN("[VersionParser] Skipping unknown download type '{}': {}", key, e.what());
             }
         }
     }
@@ -61,5 +65,8 @@ Launcher::Version Launcher::Version::from_json(const json& j) {
         version.logging = LoggingInfo::from_json(j.at("logging"));
     }
 
+    CORE_LOG_TRACE("[VersionParser] Successfully parsed version object for ID: {}", version.id);
     return version;
 }
+
+} // namespace Launcher
