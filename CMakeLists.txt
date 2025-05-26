@@ -145,6 +145,28 @@ target_link_libraries(ObsidianLauncher
         spdlog::spdlog # Link the compiled spdlog library
 )
 
+add_executable(
+        SSL-Debug
+        tests/SSL-Debug.cpp
+        src/Utils/Logger.cpp
+        src/Http.cpp
+)
+target_include_directories(
+        SSL-Debug PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_BINARY_DIR}/include # For cacert_pem.h and spdlog (if built in-tree)
+        ${THIRDPARTY_INCLUDE_DIRS} # For miniz-cpp
+)
+add_dependencies(SSL-Debug embed_cert)
+target_compile_definitions(SSL-Debug PRIVATE HAS_STRING_VIEW)
+target_link_libraries(SSL-Debug
+        PRIVATE cpr::cpr # cpr library target
+        nlohmann_json::nlohmann_json # nlohmann_json library target
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        spdlog::spdlog # Link the compiled spdlog library
+)
+
 # --- Copy OpenSSL DLLs on Windows after building the target ---
 if (WIN32)
     file(GLOB OPENSSL_DLLS "${OPENSSL_ROOT_DIR}/bin/*.dll") # More robust way to find DLLs
