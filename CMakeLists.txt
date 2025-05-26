@@ -58,6 +58,30 @@ set(SPDLOG_WCHAR_SUPPORT ON CACHE BOOL "Enable wchar_t support" FORCE)
 
 FetchContent_MakeAvailable(spdlog) # This will download, populate, and add_subdirectory
 
+# --- Minizip-NG ---
+FetchContent_Declare(
+        minizip-ng
+        GIT_REPOSITORY https://github.com/zlib-ng/minizip-ng.git
+        GIT_TAG 4.0.6 # Use a specific stable tag (check their releases)
+)
+# Options for minizip-ng
+set(MZ_FETCH_LIBS ON CACHE BOOL "Allow minizip-ng to fetch its dependencies (like zlib-ng)" FORCE) # Important
+set(MZ_ZLIB OFF CACHE BOOL "Use system zlib" FORCE) # Set to OFF to use zlib-ng via MZ_FETCH_LIBS
+set(MZ_ZLIB_NG ON CACHE BOOL "Enable zlib-ng backend" FORCE) # Explicitly use zlib-ng
+set(MZ_BZIP2 OFF CACHE BOOL "Disable BZip2 support" FORCE)
+set(MZ_LZMA OFF CACHE BOOL "Disable LZMA support" FORCE)
+set(MZ_ZSTD OFF CACHE BOOL "Disable ZSTD support" FORCE)
+set(MZ_LIBCOMP OFF CACHE BOOL "Disable libcomp support" FORCE)
+set(MZ_PKCRYPT OFF CACHE BOOL "Disable PKCRYPT encryption" FORCE)
+set(MZ_WZAES OFF CACHE BOOL "Disable WinZip AES encryption" FORCE)
+set(MZ_OPENSSL OFF CACHE BOOL "Disable OpenSSL for encryption (we use it for HTTP)" FORCE) # minizip can use OpenSSL for crypto, but we might not need it for basic extraction
+set(MZ_ICONV OFF CACHE BOOL "Disable iconv support" FORCE)
+set(MZ_COMPAT OFF CACHE BOOL "Disable Minizip 1.x compatibility API" FORCE) # For cleaner API
+set(MZ_BUILD_TESTS OFF CACHE BOOL "Build minizip-ng tests" FORCE)
+set(MZ_BUILD_UNIT_TESTS OFF CACHE BOOL "Build minizip-ng unit tests" FORCE)
+set(MZ_BUILD_FUZZERS OFF CACHE BOOL "Build minizip-ng fuzzers" FORCE)
+
+FetchContent_MakeAvailable(minizip-ng)
 
 ### Download and embed cacert.pem ###
 set(CACERT_PEM_URL "https://curl.se/ca/cacert.pem")
@@ -130,7 +154,8 @@ add_executable(
 target_include_directories(ObsidianLauncher PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_BINARY_DIR}/include # For cacert_pem.h and spdlog (if built in-tree)
-        ${THIRDPARTY_INCLUDE_DIRS} # For miniz-cpp
+        ${CMAKE_BINARY_DIR}/_deps/minizip-ng-src
+
 )
 
 add_dependencies(ObsidianLauncher embed_cert)
@@ -143,7 +168,12 @@ target_link_libraries(ObsidianLauncher
         OpenSSL::SSL
         OpenSSL::Crypto
         spdlog::spdlog # Link the compiled spdlog library
+        minizip
 )
+
+
+# ===================================================================
+
 
 add_executable(
         SSL-Debug
@@ -155,7 +185,7 @@ target_include_directories(
         SSL-Debug PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_BINARY_DIR}/include # For cacert_pem.h and spdlog (if built in-tree)
-        ${THIRDPARTY_INCLUDE_DIRS} # For miniz-cpp
+
 )
 add_dependencies(SSL-Debug embed_cert)
 target_compile_definitions(SSL-Debug PRIVATE HAS_STRING_VIEW)

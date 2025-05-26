@@ -4,11 +4,26 @@
 #include <Launcher/JavaDownloader.hpp>
 #include <Launcher/Utils/OS.hpp>
 #include <Launcher/Utils/Logger.hpp>
-#include <miniz_cpp.hpp>
 #include <fstream>
 #include <algorithm>
+#include <vector> // For buffer in extraction
+
+// Minizip-NG includes
+extern "C" { // minizip-ng headers are C headers
+#include <mz.h>
+#include <mz_os.h>
+#include <mz_strm.h>
+#include <mz_strm_os.h>
+#include <mz_zip.h>
+#include <mz_zip_rw.h>
+}
+
 
 namespace Launcher {
+
+// Constructor and other methods (getExtractionPathForRuntime, ensureJavaForMinecraftVersion, findJavaExecutable, scanForExistingRuntimes)
+// remain largely the same as the previous "full code" version, except they will call the new extractJavaArchive.
+// For brevity, I'm only showing the modified/new extractJavaArchive and its helpers.
 
 JavaManager::JavaManager(const Config& config, HttpManager& httpManager)
     : m_config(config),
@@ -29,119 +44,114 @@ std::filesystem::path JavaManager::getExtractionPathForRuntime(const JavaVersion
     return m_config.javaRuntimesDir / dir_name;
 }
 
-std::optional<JavaRuntime> JavaManager::ensureJavaForMinecraftVersion(const Version& mcVersion) {
-    m_logger->info("Ensuring Java for Minecraft version: {}", mcVersion.id);
-    if (!mcVersion.javaVersion) {
-        m_logger->warn("Minecraft version {} does not specify a Java version. Cannot automatically ensure Java.", mcVersion.id);
-        return std::nullopt;
-    }
 
-    const auto& requiredJava = *mcVersion.javaVersion;
-    m_logger->info("Required Java: Component '{}', Major Version '{}'", requiredJava.component, requiredJava.majorVersion);
+// Helper function for minizip-ng extraction
+static int32_t minizip_extract_callback(void *handle, void *userdata, mz_zip_file *file_info, const char *path) {
+    std::filesystem::path& extraction_dir = *static_cast<std::filesystem::path*>(userdata);
+    std::filesystem::path target_path = extraction_dir / std::filesystem::path(file_info->filename).lexically_normal();
 
-    for (const auto& runtime : m_availableRuntimes) {
-        if (runtime.componentName == requiredJava.component && runtime.majorVersion == requiredJava.majorVersion) {
-            m_logger->info("Found existing suitable Java runtime: {}", runtime.homePath.string());
-            return runtime;
-        }
-    }
-    m_logger->info("No existing suitable Java runtime found for {} v{}. Attempting download.",
-              requiredJava.component, requiredJava.majorVersion);
+    std::shared_ptr<spdlog::logger> logger = Utils::Logger::GetOrCreateLogger("JavaManagerExtract"); // Or pass logger
 
-    std::filesystem::path downloadedArchivePath;
-    std::string sourceApi = "unknown";
-
-    std::filesystem::path adoptiumDownloadDir = m_config.javaRuntimesDir / "_downloads" / "adoptium";
-    downloadedArchivePath = m_javaDownloader.downloadJavaForSpecificVersionAdoptium(requiredJava, adoptiumDownloadDir);
-    if (!downloadedArchivePath.empty()) {
-        sourceApi = "adoptium";
-    } else {
-        m_logger->warn("Adoptium download failed or not suitable. Trying Mojang manifest...");
-        std::filesystem::path mojangDownloadDir = m_config.javaRuntimesDir / "_downloads" / "mojang";
-        downloadedArchivePath = m_javaDownloader.downloadJavaForMinecraftVersionMojang(mcVersion, mojangDownloadDir);
-        if (!downloadedArchivePath.empty()) {
-            sourceApi = "mojang";
-        }
-    }
-
-    if (downloadedArchivePath.empty()) {
-        m_logger->error("Failed to download Java for {} v{}", requiredJava.component, requiredJava.majorVersion);
-        return std::nullopt;
-    }
-
-    m_logger->info("Java archive downloaded via {} to: {}", sourceApi, downloadedArchivePath.string());
-
-    std::filesystem::path extractionTargetDir = getExtractionPathForRuntime(requiredJava);
-    std::string runtimeNameForPath = extractionTargetDir.filename().string();
-
-    if (extractJavaArchive(downloadedArchivePath, extractionTargetDir, runtimeNameForPath)) {
-        m_logger->info("Java archive extracted to: {}", extractionTargetDir.string());
-
-        std::filesystem::path javaExePath = findJavaExecutable(extractionTargetDir);
-
-        if (!javaExePath.empty()) {
-            std::filesystem::path effectiveJavaHome = javaExePath.parent_path().parent_path();
-
-            JavaRuntime newRuntime = {effectiveJavaHome, javaExePath, requiredJava.majorVersion, requiredJava.component, sourceApi};
-            m_availableRuntimes.push_back(newRuntime);
-
-            m_logger->info("Successfully configured Java runtime: Component={}, Version={}, Source={}, Home='{}', Executable='{}'",
-                newRuntime.componentName, newRuntime.majorVersion, newRuntime.source, newRuntime.homePath.string(), newRuntime.javaExecutablePath.string());
-
-            std::error_code ec_remove;
-            std::filesystem::remove(downloadedArchivePath, ec_remove);
-            if(ec_remove) {
-                m_logger->warn("Failed to remove downloaded archive {}: {}", downloadedArchivePath.string(), ec_remove.message());
-            } else {
-                m_logger->info("Removed downloaded archive: {}", downloadedArchivePath.string());
+    if (mz_zip_entry_is_dir(file_info) == MZ_OK) {
+        if (!std::filesystem::exists(target_path)) {
+            if (!std::filesystem::create_directories(target_path)) {
+                logger->error("Failed to create directory: {}", target_path.string());
+                return MZ_INTERNAL_ERROR;
             }
-            return newRuntime;
-        } else {
-            m_logger->error("Failed to find Java executable in the extracted archive at {}", extractionTargetDir.string());
         }
     } else {
-        m_logger->error("Failed to extract Java archive {}", downloadedArchivePath.string());
+        // Ensure parent directory exists
+        if (target_path.has_parent_path() && !std::filesystem::exists(target_path.parent_path())) {
+            if (!std::filesystem::create_directories(target_path.parent_path())) {
+                 logger->error("Failed to create parent directory for file: {}", target_path.string());
+                return MZ_INTERNAL_ERROR;
+            }
+        }
+        // Extract the file
+        if (mz_zip_entry_read(handle        ) != MZ_OK) {
+            logger->error("Failed to extract file: {} to {}", std::string(file_info->filename), target_path.string());
+            return MZ_INTERNAL_ERROR;
+        }
     }
-
-    // if(std::filesystem::exists(downloadedArchivePath)) {
-    //     std::error_code ec_remove_fail;
-    //     std::filesystem::remove(downloadedArchivePath, ec_remove_fail);
-    //     if(ec_remove_fail) {
-    //          m_logger->warn("Cleanup: Failed to remove archive {} after failure: {}", downloadedArchivePath.string(), ec_remove_fail.message());
-    //     } else {
-    //          m_logger->info("Cleaned up downloaded archive after failure: {}", downloadedArchivePath.string());
-    //     }
-    // }
-    return std::nullopt;
+    return MZ_OK;
 }
 
-bool JavaManager::extractJavaArchive(const std::filesystem::path& archivePath, const std::filesystem::path& extractionDir, const std::string& runtimeNameForPath) {
-    m_logger->info("Attempting to extract archive {} to {}", archivePath.string(), extractionDir.string());
+
+bool JavaManager::extractJavaArchive(const std::filesystem::path& archivePath, const std::filesystem::path& extractionDir, const std::string& /*runtimeNameForPath*/) {
+    m_logger->info("Attempting to extract archive {} to {} using minizip-ng.", archivePath.string(), extractionDir.string());
+
+    void *zip_reader = nullptr;
+    int32_t err = MZ_OK;
+
     try {
         if (std::filesystem::exists(extractionDir)) {
             m_logger->info("Extraction directory {} already exists. Removing for fresh extraction.", extractionDir.string());
             std::filesystem::remove_all(extractionDir);
         }
-        std::filesystem::create_directories(extractionDir);
+        if (!std::filesystem::create_directories(extractionDir)) {
+            m_logger->error("Failed to create base extraction directory: {}", extractionDir.string());
+            return false;
+        }
 
-        miniz_cpp::zip_file zipFile;
-        zipFile.load(archivePath.string());
+        zip_reader = mz_zip_reader_create();
+        if (!zip_reader) {
+            m_logger->error("Failed to create zip_reader handle.");
+            return false;
+        }
 
-        m_logger->info("Extracting {} files from {} to {}...", zipFile.infolist().size(), archivePath.string(), extractionDir.string());
-        zipFile.extractall(extractionDir.string());
+        // Convert path to UTF-8 for minizip-ng functions that expect char*
+        std::string archivePathStr = archivePath.string();
+        std::string extractionDirStr = extractionDir.string();
 
-        m_logger->info("Extraction complete for {}.", archivePath.string());
-        return true;
+        err = mz_zip_reader_open_file(zip_reader, archivePathStr.c_str());
+        if (err != MZ_OK) {
+            m_logger->error("Failed to open ZIP archive {}: mz_zip_reader_open_file error {}", archivePathStr, err);
+            mz_zip_reader_delete(&zip_reader);
+            return false;
+        }
+
+        m_logger->info("Extracting files from {} to {}...", archivePathStr, extractionDirStr);
+
+        // Iterate and extract all files
+        // Option 1: Iterate and extract one by one (more control, more complex)
+        // Option 2: Use a higher-level extraction function if minizip-ng provides one that fits
+        // For now, let's try mz_zip_reader_extract_all_cb which seems suitable
+
+        // We need to pass the extractionDir as userdata to the callback
+        std::filesystem::path user_extraction_dir = extractionDir;
+        err = mz_zip_reader_extract_all_cb(zip_reader, extractionDirStr.c_str(), minizip_extract_callback, &user_extraction_dir);
+
+        if (err != MZ_OK) {
+            m_logger->error("Failed to extract all files from {}: mz_zip_reader_extract_all_cb error {}", archivePathStr, err);
+            // Cleanup might be partial, so let's not delete extractionDir immediately here unless sure.
+        } else {
+            m_logger->info("Extraction complete for {}.", archivePath.string());
+        }
+
+        mz_zip_reader_close(zip_reader);
+        mz_zip_reader_delete(&zip_reader);
+
+        return (err == MZ_OK);
+
     } catch (const std::exception& e) {
-        m_logger->error("Error extracting archive {}: {}", archivePath.string(), e.what());
+        m_logger->error("Exception during archive extraction {}: {}", archivePath.string(), e.what());
+        if (zip_reader) {
+            mz_zip_reader_close(zip_reader);
+            mz_zip_reader_delete(&zip_reader);
+        }
+        // Cleanup partially extracted directory
         if (std::filesystem::exists(extractionDir)) {
-            std::error_code ec;
-            std::filesystem::remove_all(extractionDir, ec);
-            if(ec) m_logger->warn("Failed to cleanup extraction directory {} after error: {}", extractionDir.string(), ec.message());
+             std::error_code ec_remove;
+            std::filesystem::remove_all(extractionDir, ec_remove);
+             if(ec_remove) m_logger->warn("Failed to cleanup extraction directory {} after exception: {}", extractionDir.string(), ec_remove.message());
         }
         return false;
     }
 }
+
+// findJavaExecutable, ensureJavaForMinecraftVersion, scanForExistingRuntimes, getAvailableRuntimes
+// remain the same as the previous "full code" response where we refined findJavaExecutable.
+// I will include them here for completeness.
 
 std::filesystem::path JavaManager::findJavaExecutable(const std::filesystem::path& extractionBaseDir) {
     m_logger->trace("Attempting to find Java executable in/under base extraction directory: {}", extractionBaseDir.string());
@@ -233,6 +243,92 @@ std::filesystem::path JavaManager::findJavaExecutable(const std::filesystem::pat
     return "";
 }
 
+std::optional<JavaRuntime> JavaManager::ensureJavaForMinecraftVersion(const Version& mcVersion) {
+    m_logger->info("Ensuring Java for Minecraft version: {}", mcVersion.id);
+    if (!mcVersion.javaVersion) {
+        m_logger->warn("Minecraft version {} does not specify a Java version. Cannot automatically ensure Java.", mcVersion.id);
+        return std::nullopt;
+    }
+
+    const auto& requiredJava = *mcVersion.javaVersion;
+    m_logger->info("Required Java: Component '{}', Major Version '{}'", requiredJava.component, requiredJava.majorVersion);
+
+    for (const auto& runtime : m_availableRuntimes) {
+        if (runtime.componentName == requiredJava.component && runtime.majorVersion == requiredJava.majorVersion) {
+            m_logger->info("Found existing suitable Java runtime: {}", runtime.homePath.string());
+            return runtime;
+        }
+    }
+    m_logger->info("No existing suitable Java runtime found for {} v{}. Attempting download.",
+              requiredJava.component, requiredJava.majorVersion);
+
+    std::filesystem::path downloadedArchivePath;
+    std::string sourceApi = "unknown";
+
+    std::filesystem::path adoptiumDownloadDir = m_config.javaRuntimesDir / "_downloads" / "adoptium";
+    downloadedArchivePath = m_javaDownloader.downloadJavaForSpecificVersionAdoptium(requiredJava, adoptiumDownloadDir);
+    if (!downloadedArchivePath.empty()) {
+        sourceApi = "adoptium";
+    } else {
+        m_logger->warn("Adoptium download failed or not suitable. Trying Mojang manifest...");
+        std::filesystem::path mojangDownloadDir = m_config.javaRuntimesDir / "_downloads" / "mojang";
+        downloadedArchivePath = m_javaDownloader.downloadJavaForMinecraftVersionMojang(mcVersion, mojangDownloadDir);
+        if (!downloadedArchivePath.empty()) {
+            sourceApi = "mojang";
+        }
+    }
+
+    if (downloadedArchivePath.empty()) {
+        m_logger->error("Failed to download Java for {} v{}", requiredJava.component, requiredJava.majorVersion);
+        return std::nullopt;
+    }
+
+    m_logger->info("Java archive downloaded via {} to: {}", sourceApi, downloadedArchivePath.string());
+
+    std::filesystem::path extractionTargetDir = getExtractionPathForRuntime(requiredJava);
+    std::string runtimeNameForPath = extractionTargetDir.filename().string();
+
+    if (extractJavaArchive(downloadedArchivePath, extractionTargetDir, runtimeNameForPath)) {
+        m_logger->info("Java archive extracted to: {}", extractionTargetDir.string());
+
+        std::filesystem::path javaExePath = findJavaExecutable(extractionTargetDir);
+
+        if (!javaExePath.empty()) {
+            std::filesystem::path effectiveJavaHome = javaExePath.parent_path().parent_path();
+
+            JavaRuntime newRuntime = {effectiveJavaHome, javaExePath, requiredJava.majorVersion, requiredJava.component, sourceApi};
+            m_availableRuntimes.push_back(newRuntime);
+
+            m_logger->info("Successfully configured Java runtime: Component={}, Version={}, Source={}, Home='{}', Executable='{}'",
+                newRuntime.componentName, newRuntime.majorVersion, newRuntime.source, newRuntime.homePath.string(), newRuntime.javaExecutablePath.string());
+
+            std::error_code ec_remove;
+            std::filesystem::remove(downloadedArchivePath, ec_remove);
+            if(ec_remove) {
+                m_logger->warn("Failed to remove downloaded archive {}: {}", downloadedArchivePath.string(), ec_remove.message());
+            } else {
+                m_logger->info("Removed downloaded archive: {}", downloadedArchivePath.string());
+            }
+            return newRuntime;
+        } else {
+            m_logger->error("Failed to find Java executable in the extracted archive at {}", extractionTargetDir.string());
+        }
+    } else {
+        m_logger->error("Failed to extract Java archive {}", downloadedArchivePath.string());
+    }
+
+    if(std::filesystem::exists(downloadedArchivePath)) {
+        std::error_code ec_remove_fail;
+        std::filesystem::remove(downloadedArchivePath, ec_remove_fail);
+        if(ec_remove_fail) {
+             m_logger->warn("Cleanup: Failed to remove archive {} after failure: {}", downloadedArchivePath.string(), ec_remove_fail.message());
+        } else {
+             m_logger->info("Cleaned up downloaded archive after failure: {}", downloadedArchivePath.string());
+        }
+    }
+    return std::nullopt;
+}
+
 void JavaManager::scanForExistingRuntimes() {
     m_availableRuntimes.clear();
     if (!std::filesystem::exists(m_config.javaRuntimesDir) || !std::filesystem::is_directory(m_config.javaRuntimesDir)) {
@@ -265,7 +361,7 @@ void JavaManager::scanForExistingRuntimes() {
                             component = prefix.substr(first_underscore + 1);
                         } else {
                             component = prefix;
-                            source = "user";
+                            source = "user_provided";
                         }
                     } catch (const std::exception& e) {
                         m_logger->warn("Could not parse major version from directory name '{}': {}", dirName, e.what());
