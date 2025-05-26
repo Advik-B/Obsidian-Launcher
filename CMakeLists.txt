@@ -122,9 +122,9 @@ add_executable(
         src/OSUtil.cpp
         src/JavaDownloader.cpp
         src/Crypto.cpp
-        src/Http.cpp
         src/JavaManager.cpp
         src/Utils/Logger.cpp # Add Logger.cpp
+        src/HttpManager.cpp
 )
 
 target_include_directories(ObsidianLauncher PRIVATE
@@ -149,7 +149,7 @@ add_executable(
         SSL-Debug
         tests/SSL-Debug.cpp
         src/Utils/Logger.cpp
-        src/Http.cpp
+        src/HttpManager.cpp
 )
 target_include_directories(
         SSL-Debug PRIVATE
