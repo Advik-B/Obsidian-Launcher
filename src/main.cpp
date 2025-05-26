@@ -1,18 +1,17 @@
 // src/main.cpp
-#include <Launcher/Http.hpp>
+#include <Launcher/HttpManager.hpp> // Using HttpManager
 #include <Launcher/Types/Version.hpp>
-#include <Launcher/Types/VersionMeta.hpp> // Not directly used here, but good include
+#include <Launcher/Types/VersionMeta.hpp>
 #include <Launcher/Config.hpp>
 #include <Launcher/JavaManager.hpp>
 #include <Launcher/Utils/Logger.hpp>
-#include <spdlog/spdlog.h> // For spdlog::shutdown()
+#include <spdlog/spdlog.h>
 
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 #include <optional>
 #include <filesystem>
-// #include <iostream> // Can be removed if all output is through logger
 
 using json = nlohmann::json;
 
@@ -25,11 +24,17 @@ int main(int argc, char* argv[]) {
     CORE_LOG_INFO("Data directory: {}", launcherConfig.baseDataPath.string());
     CORE_LOG_INFO("Log directory: {}", logDir.string());
 
+    Launcher::HttpManager httpManager; // Create HttpManager instance
+
     CORE_LOG_INFO("Fetching version manifest from Mojang...");
-    cpr::Response manifest_response = Launcher::Http::Get(cpr::Url{"https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"});
+    cpr::Response manifest_response = httpManager.Get(cpr::Url{"https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"});
+
     if (manifest_response.status_code != 200) {
-        CORE_LOG_CRITICAL("Failed to fetch version manifest: Status Code: {}, Error: {}",
-            manifest_response.status_code, manifest_response.error.message);
+        CORE_LOG_CRITICAL("Failed to fetch version manifest: Status Code: {}, Error: \"{}\", CPR Error Code: {}",
+            manifest_response.status_code,
+            manifest_response.error.message,
+            static_cast<int>(manifest_response.error.code)
+        );
         if(!manifest_response.text.empty() && manifest_response.status_code >= 400) {
             CORE_LOG_ERROR("Response Body: {}", manifest_response.text);
         }
@@ -71,10 +76,15 @@ int main(int argc, char* argv[]) {
     CORE_LOG_INFO("Found URL for {}: {}", version_id_to_parse, version_url);
 
     CORE_LOG_INFO("Fetching version details for {} from {}...", version_id_to_parse, version_url);
-    cpr::Response version_details_response = Launcher::Http::Get(cpr::Url{version_url});
+    cpr::Response version_details_response = httpManager.Get(cpr::Url{version_url});
+
     if (version_details_response.status_code != 200) {
-        CORE_LOG_ERROR("Failed to fetch version details for {}: Status Code: {}, Error: {}",
-                  version_id_to_parse, version_details_response.status_code, version_details_response.error.message);
+        CORE_LOG_ERROR("Failed to fetch version details for {}: Status Code: {}, Error: \"{}\", CPR Error Code: {}",
+                  version_id_to_parse,
+                  version_details_response.status_code,
+                  version_details_response.error.message,
+                  static_cast<int>(version_details_response.error.code)
+        );
         if(!version_details_response.text.empty() && version_details_response.status_code >= 400) {
             CORE_LOG_ERROR("Response Body: {}", version_details_response.text);
         }
@@ -103,7 +113,7 @@ int main(int argc, char* argv[]) {
         CORE_LOG_WARN("  No specific Java version explicitly listed in this version's manifest.");
     }
 
-    Launcher::JavaManager javaManager(launcherConfig); // Logger will be created inside JavaManager
+    Launcher::JavaManager javaManager(launcherConfig, httpManager);
     CORE_LOG_INFO("--- Attempting to ensure Java Runtime ---");
     std::optional<Launcher::JavaRuntime> javaRuntime = javaManager.ensureJavaForMinecraftVersion(parsed_minecraft_version);
 
