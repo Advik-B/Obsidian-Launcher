@@ -103,15 +103,15 @@ std::optional<JavaRuntime> JavaManager::ensureJavaForMinecraftVersion(const Vers
         m_logger->error("Failed to extract Java archive {}", downloadedArchivePath.string());
     }
 
-    if(std::filesystem::exists(downloadedArchivePath)) {
-        std::error_code ec_remove_fail;
-        std::filesystem::remove(downloadedArchivePath, ec_remove_fail);
-        if(ec_remove_fail) {
-             m_logger->warn("Cleanup: Failed to remove archive {} after failure: {}", downloadedArchivePath.string(), ec_remove_fail.message());
-        } else {
-             m_logger->info("Cleaned up downloaded archive after failure: {}", downloadedArchivePath.string());
-        }
-    }
+    // if(std::filesystem::exists(downloadedArchivePath)) {
+    //     std::error_code ec_remove_fail;
+    //     std::filesystem::remove(downloadedArchivePath, ec_remove_fail);
+    //     if(ec_remove_fail) {
+    //          m_logger->warn("Cleanup: Failed to remove archive {} after failure: {}", downloadedArchivePath.string(), ec_remove_fail.message());
+    //     } else {
+    //          m_logger->info("Cleaned up downloaded archive after failure: {}", downloadedArchivePath.string());
+    //     }
+    // }
     return std::nullopt;
 }
 
