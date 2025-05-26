@@ -1,14 +1,15 @@
-//
-// Created by Advik on 10-05-2025.
-//
+// src/VersionArguments.cpp
 #include <Launcher/Types/VersionArguments.hpp>
-#include <iostream> // For error reporting
+#include <Launcher/Utils/Logger.hpp>
 
+namespace Launcher {
+
+// --- ArgumentRuleCondition ---
 ArgumentRuleCondition ArgumentRuleCondition::from_json(const json& j) {
     ArgumentRuleCondition arc;
-    arc.action = string_to_rule_action(j.at("action").get<std::string>());
+    arc.action = string_to_rule_action(j.at("action").get<std::string>()); // Ensure string_to_rule_action is accessible
     if (j.contains("os")) {
-        arc.os = OS::from_json(j.at("os"));
+        arc.os = OS::from_json(j.at("os")); // Ensure OS::from_json is accessible
     }
     if (j.contains("features")) {
         Features features_map;
@@ -20,6 +21,7 @@ ArgumentRuleCondition ArgumentRuleCondition::from_json(const json& j) {
     return arc;
 }
 
+// --- ConditionalArgumentValue ---
 ConditionalArgumentValue ConditionalArgumentValue::from_json(const json& j) {
     ConditionalArgumentValue cav;
     if (j.contains("rules") && j.at("rules").is_array()) {
@@ -41,6 +43,9 @@ ConditionalArgumentValue ConditionalArgumentValue::from_json(const json& j) {
     return cav;
 }
 
+
+// --- Arguments ---
+// Note: No 'static' keyword here in the definition
 std::vector<VersionArgument> Arguments::parse_argument_array(const json& arr) {
     std::vector<VersionArgument> result_args;
     if (arr.is_array()) {
@@ -50,14 +55,16 @@ std::vector<VersionArgument> Arguments::parse_argument_array(const json& arr) {
             } else if (arg_item_json.is_object()) {
                 result_args.emplace_back(ConditionalArgumentValue::from_json(arg_item_json));
             } else {
-                 std::cerr << "Warning: Unknown argument type in array: " << arg_item_json.dump(2) << std::endl;
+                 CORE_LOG_WARN("[VersionArgsParser] Unknown argument type in array: {}", arg_item_json.dump(2));
             }
         }
     }
     return result_args;
 }
 
+// Note: No 'static' keyword here in the definition
 Arguments Arguments::from_json(const json& j) {
+    CORE_LOG_TRACE("[VersionArgsParser] Parsing 'arguments' object.");
     Arguments args;
     if (j.contains("game")) {
         args.game = parse_argument_array(j.at("game"));
@@ -65,5 +72,8 @@ Arguments Arguments::from_json(const json& j) {
     if (j.contains("jvm")) {
         args.jvm = parse_argument_array(j.at("jvm"));
     }
+    CORE_LOG_TRACE("[VersionArgsParser] Finished parsing 'arguments' object.");
     return args;
 }
+
+} // namespace Launcher
