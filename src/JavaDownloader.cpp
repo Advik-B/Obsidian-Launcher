@@ -82,21 +82,30 @@ std::filesystem::path JavaDownloader::downloadJavaForMinecraftVersionMojang(cons
             } else if (name_json.is_string()) {
                 std::string name_str = name_json.get<std::string>();
                 try {
+                    // Try parsing the whole string as a number first (e.g., "17")
                     entryMajorVersion = static_cast<unsigned int>(std::stoul(name_str));
-                } catch (const std::exception&) {
+                } catch (const std::invalid_argument&) {
+                    // If that fails, try parsing up to the first dot (e.g., "17.0.1")
                     size_t dot_pos = name_str.find('.');
-                    try {
-                        if (dot_pos != std::string::npos) {
-                           entryMajorVersion = static_cast<unsigned int>(std::stoul(name_str.substr(0, dot_pos)));
-                        } else {
-                           entryMajorVersion = static_cast<unsigned int>(std::stoul(name_str));
+                    if (dot_pos != std::string::npos) {
+                        try {
+                            entryMajorVersion = static_cast<unsigned int>(std::stoul(name_str.substr(0, dot_pos)));
+                        } catch (const std::exception& e_parse_dot) {
+                             m_logger->warn("Could not parse major version from substring '{}' in Mojang manifest: {} ({})", name_str.substr(0, dot_pos), name_str, e_parse_dot.what());
                         }
-                    } catch (const std::exception& e_parse) {
-                         m_logger->warn("Could not parse major version from string in Mojang manifest: {} ({})", name_str, e_parse.what());
+                    } else {
+                        m_logger->warn("Could not parse major version from string in Mojang manifest (no dot, not a simple number): {}", name_str);
                     }
                 }
+                 catch (const std::out_of_range& oor) {
+                     m_logger->warn("Parsed number out of range for major version from string in Mojang manifest: {} ({})", name_str, oor.what());
+                 }
+                 catch (const std::exception& e_parse_full) { // Catch any other stoul error
+                     m_logger->warn("Could not parse major version from string in Mojang manifest: {} ({})", name_str, e_parse_full.what());
+                 }
             }
         }
+
 
         if (entryMajorVersion == requiredJava.majorVersion) {
             if (entry.contains("manifest") && entry.at("manifest").contains("url") && entry.at("manifest").contains("sha1")) {
@@ -127,7 +136,6 @@ std::filesystem::path JavaDownloader::downloadJavaForMinecraftVersionMojang(cons
     cpr::Response r_download = m_httpManager.Download(downloadPath, cpr::Url{downloadUrl});
 
     if (r_download.status_code != 200 || !r_download.error.message.empty()) {
-        // HttpManager::Download already logs detailed errors
         m_logger->error("Mojang Manifest - Java archive download failed for URL: {}", downloadUrl);
         return "";
     }
