@@ -22,10 +22,7 @@ message(STATUS "OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
 message(STATUS "OpenSSL libraries: ${OPENSSL_LIBRARIES}")
 
 ### CPR (with OpenSSL) ###
-set(CPR_USE_OPENSSL_PROVIDED ON) # Tell CPR to use the OpenSSL we found
 set(CPR_ENABLE_SSL ON)
-set(CPR_FORCE_OPENSSL_BACKEND ON) # This can sometimes be too restrictive if CURL has other ideas
-set(CURL_USE_OPENSSL ON) # CPR sets this internally when OpenSSL is used
 
 FetchContent_Declare(
         cpr
