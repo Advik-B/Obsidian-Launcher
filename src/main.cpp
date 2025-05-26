@@ -1,47 +1,60 @@
-// src/main.cpp
 #include <iostream>
 #include <string>
 #include <vector>
 #include <optional>
-#include <filesystem> // For std::filesystem::path
+#include <filesystem>
 
-// Remove direct cpr/cpr.h include if only using the wrapper
-// #include <cpr/cpr.h>
-#include <nlohmann/json.hpp>
-
-#include <Launcher/Http.hpp> // Our HTTP wrapper
+#include <Launcher/Http.hpp>
 #include <Launcher/Types/Version.hpp>
 #include <Launcher/Types/VersionMeta.hpp>
-#include <Launcher/JavaDownloader.hpp>
+#include <Launcher/Config.hpp>
+#include <Launcher/JavaManager.hpp>
+
+// NEW: Include Logger
+#include <Launcher/Utils/Logger.hpp>
+
+// For spdlog shutdown
+#include <spdlog/spdlog.h>
+
 
 using json = nlohmann::json;
 
-int main() {
-    // No explicit initialization of SSL opts needed here anymore
-    // if Http.cpp handles it statically.
+int main(int argc, char* argv[]) { // Added argc, argv for potential future use
+    // Initialize Logger as the first thing
+    Launcher::Config launcherConfig; // Uses default "./.mylauncher_data"
+    std::filesystem::path logDir = launcherConfig.baseDataPath / "logs";
+    Launcher::Utils::Logger::Init(logDir, "launcher.log", spdlog::level::trace, spdlog::level::trace); // Log everything for dev
 
-    // Fetch the main version manifest from Mojang using the wrapper
+    CORE_LOG_INFO("Minecraft Launcher v0.1 starting...");
+    CORE_LOG_INFO("Data directory: {}", launcherConfig.baseDataPath.string());
+    CORE_LOG_INFO("Log directory: {}", logDir.string());
+
+
     cpr::Response manifest_response = Launcher::Http::Get(cpr::Url{"https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"});
     if (manifest_response.status_code != 200) {
-        std::cerr << "Failed to fetch version manifest: " << manifest_response.status_code
-                  << " - " << manifest_response.error.message << std::endl;
+        CORE_LOG_CRITICAL("Failed to fetch version manifest: {} - {}", manifest_response.status_code, manifest_response.error.message);
         if(!manifest_response.text.empty() && manifest_response.status_code >= 400) {
-            std::cerr << "Response Body: " << manifest_response.text << std::endl;
+            CORE_LOG_ERROR("Response Body: {}", manifest_response.text);
         }
+        spdlog::shutdown(); // Ensure spdlog flushes if we exit early
         return 1;
     }
+    CORE_LOG_INFO("Successfully fetched version manifest (status {}).", manifest_response.status_code);
+
     json manifest_json;
     try {
         manifest_json = json::parse(manifest_response.text);
+        CORE_LOG_TRACE("Version manifest JSON parsed successfully.");
     } catch (const json::parse_error& e) {
-        std::cerr << "Failed to parse version manifest JSON: " << e.what() << std::endl;
+        CORE_LOG_CRITICAL("Failed to parse version manifest JSON: {}", e.what());
+        spdlog::shutdown();
         return 1;
     }
 
-    // --- Select a Minecraft version to process ---
-    std::string version_id_to_parse = "1.20.4";
-    // ... (rest of version selection logic) ...
-     std::string version_url;
+    std::string version_id_to_parse = "1.20.4"; // Example
+    CORE_LOG_INFO("Selected Minecraft version for parsing: {}", version_id_to_parse);
+
+    std::string version_url;
     if (manifest_json.contains("versions") && manifest_json["versions"].is_array()) {
         for (const auto& ver_meta_json : manifest_json["versions"]) {
             if (ver_meta_json.contains("id") && ver_meta_json["id"].get<std::string>() == version_id_to_parse) {
@@ -54,74 +67,63 @@ int main() {
     }
 
     if (version_url.empty()) {
-        std::cerr << "Version " << version_id_to_parse << " not found or URL missing in manifest." << std::endl;
+        CORE_LOG_ERROR("Version {} not found or URL missing in manifest.", version_id_to_parse);
+        spdlog::shutdown();
         return 1;
     }
+    CORE_LOG_INFO("Found URL for {}: {}", version_id_to_parse, version_url);
 
 
-    // Fetch the detailed JSON for the selected Minecraft version
-    std::cout << "Fetching version details for " << version_id_to_parse << " from " << version_url << std::endl;
+    CORE_LOG_INFO("Fetching version details for {}...", version_id_to_parse);
     cpr::Response version_details_response = Launcher::Http::Get(cpr::Url{version_url});
     if (version_details_response.status_code != 200) {
-        std::cerr << "Failed to fetch version details for " << version_id_to_parse << ": "
-                  << version_details_response.status_code << " - " << version_details_response.error.message << std::endl;
+        CORE_LOG_ERROR("Failed to fetch version details for {}: {} - {}",
+                  version_id_to_parse, version_details_response.status_code, version_details_response.error.message);
         if(!version_details_response.text.empty() && version_details_response.status_code >= 400) {
-            std::cerr << "Response Body: " << version_details_response.text << std::endl;
+            CORE_LOG_ERROR("Response Body: {}", version_details_response.text);
         }
+        spdlog::shutdown();
         return 1;
     }
+    CORE_LOG_INFO("Successfully fetched version details for {}.", version_id_to_parse);
+
     json version_data_json;
     try {
         version_data_json = json::parse(version_details_response.text);
+        CORE_LOG_TRACE("Version JSON for {} parsed successfully.", version_id_to_parse);
     } catch(const json::parse_error& e) {
-        std::cerr << "Failed to parse version JSON for " << version_id_to_parse << ": " << e.what() << std::endl;
+        CORE_LOG_CRITICAL("Failed to parse version JSON for {}: {}", version_id_to_parse, e.what());
+        spdlog::shutdown();
         return 1;
     }
 
-    Version parsed_minecraft_version = Version::from_json(version_data_json);
-
-    std::cout << "Successfully parsed Minecraft version: " << parsed_minecraft_version.id << std::endl;
+    Launcher::Version parsed_minecraft_version = Launcher::Version::from_json(version_data_json);
+    CORE_LOG_INFO("Successfully parsed Minecraft version object: {}", parsed_minecraft_version.id);
     if (parsed_minecraft_version.javaVersion) {
-        std::cout << "  Requires Java Component: " << parsed_minecraft_version.javaVersion->component
-                  << ", Major Version: " << parsed_minecraft_version.javaVersion->majorVersion << std::endl;
+        CORE_LOG_INFO("  Requires Java Component: {}, Major Version: {}",
+                  parsed_minecraft_version.javaVersion->component,
+                  parsed_minecraft_version.javaVersion->majorVersion);
     } else {
-        std::cout << "  No specific Java version explicitly listed in this version's manifest." << std::endl;
+        CORE_LOG_WARN("  No specific Java version explicitly listed in this version's manifest.");
     }
 
-    // --- Java Download Logic ---
-    Launcher::JavaDownloader java_downloader;
-    std::filesystem::path java_runtimes_base_dir = "./java_runtimes";
-    std::filesystem::path downloaded_java_archive_path;
+    // --- Java Management Logic ---
+    Launcher::JavaManager javaManager(launcherConfig);
 
-    if (parsed_minecraft_version.javaVersion) {
-        const auto& required_java = *parsed_minecraft_version.javaVersion;
+    std::optional<Launcher::JavaRuntime> javaRuntime = javaManager.ensureJavaForMinecraftVersion(parsed_minecraft_version);
 
-        std::cout << "\n--- Attempting Java Download via Adoptium API ---" << std::endl;
-        downloaded_java_archive_path = java_downloader.downloadJavaForSpecificVersionAdoptium(required_java, java_runtimes_base_dir / "adoptium");
-
-        if (downloaded_java_archive_path.empty()) {
-            std::cerr << "Java download via Adoptium API failed or was skipped for "
-                      << required_java.component << " v" << required_java.majorVersion << "." << std::endl;
-
-            std::cout << "\n--- Attempting Java Download via Mojang Manifest as fallback/alternative ---" << std::endl;
-            downloaded_java_archive_path = java_downloader.downloadJavaForMinecraftVersionMojang(parsed_minecraft_version, java_runtimes_base_dir / "mojang");
-
-            if (downloaded_java_archive_path.empty()) {
-                std::cerr << "Java download via Mojang Manifest also failed or was skipped for "
-                          << required_java.component << " v" << required_java.majorVersion << "." << std::endl;
-            }
-        }
+    if (javaRuntime) {
+        CORE_LOG_INFO("Successfully ensured Java runtime.");
+        CORE_LOG_INFO("  Java Home: {}", javaRuntime->homePath.string());
+        CORE_LOG_INFO("  Java Executable: {}", javaRuntime->javaExecutablePath.string());
+        // ... Further steps would go here ...
     } else {
-        std::cout << "\nNo specific Java version required by " << parsed_minecraft_version.id
-                  << " in its manifest. Consider using a default (e.g., Java 17)." << std::endl;
+        CORE_LOG_CRITICAL("Failed to obtain a suitable Java runtime for Minecraft version {}. Exiting.", parsed_minecraft_version.id);
+        spdlog::shutdown();
+        return 1;
     }
 
-    if (!downloaded_java_archive_path.empty()) {
-        std::cout << "\nJava runtime archive is available at: " << downloaded_java_archive_path.string() << std::endl;
-        std::cout << "Next steps would be to extract this archive to a suitable location and use it to launch Minecraft." << std::endl;
-    } else {
-        std::cout << "\nFailed to obtain a suitable Java runtime for Minecraft version " << parsed_minecraft_version.id << std::endl;
-    }
-
+    CORE_LOG_INFO("Minecraft Launcher finished successfully.");
+    spdlog::shutdown(); // Crucial for async loggers to flush, good practice for sync too.
     return 0;
 }
