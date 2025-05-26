@@ -4,13 +4,18 @@
 
 #include <Launcher/Types/Version.hpp>
 #include <Launcher/Config.hpp>
-#include <Launcher/JavaDownloader.hpp>
+// #include <Launcher/JavaDownloader.hpp> // Forward declare instead if only pointer/ref used
 #include <filesystem>
 #include <optional>
+#include <spdlog/logger.h>
 #include <vector>
-#include <spdlog/logger.h> // For std::shared_ptr<spdlog::logger>
+
+#include "JavaDownloader.hpp"
 
 namespace Launcher {
+
+    class HttpManager;    // Forward declaration
+    class JavaDownloader; // Forward declaration
 
     struct JavaRuntime {
         std::filesystem::path homePath;
@@ -22,7 +27,7 @@ namespace Launcher {
 
     class JavaManager {
     public:
-        JavaManager(const Config& config);
+        JavaManager(const Config& config, HttpManager& httpManager);
         std::optional<JavaRuntime> ensureJavaForMinecraftVersion(const Version& mcVersion);
         bool extractJavaArchive(const std::filesystem::path& archivePath, const std::filesystem::path& extractionDir, const std::string& runtimeNameForPath);
         std::filesystem::path findJavaExecutable(const std::filesystem::path& extractedJavaHome);
@@ -30,15 +35,14 @@ namespace Launcher {
 
     private:
         const Config& m_config;
+        HttpManager& m_httpManager;
         JavaDownloader m_javaDownloader;
         std::vector<JavaRuntime> m_availableRuntimes;
-        std::shared_ptr<spdlog::logger> m_logger; // Member logger
+        std::shared_ptr<spdlog::logger> m_logger;
 
         std::filesystem::path getExtractionPathForRuntime(const JavaVersion& javaVersion);
-        // std::filesystem::path getExtractionPathForRuntime(const std::string& component, unsigned int majorVersion); // Already defined
         void scanForExistingRuntimes();
     };
 
 } // namespace Launcher
-
 #endif //JAVA_MANAGER_HPP
