@@ -17,29 +17,30 @@
 #include <Launcher/Types/VersionLogging.hpp>
 #include <nlohmann/json.hpp>
 
-using std::string;
-using json = nlohmann::json;
+namespace Launcher {
+    using std::string;
+    using json = nlohmann::json;
 
-struct Version {
-    std::optional<AssetIndex> assetIndex;
-    string assets;
-    std::optional<unsigned int> complianceLevel;
-    std::map<MinecraftJARType, DownloadDetails> downloads;
-    string id;
-    std::optional<JavaVersion> javaVersion;
-    std::vector<Library> libraries;
-    std::optional<string> mainClass;
-    std::optional<string> minecraftArguments; // For old versions
-    std::optional<unsigned int> minimumLauncherVersion;
-    string releaseTime;
-    string time;
-    string type; // e.g. "snapshot", "release", "old_alpha"
+    struct Version {
+        std::optional<AssetIndex> assetIndex;
+        string assets;
+        std::optional<unsigned int> complianceLevel;
+        std::map<MinecraftJARType, DownloadDetails> downloads;
+        string id;
+        std::optional<JavaVersion> javaVersion;
+        std::vector<Library> libraries;
+        std::optional<string> mainClass;
+        std::optional<string> minecraftArguments; // For old versions
+        std::optional<unsigned int> minimumLauncherVersion;
+        string releaseTime;
+        string time;
+        string type; // e.g. "snapshot", "release", "old_alpha"
 
-    // Newer versions
-    std::optional<Arguments> arguments;
-    std::optional<LoggingInfo> logging;
+        // Newer versions
+        std::optional<Arguments> arguments;
+        std::optional<LoggingInfo> logging;
 
-    static Version from_json(const json& j);
-};
-
+        static Version from_json(const json& j);
+    };
+}
 #endif //VERSION_HPP
