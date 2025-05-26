@@ -4,7 +4,7 @@
 
 #include <Launcher/Types/Version.hpp>
 #include <Launcher/Config.hpp>
-// #include <Launcher/JavaDownloader.hpp> // Forward declare instead if only pointer/ref used
+// #include <Launcher/JavaDownloader.hpp> // Forward declared below
 #include <filesystem>
 #include <optional>
 #include <spdlog/logger.h>
@@ -14,8 +14,8 @@
 
 namespace Launcher {
 
-    class HttpManager;    // Forward declaration
-    class JavaDownloader; // Forward declaration
+    class HttpManager;
+    class JavaDownloader;
 
     struct JavaRuntime {
         std::filesystem::path homePath;
@@ -30,7 +30,7 @@ namespace Launcher {
         JavaManager(const Config& config, HttpManager& httpManager);
         std::optional<JavaRuntime> ensureJavaForMinecraftVersion(const Version& mcVersion);
         bool extractJavaArchive(const std::filesystem::path& archivePath, const std::filesystem::path& extractionDir, const std::string& runtimeNameForPath);
-        std::filesystem::path findJavaExecutable(const std::filesystem::path& extractedJavaHome);
+        std::filesystem::path findJavaExecutable(const std::filesystem::path& extractedJavaBaseDir);
         std::vector<JavaRuntime> getAvailableRuntimes() const;
 
     private:
