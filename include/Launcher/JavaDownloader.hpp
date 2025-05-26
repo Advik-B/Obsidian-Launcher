@@ -15,14 +15,14 @@ namespace Launcher {
 
     class JavaDownloader {
     public:
-        JavaDownloader(HttpManager& httpManager); // Constructor takes HttpManager
+        JavaDownloader(HttpManager& httpManager);
 
         std::filesystem::path downloadJavaForMinecraftVersionMojang(const Version& mcVersion, const std::filesystem::path& baseDownloadDir);
         std::filesystem::path downloadJavaForSpecificVersionAdoptium(const JavaVersion& requiredJava, const std::filesystem::path& baseDownloadDir);
 
     private:
         nlohmann::json fetchMojangJavaManifest();
-        HttpManager& m_httpManager; // Store reference to HttpManager
+        HttpManager& m_httpManager;
         std::shared_ptr<spdlog::logger> m_logger;
     };
 
