@@ -1,5 +1,5 @@
 // src/main.cpp
-#include <Launcher/HttpManager.hpp> // Using HttpManager
+#include <Launcher/HttpManager.hpp>
 #include <Launcher/Types/Version.hpp>
 #include <Launcher/Types/VersionMeta.hpp>
 #include <Launcher/Config.hpp>
@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
     CORE_LOG_INFO("Data directory: {}", launcherConfig.baseDataPath.string());
     CORE_LOG_INFO("Log directory: {}", logDir.string());
 
-    Launcher::HttpManager httpManager; // Create HttpManager instance
+    Launcher::HttpManager httpManager;
 
     CORE_LOG_INFO("Fetching version manifest from Mojang...");
     cpr::Response manifest_response = httpManager.Get(cpr::Url{"https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"});
