@@ -1,15 +1,15 @@
-cmake_minimum_required(VERSION 3.16) # spdlog recommends 3.15+, 3.16 is safe for FetchContent_MakeAvailable with modern CMake
+cmake_minimum_required(VERSION 3.16)
 project(ObsidianLauncher)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON) # Good practice
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include(FetchContent)
 
 # Platform-specific OpenSSL hints
 if(WIN32)
-    list(APPEND CMAKE_PREFIX_PATH "C:/Programs/OpenSSL-Win64") # Adjust if your path is different
+    list(APPEND CMAKE_PREFIX_PATH "C:/Programs/OpenSSL-Win64")
 elseif(APPLE)
     list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/openssl" "/opt/homebrew/opt/openssl")
 endif()
@@ -21,66 +21,45 @@ message(STATUS "OpenSSL version: ${OPENSSL_VERSION}")
 message(STATUS "OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
 message(STATUS "OpenSSL libraries: ${OPENSSL_LIBRARIES}")
 
-### CPR (with OpenSSL) ###
+
 set(CPR_ENABLE_SSL ON)
 
 FetchContent_Declare(
         cpr
         GIT_REPOSITORY https://github.com/libcpr/cpr.git
-        GIT_TAG 1.10.5 # Use a specific tag
+        GIT_TAG 1.10.5
 )
 FetchContent_MakeAvailable(cpr)
 
-
-### nlohmann/json ###
 FetchContent_Declare(
         json
         GIT_REPOSITORY https://github.com/nlohmann/json.git
-        GIT_TAG v3.11.3 # Use a specific tag
+        GIT_TAG v3.11.3
 )
 FetchContent_MakeAvailable(json)
 
-
-### spdlog (compiled library) ###
 FetchContent_Declare(
-        spdlog # Use the canonical name 'spdlog' for the FetchContent entry
+        spdlog
         GIT_REPOSITORY https://github.com/gabime/spdlog.git
         GIT_TAG v1.15.3
 )
-
-# Set spdlog options BEFORE FetchContent_MakeAvailable
-# These need to be set as CACHE variables so spdlog's CMakeLists.txt can see them
 set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "Build spdlog examples" FORCE)
 set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "Build spdlog tests" FORCE)
 set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "Build spdlog benchmarks" FORCE)
-set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "Use external fmt library" FORCE) # Use spdlog's bundled fmt
+set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "Use external fmt library" FORCE)
 set(SPDLOG_WCHAR_SUPPORT ON CACHE BOOL "Enable wchar_t support" FORCE)
 
-FetchContent_MakeAvailable(spdlog) # This will download, populate, and add_subdirectory
+FetchContent_MakeAvailable(spdlog)
 
-# --- Minizip-NG ---
 FetchContent_Declare(
         minizip-ng
         GIT_REPOSITORY https://github.com/zlib-ng/minizip-ng.git
-        GIT_TAG 4.0.6 # Use a specific stable tag (check their releases)
+        GIT_TAG master
 )
-# Options for minizip-ng
-set(MZ_FETCH_LIBS ON CACHE BOOL "Allow minizip-ng to fetch its dependencies (like zlib-ng)" FORCE) # Important
-set(MZ_ZLIB OFF CACHE BOOL "Use system zlib" FORCE) # Set to OFF to use zlib-ng via MZ_FETCH_LIBS
-set(MZ_ZLIB_NG ON CACHE BOOL "Enable zlib-ng backend" FORCE) # Explicitly use zlib-ng
-set(MZ_BZIP2 OFF CACHE BOOL "Disable BZip2 support" FORCE)
-set(MZ_LZMA OFF CACHE BOOL "Disable LZMA support" FORCE)
-set(MZ_ZSTD OFF CACHE BOOL "Disable ZSTD support" FORCE)
-set(MZ_LIBCOMP OFF CACHE BOOL "Disable libcomp support" FORCE)
-set(MZ_PKCRYPT OFF CACHE BOOL "Disable PKCRYPT encryption" FORCE)
-set(MZ_WZAES OFF CACHE BOOL "Disable WinZip AES encryption" FORCE)
-set(MZ_OPENSSL OFF CACHE BOOL "Disable OpenSSL for encryption (we use it for HTTP)" FORCE) # minizip can use OpenSSL for crypto, but we might not need it for basic extraction
-set(MZ_ICONV OFF CACHE BOOL "Disable iconv support" FORCE)
-set(MZ_COMPAT OFF CACHE BOOL "Disable Minizip 1.x compatibility API" FORCE) # For cleaner API
-set(MZ_BUILD_TESTS OFF CACHE BOOL "Build minizip-ng tests" FORCE)
-set(MZ_BUILD_UNIT_TESTS OFF CACHE BOOL "Build minizip-ng unit tests" FORCE)
-set(MZ_BUILD_FUZZERS OFF CACHE BOOL "Build minizip-ng fuzzers" FORCE)
-
+# Set minizip-ng specific options if needed before populating
+set(MZ_BUILD_TESTS OFF CACHE BOOL "Disable minizip-ng tests" FORCE)
+set(MZ_BUILD_UNIT_TESTS OFF CACHE BOOL "Disable minizip-ng unit tests" FORCE)
+set(MZ_BUILD_FUZZ_TESTS OFF CACHE BOOL "Disable minizip-ng fuzz tests" FORCE)
 FetchContent_MakeAvailable(minizip-ng)
 
 ### Download and embed cacert.pem ###
@@ -147,14 +126,13 @@ add_executable(
         src/JavaDownloader.cpp
         src/Crypto.cpp
         src/JavaManager.cpp
-        src/Utils/Logger.cpp # Add Logger.cpp
+        src/Utils/Logger.cpp
         src/HttpManager.cpp
 )
 
 target_include_directories(ObsidianLauncher PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_BINARY_DIR}/include # For cacert_pem.h and spdlog (if built in-tree)
-        ${CMAKE_BINARY_DIR}/_deps/minizip-ng-src
+        ${CMAKE_BINARY_DIR}/include
 
 )
 
@@ -163,38 +141,13 @@ add_dependencies(ObsidianLauncher embed_cert)
 target_compile_definitions(ObsidianLauncher PRIVATE HAS_STRING_VIEW)
 
 target_link_libraries(ObsidianLauncher
-        PRIVATE cpr::cpr # cpr library target
-        nlohmann_json::nlohmann_json # nlohmann_json library target
+        PRIVATE
+        cpr::cpr
+        nlohmann_json::nlohmann_json
         OpenSSL::SSL
         OpenSSL::Crypto
-        spdlog::spdlog # Link the compiled spdlog library
-        minizip
-)
-
-
-# ===================================================================
-
-
-add_executable(
-        SSL-Debug
-        tests/SSL-Debug.cpp
-        src/Utils/Logger.cpp
-        src/HttpManager.cpp
-)
-target_include_directories(
-        SSL-Debug PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_BINARY_DIR}/include # For cacert_pem.h and spdlog (if built in-tree)
-
-)
-add_dependencies(SSL-Debug embed_cert)
-target_compile_definitions(SSL-Debug PRIVATE HAS_STRING_VIEW)
-target_link_libraries(SSL-Debug
-        PRIVATE cpr::cpr # cpr library target
-        nlohmann_json::nlohmann_json # nlohmann_json library target
-        OpenSSL::SSL
-        OpenSSL::Crypto
-        spdlog::spdlog # Link the compiled spdlog library
+        spdlog::spdlog
+        MINIZIP::minizip
 )
 
 # --- Copy OpenSSL DLLs on Windows after building the target ---
@@ -215,4 +168,21 @@ if (WIN32)
                 $<TARGET_FILE_DIR:${PROJECT_NAME}>
         )
     endforeach()
+endif()
+
+if (TARGET zlib) # Check if the 'zlib' target from zlib-ng exists
+    get_target_property(ZLIB_TYPE zlib TYPE)
+    if (ZLIB_TYPE STREQUAL "SHARED_LIBRARY" OR ZLIB_TYPE STREQUAL "MODULE_LIBRARY")
+        add_custom_command(
+                TARGET ObsidianLauncher POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:zlib>"  # Source: zlib-ng DLL (e.g., zlib-ngd2.dll)
+                # $<TARGET_FILE:...> resolves to the correct name and path
+                # for the current build configuration (Debug/Release).
+                "$<TARGET_FILE_DIR:ObsidianLauncher>"      # Destination: where ObsidianLauncher.exe is
+                COMMENT "Copying zlib-ng DLL to executable directory"
+        )
+    endif()
+else()
+    message(WARNING "Target 'zlib' (expected from zlib-ng dependency) not found. Cannot set up DLL copy for it. This is okay if zlib-ng is built statically.")
 endif()
