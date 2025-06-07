@@ -245,7 +245,7 @@ namespace ObsidianLauncher.Services
                 try { fileInfo.Delete(); } catch(Exception ex) { _logger.Error(ex, "Failed to delete mismatched file {LocalPath} before re-download.", localPath); return false; }
             }
 
-            _logger.Information("Downloading {Description}: {Url} -> {LocalPath}", fileDescription, url, localPath);
+            _logger.Verbose("Downloading {Description}: {Url} -> {LocalPath}", fileDescription, url, localPath);
 
             // Ensure directory exists
             string directory = Path.GetDirectoryName(localPath);
