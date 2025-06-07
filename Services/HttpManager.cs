@@ -131,7 +131,7 @@ namespace ObsidianLauncher.Services
             IProgress<float> progress = null,
             CancellationToken cancellationToken = default)
         {
-            _logger.Information("HTTP DOWNLOAD: {Url} -> {FilePath}", url, filePath);
+            _logger.Verbose("HTTP DOWNLOAD: {Url} -> {FilePath}", url, filePath);
 
             try
             {
