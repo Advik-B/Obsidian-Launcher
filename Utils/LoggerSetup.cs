@@ -40,7 +40,7 @@ namespace ObsidianLauncher.Utils // Correct namespace based on folder structure
                         rollOnFileSizeLimit: true,                 // Start new file if current one gets too big
                         fileSizeLimitBytes: 10 * 1024 * 1024,      // 10 MB limit per file
                         retainedFileCountLimit: 7,                 // Keep the last 7 log files
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
+                        outputTemplate: "{Timestamp:HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
                         shared: false                              // false = exclusive lock, true = shared (can be slower)
                     );
                 }
