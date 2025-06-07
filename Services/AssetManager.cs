@@ -202,7 +202,7 @@ namespace ObsidianLauncher.Services
         /// Downloads a file if it doesn't exist or if its SHA1 hash doesn't match.
         /// </summary>
         /// <returns>True if the file is valid (exists and matches hash, or successfully downloaded and verified).</returns>
-        private async Task<bool> DownloadAndVerifyFileAsync(
+        internal async Task<bool> DownloadAndVerifyFileAsync(
             string url,
             string localPath,
             string expectedSha1,
