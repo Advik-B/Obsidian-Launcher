@@ -83,8 +83,10 @@ public class Program
             Log.Information("Successfully fetched version manifest (status {StatusCode}). Size: {Length} bytes",
                 manifestResponseMsg.StatusCode, manifestJsonString.Length);
 
-            VersionManifest versionManifestAll = JsonSerializer.Deserialize<VersionManifest>(manifestJsonString,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            VersionManifest? versionManifestAll = JsonSerializer.Deserialize<VersionManifest>(
+                manifestJsonString,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
 
             if (versionManifestAll?.Versions == null)
             {
