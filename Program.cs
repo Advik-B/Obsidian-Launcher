@@ -223,7 +223,7 @@ public class Program
             // --- Step 7: Construct JVM Arguments ---
             Log.Information("--- Constructing JVM Arguments ---");
             // TODO: Populate these from a real auth flow / settings
-            argumentBuilder.SetAuthInfo("Player123", Guid.NewGuid().ToString(), "ACCESS_TOKEN_PLACEHOLDER");
+            argumentBuilder.SetOfflinePlayerName("Player123");
             // Example of setting a feature flag if needed by arguments:
             // argumentBuilder.SetFeatureFlag("is_demo_user", true);
             // argumentBuilder.SetFeatureFlag("has_custom_resolution", true);
