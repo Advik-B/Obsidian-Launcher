@@ -45,7 +45,8 @@ public class Program
         }
 
         Log.Information("==================================================");
-        Log.Information("  Obsidian Minecraft Launcher (C# Port) v0.1");
+        Log.Information("  Obsidian Launcher v{Version}",
+            LauncherConfig.VERSION);
         Log.Information("==================================================");
         Log.Information("Data directory: {BaseDataPath}", launcherConfig.BaseDataPath);
         Log.Information("Log directory: {LogsDir}", launcherConfig.LogsDir);
@@ -265,7 +266,7 @@ public class Program
                 }
             }
 
-            Log.Information("Minecraft Launcher (C# Port) has completed its operation for version {VersionId}.", minecraftVersion.Id);
+            Log.Information("Obsidian Launcher has completed its operation for version {VersionId}.", minecraftVersion.Id);
         }
         catch (OperationCanceledException)
         {
