@@ -63,7 +63,7 @@ ObsidianLauncher/
 ├── Services/
 │   └── (Service classes like HttpManagerService.cs, JavaManager.cs, etc.)
 └── Utils/
-└── (Utility classes like CryptoUtils.cs, LoggerSetup.cs, etc.)
+    └── (Utility classes like CryptoUtils.cs, LoggerSetup.cs, etc.)
 ```
 
 ## Prerequisites
