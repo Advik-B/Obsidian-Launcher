@@ -55,10 +55,10 @@ public class Program
         Log.Information("Log directory: {LogsDir}", launcherConfig.LogsDir);
 
         // --- Initialize Services ---
-        // HttpManagerService is designed with a static HttpClient, so it's okay to create an instance
+        // HttpManager is designed with a static HttpClient, so it's okay to create an instance
         // or you could register it with a DI container if the project grows.
-        using var httpManager = new HttpManagerService();
-        var javaManager = new JavaManagerService(launcherConfig, httpManager);
+        using var httpManager = new HttpManager();
+        var javaManager = new JavaManager(launcherConfig, httpManager);
         // Other services would be initialized here as needed (e.g., AssetManager, LaunchService)
 
         try
