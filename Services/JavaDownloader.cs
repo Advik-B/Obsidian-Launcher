@@ -12,16 +12,16 @@ using Serilog;
 
 namespace ObsidianLauncher.Services
 {
-    public class JavaDownloaderService
+    public class JavaDownloader
     {
-        private readonly HttpManagerService _httpManager;
+        private readonly HttpManager _httpManager;
         private readonly ILogger _logger;
 
-        public JavaDownloaderService(HttpManagerService httpManager)
+        public JavaDownloader(HttpManager httpManager)
         {
             _httpManager = httpManager ?? throw new ArgumentNullException(nameof(httpManager));
-            _logger = Log.ForContext<JavaDownloaderService>();
-            _logger.Verbose("JavaDownloaderService initialized.");
+            _logger = Log.ForContext<JavaDownloader>();
+            _logger.Verbose("JavaDownloader initialized.");
         }
 
         private async Task<JsonDocument> FetchMojangJavaManifestAsync(CancellationToken cancellationToken = default)

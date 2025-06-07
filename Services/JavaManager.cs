@@ -12,26 +12,26 @@ using Serilog;
 
 namespace ObsidianLauncher.Services
 {
-    public class JavaManagerService
+    public class JavaManager
     {
         private readonly LauncherConfig _config;
-        // HttpManagerService is now owned by JavaDownloaderService
-        private readonly JavaDownloaderService _javaDownloader;
+        // HttpManager is now owned by JavaDownloader
+        private readonly JavaDownloader _javaDownloader;
         private readonly ILogger _logger;
         private List<JavaRuntimeInfo> _availableRuntimes;
 
-        public JavaManagerService(LauncherConfig config, HttpManagerService httpManager)
+        public JavaManager(LauncherConfig config, HttpManager httpManager)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
-            _logger = Log.ForContext<JavaManagerService>();
-            // JavaDownloaderService now takes HttpManagerService
-            _javaDownloader = new JavaDownloaderService(httpManager ?? throw new ArgumentNullException(nameof(httpManager)));
+            _logger = Log.ForContext<JavaManager>();
+            // JavaDownloader now takes HttpManager
+            _javaDownloader = new JavaDownloader(httpManager ?? throw new ArgumentNullException(nameof(httpManager)));
             _availableRuntimes = new List<JavaRuntimeInfo>();
 
-            _logger.Verbose("JavaManagerService initializing...");
+            _logger.Verbose("JavaManager initializing...");
             InitializeDirectories();
             ScanForExistingRuntimes();
-            _logger.Verbose("JavaManagerService initialization complete. Found {Count} existing runtimes.", _availableRuntimes.Count);
+            _logger.Verbose("JavaManager initialization complete. Found {Count} existing runtimes.", _availableRuntimes.Count);
         }
 
         private void InitializeDirectories()

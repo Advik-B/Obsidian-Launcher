@@ -1,4 +1,4 @@
-﻿// Services/HttpManagerService.cs
+﻿// Services/HttpManager.cs
 using System;
 using System.IO;
 using System.Net.Http;
@@ -9,14 +9,14 @@ using Serilog;
 
 namespace ObsidianLauncher.Services
 {
-    public class HttpManagerService : IDisposable
+    public class HttpManager : IDisposable
     {
         // HttpClient is designed to be instantiated once and reused throughout the life of an application.
         // Instantiating an HttpClient class for every request will exhaust the number of sockets available under heavy loads.
         private static readonly HttpClient httpClient;
         private readonly ILogger _logger;
 
-        static HttpManagerService() // Static constructor to initialize HttpClient once
+        static HttpManager() // Static constructor to initialize HttpClient once
         {
             // If you need custom SSL handling (like ignoring errors, NOT recommended for production):
             // var handler = new HttpClientHandler
@@ -35,10 +35,10 @@ namespace ObsidianLauncher.Services
             httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("ObsidianLauncher/1.0 (+https://github.com/Advik-B/Obsidian-Launcher)");
         }
 
-        public HttpManagerService()
+        public HttpManager()
         {
-            _logger = Log.ForContext<HttpManagerService>(); // Get a logger specific to this service
-            _logger.Verbose("HttpManagerService instance created.");
+            _logger = Log.ForContext<HttpManager>(); // Get a logger specific to this service
+            _logger.Verbose("HttpManager instance created.");
         }
 
         /// <summary>
@@ -214,7 +214,7 @@ namespace ObsidianLauncher.Services
         }
 
         /// <summary>
-        /// Disposes the HttpManagerService. Currently, this does nothing as HttpClient is static.
+        /// Disposes the HttpManager. Currently, this does nothing as HttpClient is static.
         /// </summary>
         public void Dispose()
         {
