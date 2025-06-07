@@ -1,5 +1,6 @@
 ﻿// Program.cs
 using System;
+using System.Collections.Generic; // For List<string>
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -13,7 +14,7 @@ using ObsidianLauncher; // For LauncherConfig
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Services;
 using ObsidianLauncher.Utils;
-// using ObsidianLauncher.Enums; // If you need direct access to enums here
+// using ObsidianLauncher.Enums; // If you need direct access to enums here, otherwise they are used within models/services
 
 public class Program
 {
@@ -38,6 +39,7 @@ public class Program
         {
             Console.Error.WriteLine($"Critical startup error: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
             Console.Error.WriteLine("Ensure the application has permissions to create directories/files in its working path or the specified data path.");
+            Environment.ExitCode = 1; // Indicate failure
             return;
         }
 
@@ -48,10 +50,11 @@ public class Program
         Log.Information("Log directory: {LogsDir}", launcherConfig.LogsDir);
 
         using var httpManager = new HttpManager();
-        var javaManager = new JavaManager(launcherConfig, httpManager); // Renamed
-        var assetManager = new AssetManager(launcherConfig, httpManager); // New
-        // var libraryManager = new LibraryManager(launcherConfig, httpManager); // Placeholder for future
-        // var gameLauncher = new GameLauncher(launcherConfig); // Placeholder for future
+        var javaManager = new JavaManager(launcherConfig, httpManager);
+        var assetManager = new AssetManager(launcherConfig, httpManager);
+        var libraryManager = new LibraryManager(launcherConfig, httpManager);
+        // var argumentBuilder = new ArgumentBuilder(launcherConfig); // Placeholder
+        // var gameLauncher = new GameLauncher(launcherConfig);    // Placeholder
 
         try
         {
@@ -87,6 +90,7 @@ public class Program
 
             // --- Step 2: Select a Version and Get its Details ---
             string versionIdToLaunch = "1.20.4"; // Default
+            // string versionIdToLaunch = "1.21.5"; // Test with your new JSON
             // string versionIdToLaunch = "rd-132328"; // For testing old version
             if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
             {
@@ -130,18 +134,6 @@ public class Program
 
             // --- Step 3: Ensure Java Runtime ---
             Log.Information("--- Ensuring Java Runtime for Minecraft {VersionId} ---", minecraftVersion.Id);
-            if (minecraftVersion.JavaVersion != null)
-            {
-                Log.Information("Minecraft requires Java: Component='{Component}', MajorVersion='{MajorVersion}'",
-                    minecraftVersion.JavaVersion.Component, minecraftVersion.JavaVersion.MajorVersion);
-            }
-            else
-            {
-                Log.Warning("Minecraft version {VersionId} does not explicitly specify a Java version. The launcher will attempt to use a default or system Java if necessary (not yet implemented).", minecraftVersion.Id);
-                // For older versions without javaVersion, you might need a default (e.g. Java 8)
-                // or prompt the user, or try to find system Java.
-            }
-
             JavaRuntimeInfo javaRuntime = await javaManager.EnsureJavaForMinecraftVersionAsync(minecraftVersion, _cts.Token);
 
             if (_cts.IsCancellationRequested) { Log.Warning("Java setup cancelled."); return; }
@@ -162,21 +154,16 @@ public class Program
 
             // --- Step 4: Download/Verify Assets ---
             Log.Information("--- Ensuring Assets for Minecraft {VersionId} ---", minecraftVersion.Id);
-            var assetProgress = new Progress<AssetDownloadProgress>(progressReport =>
+            var assetProgress = new Progress<AssetDownloadProgress>(report =>
             {
-                // Basic progress reporting. Could be more sophisticated for a UI.
-                double overallProgressPercent = (progressReport.TotalFiles > 0)
-                    ? (double)progressReport.ProcessedFiles / progressReport.TotalFiles * 100
+                double overallProgressPercent = (report.TotalFiles > 0)
+                    ? (double)report.ProcessedFiles / report.TotalFiles * 100
                     : 0;
-                // Log only occasionally to avoid spamming, e.g., every 5% or every N files
-                if (progressReport.ProcessedFiles % Math.Max(1, progressReport.TotalFiles / 20) == 0 || progressReport.ProcessedFiles == progressReport.TotalFiles)
+                if (report.ProcessedFiles % Math.Max(1, report.TotalFiles / 20) == 0 || report.ProcessedFiles == report.TotalFiles)
                 {
                     Log.Information(
                         "[Assets] Progress: {Processed}/{Total} files ({OverallPercent:F1}%) - Current: {CurrentFile}",
-                        progressReport.ProcessedFiles,
-                        progressReport.TotalFiles,
-                        overallProgressPercent,
-                        progressReport.CurrentFile ?? "...");
+                        report.ProcessedFiles, report.TotalFiles, overallProgressPercent, report.CurrentFile ?? "...");
                 }
             });
 
@@ -184,54 +171,132 @@ public class Program
 
             if (_cts.IsCancellationRequested) { Log.Warning("Asset processing cancelled."); return; }
 
-            if (assetsOk)
-            {
-                Log.Information("All required assets are successfully in place for version {VersionId}.", minecraftVersion.Id);
-            }
-            else
+            if (!assetsOk)
             {
                 Log.Error("Asset download or verification failed for version {VersionId}. Cannot proceed with launch.", minecraftVersion.Id);
                 return;
             }
-
-            // --- Step 5: (TODO) Download Libraries ---
-            Log.Information("--- Library Download/Verification (Placeholder) ---");
-            // Implementation would go into a LibraryManager and called here.
-            // bool librariesOk = await libraryManager.EnsureLibrariesAsync(minecraftVersion, progress, _cts.Token);
-            // if (!librariesOk) { Log.Error("Library setup failed."); return; }
+            Log.Information("All required assets are successfully in place for version {VersionId}.", minecraftVersion.Id);
 
 
-            // --- Step 6: (TODO) Construct Classpath ---
-            Log.Information("--- Classpath Construction (Placeholder) ---");
-            // string classpath = libraryManager.BuildClasspath(minecraftVersion, clientJarPath);
+            // --- Step 5: Download Libraries & Extract Natives ---
+            Log.Information("--- Ensuring Libraries for Minecraft {VersionId} ---", minecraftVersion.Id);
+            string versionSpecificDir = Path.Combine(launcherConfig.VersionsDir, minecraftVersion.Id);
+            Directory.CreateDirectory(versionSpecificDir); // Ensure version-specific directory exists
+            string nativesDirectory = Path.Combine(versionSpecificDir, $"{minecraftVersion.Id}-natives");
+            Log.Information("Natives will be extracted to: {NativesDirectory}", nativesDirectory);
+
+
+            var libraryProgress = new Progress<LibraryProcessingProgress>(report =>
+            {
+                // More detailed or less frequent logging for libraries
+                if (report.Status.Contains("failed", StringComparison.OrdinalIgnoreCase) || report.Status.Contains("Skipped") || report.ProcessedLibraries % Math.Max(1, report.TotalLibraries / 10) == 0 || report.ProcessedLibraries == report.TotalLibraries)
+                {
+                    Log.Information("[Libs] {Processed}/{Total} - Status: {Status} - Lib: {LibraryName}",
+                        report.ProcessedLibraries, report.TotalLibraries, report.Status, report.CurrentLibraryName);
+                }
+                else
+                {
+                    Log.Verbose("[Libs] {Processed}/{Total} - Status: {Status} - Lib: {LibraryName}",
+                        report.ProcessedLibraries, report.TotalLibraries, report.Status, report.CurrentLibraryName);
+                }
+            });
+
+            List<string> libraryClasspathEntries = await libraryManager.EnsureLibrariesAsync(minecraftVersion, nativesDirectory, libraryProgress, _cts.Token);
+
+            if (_cts.IsCancellationRequested) { Log.Warning("Library processing cancelled."); return; }
+
+            if (libraryClasspathEntries == null) // EnsureLibrariesAsync returns null on critical failure
+            {
+                Log.Error("Failed to process one or more libraries for version {VersionId}. Cannot proceed.", minecraftVersion.Id);
+                return;
+            }
+            Log.Information("All applicable libraries processed successfully for version {VersionId}. Library classpath entries: {Count}",
+                minecraftVersion.Id, libraryClasspathEntries.Count);
+
+
+            // --- Step 5.5: Download Client JAR ---
+            Log.Information("--- Ensuring Client JAR for Minecraft {VersionId} ---", minecraftVersion.Id);
+            string clientJarPath = Path.Combine(versionSpecificDir, $"{minecraftVersion.Id}.jar");
+            bool clientJarOk = false;
+            if (minecraftVersion.Downloads.TryGetValue("client", out DownloadDetails clientDownloadDetails))
+            {
+                clientJarOk = await assetManager.DownloadAndVerifyFileAsync( // Reusing AssetManager's helper
+                    clientDownloadDetails.Url,
+                    clientJarPath,
+                    clientDownloadDetails.Sha1,
+                    $"Client JAR for {minecraftVersion.Id}",
+                    _cts.Token,
+                    clientDownloadDetails.Size);
+            }
+            else
+            {
+                Log.Error("No client JAR download information found for version {VersionId}.", minecraftVersion.Id);
+            }
+
+            if (_cts.IsCancellationRequested) { Log.Warning("Client JAR download cancelled."); return; }
+
+            if (!clientJarOk)
+            {
+                Log.Error("Failed to download or verify client JAR for version {VersionId}. Cannot proceed.", minecraftVersion.Id);
+                return;
+            }
+            Log.Information("Client JAR for version {VersionId} is ready at {ClientJarPath}", minecraftVersion.Id, clientJarPath);
+
+
+            // --- Step 6: Construct Classpath ---
+            Log.Information("--- Classpath Construction ---");
+            List<string> finalClasspathEntries = new List<string>();
+            if (File.Exists(clientJarPath))
+            {
+                finalClasspathEntries.Add(Path.GetFullPath(clientJarPath));
+            }
+            else
+            {
+                Log.Error("CRITICAL: Client JAR {ClientJarPath} not found even after download attempt. Classpath will be incomplete.", clientJarPath);
+                // This should ideally not happen if clientJarOk was true.
+            }
+            finalClasspathEntries.AddRange(libraryClasspathEntries); // These are already full paths
+
+            string classpathString = string.Join(Path.PathSeparator.ToString(), finalClasspathEntries);
+            Log.Information("Final Classpath contains {Count} entries.", finalClasspathEntries.Count);
+            Log.Verbose("Classpath Preview (first 200 chars): {ClasspathPreview}",
+                classpathString.Length > 200 ? classpathString.Substring(0, 200) + "..." : classpathString);
+            // For full classpath in verbose/debug: Log.Verbose("Full Classpath: {ClasspathString}", classpathString);
+
 
             // --- Step 7: (TODO) Construct JVM Arguments ---
             Log.Information("--- JVM Argument Construction (Placeholder) ---");
-            // List<string> jvmArgs = argumentBuilder.BuildJvmArguments(minecraftVersion, classpath, nativesDir, authInfo);
+            // List<string> jvmArgs = argumentBuilder.BuildJvmArguments(minecraftVersion, classpathString, nativesDirectory, authInfo /*, etc */);
 
             // --- Step 8: (TODO) Construct Game Arguments ---
             Log.Information("--- Game Argument Construction (Placeholder) ---");
-            // List<string> gameArgs = argumentBuilder.BuildGameArguments(minecraftVersion, authInfo, windowInfo);
+            // List<string> gameArgs = argumentBuilder.BuildGameArguments(minecraftVersion, authInfo, windowInfo /*, etc */);
 
             // --- Step 9: (TODO) Launch Minecraft ---
             Log.Information("--- Launching Minecraft (Placeholder) ---");
-            // await gameLauncher.LaunchAsync(javaRuntime.JavaExecutablePath, jvmArgs, gameArgs, workingDirectory);
+            // await gameLauncher.LaunchAsync(javaRuntime.JavaExecutablePath, jvmArgs, gameArgs, versionSpecificDir /* or game_directory */);
 
 
-            Log.Information("Minecraft Launcher (C# Port) simulated run finished.");
+            Log.Information("Minecraft Launcher (C# Port) setup phase finished for version {VersionId}.", minecraftVersion.Id);
         }
-        catch (OperationCanceledException) // Catches TaskCanceledException as well
+        catch (OperationCanceledException)
         {
             Log.Warning("A long-running operation was cancelled by the user or a timeout.");
         }
         catch (Exception ex)
         {
             Log.Fatal(ex, "An unhandled exception occurred in the main application flow.");
+            Environment.ExitCode = 1;
         }
         finally
         {
             Log.Information("Shutting down logger...");
             await Log.CloseAndFlushAsync();
+            if (Environment.ExitCode != 0)
+            {
+                 Console.WriteLine("Launcher exited with errors. Check logs for details.");
+            }
         }
     }
 }
