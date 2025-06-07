@@ -1,6 +1,7 @@
 ﻿// Program.cs
 using System;
-using System.Collections.Generic; // For List<string>
+using System.Collections.Generic;
+using System.Diagnostics; // Required for Process related classes
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -14,7 +15,7 @@ using ObsidianLauncher; // For LauncherConfig
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Services;
 using ObsidianLauncher.Utils;
-// using ObsidianLauncher.Enums; // If you need direct access to enums here, otherwise they are used within models/services
+// using ObsidianLauncher.Enums; // If you need direct access to enums here
 
 public class Program
 {
@@ -26,21 +27,21 @@ public class Program
         {
             Log.Warning("Cancellation requested via Ctrl+C.");
             _cts.Cancel();
-            eventArgs.Cancel = true;
+            eventArgs.Cancel = true; // Prevent the process from terminating immediately if we want to clean up
         };
 
         LauncherConfig launcherConfig = null;
         try
         {
-            launcherConfig = new LauncherConfig();
+            launcherConfig = new LauncherConfig(); // Uses default path or can take one from args
             LoggerSetup.Initialize(launcherConfig);
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Critical startup error: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
             Console.Error.WriteLine("Ensure the application has permissions to create directories/files in its working path or the specified data path.");
-            Environment.ExitCode = 1; // Indicate failure
-            return;
+            Environment.ExitCode = 1;
+            return; // Exit if basic setup fails
         }
 
         Log.Information("==================================================");
@@ -49,12 +50,13 @@ public class Program
         Log.Information("Data directory: {BaseDataPath}", launcherConfig.BaseDataPath);
         Log.Information("Log directory: {LogsDir}", launcherConfig.LogsDir);
 
+        // --- Initialize Services ---
         using var httpManager = new HttpManager();
         var javaManager = new JavaManager(launcherConfig, httpManager);
         var assetManager = new AssetManager(launcherConfig, httpManager);
         var libraryManager = new LibraryManager(launcherConfig, httpManager);
-        // var argumentBuilder = new ArgumentBuilder(launcherConfig); // Placeholder
-        // var gameLauncher = new GameLauncher(launcherConfig);    // Placeholder
+        var argumentBuilder = new ArgumentBuilder(launcherConfig);
+        var gameLauncher = new GameLauncher(launcherConfig);
 
         try
         {
@@ -90,11 +92,10 @@ public class Program
 
             // --- Step 2: Select a Version and Get its Details ---
             string versionIdToLaunch = "1.20.4"; // Default
-            // string versionIdToLaunch = "1.21.5"; // Test with your new JSON
-            // string versionIdToLaunch = "rd-132328"; // For testing old version
             if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
             {
                 versionIdToLaunch = args[0];
+                Log.Information("Overriding target version with command line argument: {VersionId}", versionIdToLaunch);
             }
             Log.Information("Target Minecraft version for setup: {VersionId}", versionIdToLaunch);
 
@@ -138,82 +139,61 @@ public class Program
 
             if (_cts.IsCancellationRequested) { Log.Warning("Java setup cancelled."); return; }
 
-            if (javaRuntime != null)
-            {
-                Log.Information("Successfully ensured Java runtime for '{VersionId}'.", minecraftVersion.Id);
-                Log.Information("  Java Home: {HomePath}", javaRuntime.HomePath);
-                Log.Information("  Java Executable: {JavaExecutablePath}", javaRuntime.JavaExecutablePath);
-                Log.Information("  Source: {Source}, Component: {Component}, Version: {MajorVersion}",
-                    javaRuntime.Source, javaRuntime.ComponentName, javaRuntime.MajorVersion);
-            }
-            else
+            if (javaRuntime == null)
             {
                 Log.Error("Failed to obtain a suitable Java runtime for Minecraft version '{VersionId}'. Cannot proceed.", minecraftVersion.Id);
                 return;
             }
+            Log.Information("Java Runtime Ensured: {JavaExecutablePath}", javaRuntime.JavaExecutablePath);
+
 
             // --- Step 4: Download/Verify Assets ---
             Log.Information("--- Ensuring Assets for Minecraft {VersionId} ---", minecraftVersion.Id);
             var assetProgress = new Progress<AssetDownloadProgress>(report =>
             {
-                double overallProgressPercent = (report.TotalFiles > 0)
-                    ? (double)report.ProcessedFiles / report.TotalFiles * 100
-                    : 0;
                 if (report.ProcessedFiles % Math.Max(1, report.TotalFiles / 20) == 0 || report.ProcessedFiles == report.TotalFiles)
                 {
                     Log.Information(
                         "[Assets] Progress: {Processed}/{Total} files ({OverallPercent:F1}%) - Current: {CurrentFile}",
-                        report.ProcessedFiles, report.TotalFiles, overallProgressPercent, report.CurrentFile ?? "...");
+                        report.ProcessedFiles, report.TotalFiles,
+                        (report.TotalFiles > 0 ? (double)report.ProcessedFiles / report.TotalFiles * 100 : 0),
+                        report.CurrentFile ?? "...");
                 }
             });
-
             bool assetsOk = await assetManager.EnsureAssetsAsync(minecraftVersion, assetProgress, _cts.Token);
 
             if (_cts.IsCancellationRequested) { Log.Warning("Asset processing cancelled."); return; }
-
             if (!assetsOk)
             {
-                Log.Error("Asset download or verification failed for version {VersionId}. Cannot proceed with launch.", minecraftVersion.Id);
+                Log.Error("Asset download or verification failed for version {VersionId}. Cannot proceed.", minecraftVersion.Id);
                 return;
             }
-            Log.Information("All required assets are successfully in place for version {VersionId}.", minecraftVersion.Id);
-
+            Log.Information("Assets Ensured for version {VersionId}", minecraftVersion.Id);
 
             // --- Step 5: Download Libraries & Extract Natives ---
             Log.Information("--- Ensuring Libraries for Minecraft {VersionId} ---", minecraftVersion.Id);
             string versionSpecificDir = Path.Combine(launcherConfig.VersionsDir, minecraftVersion.Id);
-            Directory.CreateDirectory(versionSpecificDir); // Ensure version-specific directory exists
+            Directory.CreateDirectory(versionSpecificDir);
             string nativesDirectory = Path.Combine(versionSpecificDir, $"{minecraftVersion.Id}-natives");
             Log.Information("Natives will be extracted to: {NativesDirectory}", nativesDirectory);
 
-
             var libraryProgress = new Progress<LibraryProcessingProgress>(report =>
             {
-                // More detailed or less frequent logging for libraries
                 if (report.Status.Contains("failed", StringComparison.OrdinalIgnoreCase) || report.Status.Contains("Skipped") || report.ProcessedLibraries % Math.Max(1, report.TotalLibraries / 10) == 0 || report.ProcessedLibraries == report.TotalLibraries)
                 {
                     Log.Information("[Libs] {Processed}/{Total} - Status: {Status} - Lib: {LibraryName}",
                         report.ProcessedLibraries, report.TotalLibraries, report.Status, report.CurrentLibraryName);
-                }
-                else
-                {
-                    Log.Verbose("[Libs] {Processed}/{Total} - Status: {Status} - Lib: {LibraryName}",
-                        report.ProcessedLibraries, report.TotalLibraries, report.Status, report.CurrentLibraryName);
-                }
+                } else { Log.Verbose("[Libs] {Processed}/{Total} - Status: {Status} - Lib: {LibraryName}", report.ProcessedLibraries, report.TotalLibraries, report.Status, report.CurrentLibraryName); }
             });
-
             List<string> libraryClasspathEntries = await libraryManager.EnsureLibrariesAsync(minecraftVersion, nativesDirectory, libraryProgress, _cts.Token);
 
             if (_cts.IsCancellationRequested) { Log.Warning("Library processing cancelled."); return; }
-
-            if (libraryClasspathEntries == null) // EnsureLibrariesAsync returns null on critical failure
+            if (libraryClasspathEntries == null)
             {
                 Log.Error("Failed to process one or more libraries for version {VersionId}. Cannot proceed.", minecraftVersion.Id);
                 return;
             }
-            Log.Information("All applicable libraries processed successfully for version {VersionId}. Library classpath entries: {Count}",
-                minecraftVersion.Id, libraryClasspathEntries.Count);
-
+            Log.Information("All applicable libraries processed. Library classpath entries: {Count}", libraryClasspathEntries.Count);
 
             // --- Step 5.5: Download Client JAR ---
             Log.Information("--- Ensuring Client JAR for Minecraft {VersionId} ---", minecraftVersion.Id);
@@ -221,21 +201,13 @@ public class Program
             bool clientJarOk = false;
             if (minecraftVersion.Downloads.TryGetValue("client", out DownloadDetails clientDownloadDetails))
             {
-                clientJarOk = await assetManager.DownloadAndVerifyFileAsync( // Reusing AssetManager's helper
-                    clientDownloadDetails.Url,
-                    clientJarPath,
-                    clientDownloadDetails.Sha1,
-                    $"Client JAR for {minecraftVersion.Id}",
-                    _cts.Token,
-                    clientDownloadDetails.Size);
+                clientJarOk = await assetManager.DownloadAndVerifyFileAsync(
+                    clientDownloadDetails.Url, clientJarPath, clientDownloadDetails.Sha1,
+                    $"Client JAR for {minecraftVersion.Id}", _cts.Token, clientDownloadDetails.Size);
             }
-            else
-            {
-                Log.Error("No client JAR download information found for version {VersionId}.", minecraftVersion.Id);
-            }
+            else { Log.Error("No client JAR download information found for version {VersionId}.", minecraftVersion.Id); }
 
             if (_cts.IsCancellationRequested) { Log.Warning("Client JAR download cancelled."); return; }
-
             if (!clientJarOk)
             {
                 Log.Error("Failed to download or verify client JAR for version {VersionId}. Cannot proceed.", minecraftVersion.Id);
@@ -243,59 +215,74 @@ public class Program
             }
             Log.Information("Client JAR for version {VersionId} is ready at {ClientJarPath}", minecraftVersion.Id, clientJarPath);
 
-
             // --- Step 6: Construct Classpath ---
-            Log.Information("--- Classpath Construction ---");
-            List<string> finalClasspathEntries = new List<string>();
-            if (File.Exists(clientJarPath))
+            Log.Information("--- Constructing Classpath ---");
+            string classpathString = argumentBuilder.BuildClasspath(clientJarPath, libraryClasspathEntries);
+            // BuildClasspath already logs details.
+
+            // --- Step 7: Construct JVM Arguments ---
+            Log.Information("--- Constructing JVM Arguments ---");
+            // TODO: Populate these from a real auth flow / settings
+            argumentBuilder.SetAuthInfo("Player123", Guid.NewGuid().ToString(), "ACCESS_TOKEN_PLACEHOLDER");
+            // Example of setting a feature flag if needed by arguments:
+            // argumentBuilder.SetFeatureFlag("is_demo_user", true);
+            // argumentBuilder.SetFeatureFlag("has_custom_resolution", true);
+            // argumentBuilder.SetCustomResolution(1280, 720);
+
+
+            List<string> jvmArgs = argumentBuilder.BuildJvmArguments(minecraftVersion, classpathString, Path.GetFullPath(nativesDirectory), javaRuntime);
+
+            // --- Step 8: Construct Game Arguments ---
+            Log.Information("--- Constructing Game Arguments ---");
+            List<string> gameArgs = argumentBuilder.BuildGameArguments(minecraftVersion);
+
+            // --- Step 9: Launch Minecraft ---
+            Log.Information("--- Launching Minecraft {VersionId} ---", minecraftVersion.Id);
+            string gameWorkingDirectory = Path.GetFullPath(launcherConfig.BaseDataPath); // Or a version-specific instance directory like `versionSpecificDir`
+            // For isolated instances: string gameWorkingDirectory = versionSpecificDir;
+            Log.Information("Game working directory set to: {GameDir}", gameWorkingDirectory);
+
+
+            int exitCode = await gameLauncher.LaunchAsync(
+                javaRuntime.JavaExecutablePath,
+                jvmArgs,
+                minecraftVersion.MainClass,
+                gameArgs,
+                gameWorkingDirectory,
+                _cts.Token
+            );
+
+            if (_cts.IsCancellationRequested)
             {
-                finalClasspathEntries.Add(Path.GetFullPath(clientJarPath));
+                Log.Warning("Minecraft launch was explicitly cancelled by the user during execution.");
             }
             else
             {
-                Log.Error("CRITICAL: Client JAR {ClientJarPath} not found even after download attempt. Classpath will be incomplete.", clientJarPath);
-                // This should ideally not happen if clientJarOk was true.
+                Log.Information("Minecraft process finished with exit code: {ExitCode}", exitCode);
+                if (exitCode != 0)
+                {
+                    Log.Warning("Minecraft exited with a non-zero exit code ({ExitCode}), indicating a potential issue or crash. Check Minecraft's own logs if created.", exitCode);
+                }
             }
-            finalClasspathEntries.AddRange(libraryClasspathEntries); // These are already full paths
 
-            string classpathString = string.Join(Path.PathSeparator.ToString(), finalClasspathEntries);
-            Log.Information("Final Classpath contains {Count} entries.", finalClasspathEntries.Count);
-            Log.Verbose("Classpath Preview (first 200 chars): {ClasspathPreview}",
-                classpathString.Length > 200 ? classpathString.Substring(0, 200) + "..." : classpathString);
-            // For full classpath in verbose/debug: Log.Verbose("Full Classpath: {ClasspathString}", classpathString);
-
-
-            // --- Step 7: (TODO) Construct JVM Arguments ---
-            Log.Information("--- JVM Argument Construction (Placeholder) ---");
-            // List<string> jvmArgs = argumentBuilder.BuildJvmArguments(minecraftVersion, classpathString, nativesDirectory, authInfo /*, etc */);
-
-            // --- Step 8: (TODO) Construct Game Arguments ---
-            Log.Information("--- Game Argument Construction (Placeholder) ---");
-            // List<string> gameArgs = argumentBuilder.BuildGameArguments(minecraftVersion, authInfo, windowInfo /*, etc */);
-
-            // --- Step 9: (TODO) Launch Minecraft ---
-            Log.Information("--- Launching Minecraft (Placeholder) ---");
-            // await gameLauncher.LaunchAsync(javaRuntime.JavaExecutablePath, jvmArgs, gameArgs, versionSpecificDir /* or game_directory */);
-
-
-            Log.Information("Minecraft Launcher (C# Port) setup phase finished for version {VersionId}.", minecraftVersion.Id);
+            Log.Information("Minecraft Launcher (C# Port) has completed its operation for version {VersionId}.", minecraftVersion.Id);
         }
         catch (OperationCanceledException)
         {
-            Log.Warning("A long-running operation was cancelled by the user or a timeout.");
+            Log.Warning("A critical operation was cancelled. Launcher will now exit.");
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "An unhandled exception occurred in the main application flow.");
+            Log.Fatal(ex, "An unhandled exception occurred in the main application flow. Launcher will now exit.");
             Environment.ExitCode = 1;
         }
         finally
         {
             Log.Information("Shutting down logger...");
             await Log.CloseAndFlushAsync();
-            if (Environment.ExitCode != 0)
+            if (Environment.ExitCode != 0 || _cts.IsCancellationRequested)
             {
-                 Console.WriteLine("Launcher exited with errors. Check logs for details.");
+                 Console.WriteLine("Launcher exited prematurely or with errors. Check logs for details.");
             }
         }
     }
