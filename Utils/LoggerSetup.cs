@@ -5,8 +5,12 @@ using System.IO;
 
 namespace ObsidianLauncher.Utils // Correct namespace based on folder structure
 {
+    
     public static class LoggerSetup
     {
+        private const String LogTemplate = "{Timestamp:hh:mm:ss.fff tt} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}";
+
+        
         /// <summary>
         /// Initializes the global Serilog logger with console and file sinks.
         /// </summary>
@@ -28,7 +32,7 @@ namespace ObsidianLauncher.Utils // Correct namespace based on folder structure
                     .Enrich.FromLogContext() // Essential for adding SourceContext or other enrichers
                     .WriteTo.Console(
                         restrictedToMinimumLevel: consoleLevel,
-                        outputTemplate: "{Timestamp:hh:mm:ss.fff tt} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}"
+                        outputTemplate: LogTemplate
                     );
 
                 if (!string.IsNullOrEmpty(config.LogsDir)) // Only add file sink if LogsDir is configured
@@ -40,7 +44,7 @@ namespace ObsidianLauncher.Utils // Correct namespace based on folder structure
                         rollOnFileSizeLimit: true,                 // Start new file if current one gets too big
                         fileSizeLimitBytes: 10 * 1024 * 1024,      // 10 MB limit per file
                         retainedFileCountLimit: 7,                 // Keep the last 7 log files
-                        outputTemplate: "{Timestamp:hh:mm:ss.fff tt} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
+                        outputTemplate: LogTemplate,
                         shared: false                              // false = exclusive lock, true = shared (can be slower)
                     );
                 }
