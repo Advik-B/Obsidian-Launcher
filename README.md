@@ -39,7 +39,7 @@ This project is actively in development. Here's what's working or in progress:
 *   **Logging**: Uses Serilog for detailed console and file logging.
 
 
-## Why C# for This Port?
+## Why C#
 
 *   **Rich Standard Library**: `HttpClient`, `System.IO.Compression.ZipFile`, `System.Security.Cryptography`, `System.Text.Json` – so much is built-in and just works.
 *   **NuGet Package Ecosystem**: For anything not in the BCL, NuGet is a breeze.
