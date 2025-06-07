@@ -32,8 +32,8 @@ namespace ObsidianLauncher.Enums
         /// </summary>
         ServerMappings,
 
-        // Add other types here if Mojang introduces them, e.g., "windows_server" for Bedrock Edition related things,
-        // though that's usually separate from Java Edition manifests.
+        // TODO: Add other types here if Mojang introduces them, e.g., "windows_server" for Bedrock Edition related things.
+        // Note: Bedrock Edition manifests are usually separate from Java Edition manifests.
 
         /// <summary>
         /// Represents an unknown or unsupported JAR type.
