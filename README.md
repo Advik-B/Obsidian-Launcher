@@ -4,7 +4,7 @@
 
 This project, Obsidian Launcher, is a custom 'cracked' Minecraft launcher.
 
-It didn't start its life in C#, though. My first attempt was in C++, This is the last commit I had made in C++ https://github.com/Advik-B/Obsidian-Launcher/tree/ff27925ef0075a02787c2754d71c0096c27b33f1.
+It didn't start its life in C#, though. My first attempt was in C++, This is the last commit I had made in C++ [Click here to browse](https://github.com/Advik-B/Obsidian-Launcher/tree/ff27925ef0075a02787c2754d71c0096c27b33f1).
 
 Why the switch? Let's just say C++ development, while powerful, presented a series of... *[character-building](./Images/rage-commits.png)* experiences that eventually led me to the more streamlined environment of C# and .NET.
 
