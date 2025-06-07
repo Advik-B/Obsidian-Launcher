@@ -174,7 +174,7 @@ namespace ObsidianLauncher.Services
                 }
 
                 await fileStream.FlushAsync(cancellationToken).ConfigureAwait(false); // Ensure all data is written
-                _logger.Information("Download complete: {FilePath}, Bytes read: {TotalBytesRead}", filePath, totalBytesRead);
+                _logger.Verbose("Download complete: {FilePath}, Bytes read: {TotalBytesRead}", filePath, totalBytesRead);
                 return (response, filePath);
             }
             catch (HttpRequestException ex)
