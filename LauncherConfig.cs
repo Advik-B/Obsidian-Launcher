@@ -19,6 +19,8 @@ namespace ObsidianLauncher
         public string AdoptiumDownloadsDir { get; }
         public string LogsDir { get; }
 
+        public static readonly string VERSION = "1.0"; // Version of the launcher
+
         private readonly ILogger _logger = Log.ForContext<LauncherConfig>(); // Instance logger
 
         public LauncherConfig(string baseDataDir = ".ObsidianLauncher")
