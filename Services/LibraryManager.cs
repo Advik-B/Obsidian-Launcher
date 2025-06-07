@@ -74,7 +74,7 @@ namespace ObsidianLauncher.Services
                     continue;
                 }
 
-                _logger.Information("Processing library: {LibraryName}", library.Name);
+                _logger.Verbose("Processing library: {LibraryName}", library.Name);
 
                 // 1. Handle main artifact
                 bool mainArtifactOk = true;
