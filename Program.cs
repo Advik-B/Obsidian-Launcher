@@ -45,8 +45,7 @@ public class Program
         }
 
         Log.Information("==================================================");
-        Log.Information("  Obsidian Launcher v{Version}",
-            LauncherConfig.VERSION);
+        Log.Information("  Obsidian Launcher {Version}", $"v{LauncherConfig.VERSION}");
         Log.Information("==================================================");
         Log.Information("Data directory: {BaseDataPath}", launcherConfig.BaseDataPath);
         Log.Information("Log directory: {LogsDir}", launcherConfig.LogsDir);
