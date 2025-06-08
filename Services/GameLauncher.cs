@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using Serilog;
 // Assuming LauncherConfig is in ObsidianLauncher namespace
 using ObsidianLauncher;
+using ObsidianLauncher.Utils;
 
 namespace ObsidianLauncher.Services
 {
@@ -30,7 +31,7 @@ namespace ObsidianLauncher.Services
         public GameLauncher(LauncherConfig config)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
-            _logger = Log.ForContext<GameLauncher>();
+            _logger = LogHelper.GetLogger<GameLauncher>();
             _logger.Verbose("GameLauncher initialized.");
         }
 
