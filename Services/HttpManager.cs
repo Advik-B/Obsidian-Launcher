@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers; // For User-Agent
 using System.Threading;
 using System.Threading.Tasks;
+using ObsidianLauncher.Utils;
 using Serilog;
 
 namespace ObsidianLauncher.Services
@@ -37,7 +38,7 @@ namespace ObsidianLauncher.Services
 
         public HttpManager()
         {
-            _logger = Log.ForContext<HttpManager>(); // Get a logger specific to this service
+            _logger = LogHelper.GetLogger<HttpManager>(); // Get a logger specific to this service
             _logger.Verbose("HttpManager instance created.");
         }
 
