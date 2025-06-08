@@ -20,7 +20,7 @@ namespace ObsidianLauncher.Services
         public JavaDownloader(HttpManager httpManager)
         {
             _httpManager = httpManager ?? throw new ArgumentNullException(nameof(httpManager));
-            _logger = Log.ForContext<JavaDownloader>();
+            _logger = LogHelper.GetLogger<JavaDownloader>();
             _logger.Verbose("JavaDownloader initialized.");
         }
 
