@@ -25,7 +25,7 @@ namespace ObsidianLauncher.Services
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _httpManager = httpManager ?? throw new ArgumentNullException(nameof(httpManager));
-            _logger = Log.ForContext<AssetManager>();
+            _logger = LogHelper.GetLogger<AssetManager>();
             _logger.Verbose("AssetManager initialized.");
         }
 
