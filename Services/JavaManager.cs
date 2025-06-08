@@ -23,7 +23,7 @@ namespace ObsidianLauncher.Services
         public JavaManager(LauncherConfig config, HttpManager httpManager)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
-            _logger = Log.ForContext<JavaManager>();
+            _logger = LogHelper.GetLogger<JavaManager>();
             // JavaDownloader now takes HttpManager
             _javaDownloader = new JavaDownloader(httpManager ?? throw new ArgumentNullException(nameof(httpManager)));
             _availableRuntimes = new List<JavaRuntimeInfo>();
