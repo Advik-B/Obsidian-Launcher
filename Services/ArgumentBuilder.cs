@@ -46,7 +46,7 @@ namespace ObsidianLauncher.Services
         public ArgumentBuilder(LauncherConfig config)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
-            _logger = Log.ForContext<ArgumentBuilder>();
+            _logger = LogHelper.GetLogger<ArgumentBuilder>();
             _logger.Information("ArgumentBuilder initialized for offline mode by default.");
             // Log the default offline auth info being used
             _logger.Verbose("Default offline auth: PlayerName={PlayerName}, UUID={AuthUuid}, AccessToken={AccessToken}",
