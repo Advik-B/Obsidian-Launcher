@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Threading; // Added for CancellationToken
+using System.Threading;
 using System.Threading.Tasks;
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Utils; 
@@ -14,16 +14,16 @@ namespace ObsidianLauncher.Services
     public class InstanceManager
     {
         private readonly LauncherConfig _launcherConfig;
-        private readonly AssetManager _assetManager;     // New
-        private readonly LibraryManager _libraryManager; // New
+        private readonly AssetManager _assetManager;     
+        private readonly LibraryManager _libraryManager; 
         private readonly ILogger _logger;
         private const string InstanceMetadataFileName = "instance.json";
 
         public InstanceManager(LauncherConfig launcherConfig, AssetManager assetManager, LibraryManager libraryManager)
         {
             _launcherConfig = launcherConfig ?? throw new ArgumentNullException(nameof(launcherConfig));
-            _assetManager = assetManager ?? throw new ArgumentNullException(nameof(assetManager));     // New
-            _libraryManager = libraryManager ?? throw new ArgumentNullException(nameof(libraryManager)); // New
+            _assetManager = assetManager ?? throw new ArgumentNullException(nameof(assetManager));     
+            _libraryManager = libraryManager ?? throw new ArgumentNullException(nameof(libraryManager)); 
             _logger = LogHelper.GetLogger<InstanceManager>();
             Directory.CreateDirectory(_launcherConfig.InstancesRootDir); 
             _logger.Verbose("InstanceManager initialized. Instances root: {InstancesRootDir}", _launcherConfig.InstancesRootDir);
@@ -61,7 +61,6 @@ namespace ObsidianLauncher.Services
 
             _logger.Information("--- Syncing instance '{InstanceName}' for Minecraft {VersionId} ---", instance.Name, mcVersion.Id);
 
-            // 1. Ensure Assets (Global)
             _logger.Information("[Sync] Ensuring assets for Minecraft {VersionId}...", mcVersion.Id);
             bool assetsOk = await _assetManager.EnsureAssetsAsync(mcVersion, assetProgress, cancellationToken);
             if (!assetsOk || cancellationToken.IsCancellationRequested)
@@ -71,7 +70,6 @@ namespace ObsidianLauncher.Services
             }
             _logger.Information("[Sync] Assets ensured for instance '{InstanceName}'.", instance.Name);
 
-            // 2. Ensure Client JAR (Global)
             _logger.Information("[Sync] Ensuring client JAR for Minecraft {VersionId}...", mcVersion.Id);
             string clientJarPath = await _assetManager.EnsureClientJarAsync(mcVersion, cancellationToken);
             if (string.IsNullOrEmpty(clientJarPath) || cancellationToken.IsCancellationRequested)
@@ -81,14 +79,13 @@ namespace ObsidianLauncher.Services
             }
             _logger.Information("[Sync] Client JAR ensured for instance '{InstanceName}': {ClientJarPath}", instance.Name, clientJarPath);
 
-            // 3. Ensure Libraries & Extract Natives (Natives are instance-specific)
             _logger.Information("[Sync] Ensuring libraries and extracting natives for instance '{InstanceName}' (Natives Path: {NativesPath})...", instance.Name, instance.NativesPath);
-            Directory.CreateDirectory(instance.NativesPath); // Ensure natives directory exists
+            Directory.CreateDirectory(instance.NativesPath); 
             List<string> libraryJarPaths = await _libraryManager.EnsureLibrariesAsync(mcVersion, instance.NativesPath, libraryProgress, cancellationToken);
             if (libraryJarPaths == null || cancellationToken.IsCancellationRequested)
             {
                 _logger.Error("[Sync] Library processing or native extraction failed or was cancelled for instance '{InstanceName}'.", instance.Name);
-                return (false, clientJarPath, null); // Return clientJarPath as it might have succeeded
+                return (false, clientJarPath, null); 
             }
             _logger.Information("[Sync] Libraries ensured and natives extracted for instance '{InstanceName}'.", instance.Name);
 
@@ -97,14 +94,13 @@ namespace ObsidianLauncher.Services
         }
 
 
-        public async Task<Instance> CreateInstanceAsync(
+        public async Task<Instance> CreateInstanceAsync( // playerName parameter removed
             string name, 
             string minecraftVersionId, 
-            MinecraftVersion mcVersion, // Needed for Sync
-            string playerName = null,
-            IProgress<AssetDownloadProgress> assetProgress = null,      // For Sync
-            IProgress<LibraryProcessingProgress> libraryProgress = null, // For Sync
-            CancellationToken cancellationToken = default)                // For Sync
+            MinecraftVersion mcVersion, 
+            IProgress<AssetDownloadProgress> assetProgress = null,      
+            IProgress<LibraryProcessingProgress> libraryProgress = null, 
+            CancellationToken cancellationToken = default)                
         {
             string sanitizedName = SanitizeName(name);
             _logger.Information("Attempting to create instance: Name='{InstanceName}' (Sanitized: '{SanitizedName}'), Version='{MinecraftVersionId}'", name, sanitizedName, minecraftVersionId);
@@ -114,11 +110,11 @@ namespace ObsidianLauncher.Services
             if (Directory.Exists(instancePath))
             {
                  _logger.Error("Instance directory '{InstancePath}' already exists. Creation implies it shouldn't. Use GetOrCreateInstanceAsync or ensure name is unique.", instancePath);
-                return null; // Or load existing if that's the desired behavior for "Create" with existing path
+                return null; 
             }
 
             Directory.CreateDirectory(instancePath);
-            Directory.CreateDirectory(Path.Combine(instancePath, "natives")); // Also created by Sync, but good to ensure
+            Directory.CreateDirectory(Path.Combine(instancePath, "natives")); 
             Directory.CreateDirectory(Path.Combine(instancePath, "logs")); 
 
             var newInstance = new Instance
@@ -126,7 +122,7 @@ namespace ObsidianLauncher.Services
                 Name = name, 
                 MinecraftVersionId = minecraftVersionId,
                 InstancePath = Path.GetFullPath(instancePath), 
-                PlayerName = playerName ?? $"Player_{Random.Shared.Next(100, 999)}", 
+                // PlayerName removed
                 CreationDate = DateTime.UtcNow,
                 LastPlayedDate = DateTime.MinValue,
                 TotalPlaytime = TimeSpan.Zero,
@@ -143,27 +139,24 @@ namespace ObsidianLauncher.Services
             }
             _logger.Information("Initial metadata for instance '{InstanceName}' saved. Proceeding to sync.", newInstance.Name);
 
-            // Sync after initial save
             var (syncSuccess, _, _) = await SyncInstanceAsync(newInstance, mcVersion, assetProgress, libraryProgress, cancellationToken);
             if (!syncSuccess)
             {
                 _logger.Error("Sync failed during creation of instance '{InstanceName}'. The instance directory and metadata exist but may be incomplete.", newInstance.Name);
-                // Optionally, delete the instance or mark it as incomplete
-                return newInstance; // Return instance even if sync fails, as metadata is saved. Caller can check.
+                return newInstance; 
             }
 
             _logger.Information("Successfully created and synced new instance: '{InstanceName}' at {InstancePath}", newInstance.Name, newInstance.InstancePath);
             return newInstance;
         }
 
-        public async Task<(Instance Instance, string ClientJarPath, List<string> LibraryJarPaths)> GetOrCreateInstanceAsync(
+        public async Task<(Instance Instance, string ClientJarPath, List<string> LibraryJarPaths)> GetOrCreateInstanceAsync( // playerName parameter removed
             string name, 
             string minecraftVersionId, 
-            MinecraftVersion mcVersion, // Needed for Create & Sync
-            string playerName = null,
-            IProgress<AssetDownloadProgress> assetProgress = null,      // For Sync
-            IProgress<LibraryProcessingProgress> libraryProgress = null, // For Sync
-            CancellationToken cancellationToken = default)                // For Sync
+            MinecraftVersion mcVersion, 
+            IProgress<AssetDownloadProgress> assetProgress = null,      
+            IProgress<LibraryProcessingProgress> libraryProgress = null, 
+            CancellationToken cancellationToken = default)                
         {
             string sanitizedName = SanitizeName(name);
             var instance = await LoadInstanceAsync(sanitizedName); 
@@ -177,64 +170,36 @@ namespace ObsidianLauncher.Services
                         instance.Name, instance.MinecraftVersionId, minecraftVersionId);
                     return (null, null, null); 
                 }
-                if (!string.IsNullOrEmpty(playerName) && instance.PlayerName != playerName)
-                {
-                    _logger.Information("Updating player name for instance '{InstanceName}' from '{OldPlayerName}' to '{NewPlayerName}'.", instance.Name, instance.PlayerName, playerName);
-                    instance.PlayerName = playerName;
-                    await SaveInstanceAsync(instance);
-                }
-                else if (string.IsNullOrEmpty(instance.PlayerName) && !string.IsNullOrEmpty(playerName))
-                {
-                     _logger.Information("Setting player name for instance '{InstanceName}' to '{NewPlayerName}'.", instance.Name, playerName);
-                    instance.PlayerName = playerName;
-                    await SaveInstanceAsync(instance);
-                }
+                // PlayerName update logic removed
                 _logger.Information("Loaded existing instance: '{InstanceName}'. Will ensure it's synced.", instance.Name);
             }
             else
             {
                 _logger.Information("Instance '{SanitizedName}' not found. Creating new instance.", sanitizedName);
-                instance = await CreateInstanceAsync(name, minecraftVersionId, mcVersion, playerName, assetProgress, libraryProgress, cancellationToken);
+                // Call CreateInstanceAsync without playerName
+                instance = await CreateInstanceAsync(name, minecraftVersionId, mcVersion, assetProgress, libraryProgress, cancellationToken);
                 if (instance == null)
                 {
                     _logger.Error("Failed to create instance '{SanitizedName}'.", sanitizedName);
                     return (null, null, null);
                 }
-                needsCreation = true; // Sync already happened during CreateInstanceAsync
+                needsCreation = true; 
             }
 
-            if (instance == null) return (null, null, null); // Should not happen if creation succeeded
+            if (instance == null) return (null, null, null); 
 
-            // If instance was loaded (not newly created), sync it now.
-            // If it was newly created, SyncInstanceAsync was already called by CreateInstanceAsync.
-            // However, to ensure consistency and handle potential partial syncs on create,
-            // we can call sync again, or rely on CreateInstanceAsync's sync.
-            // For robustness, let's call sync if it wasn't just created OR if the previous sync might have failed.
-            // The SyncInstanceAsync method itself is idempotent for downloaded files.
-            
-            // Re-evaluating: CreateInstanceAsync *now calls sync*. So if needsCreation is true, it's synced.
-            // If needsCreation is false (instance was loaded), then we sync it.
             if (!needsCreation) {
                  _logger.Information("Ensuring existing instance '{InstanceName}' is synced...", instance.Name);
                 var (syncSuccess, clientJarPath, libraryJarPaths) = await SyncInstanceAsync(instance, mcVersion, assetProgress, libraryProgress, cancellationToken);
                 if (!syncSuccess)
                 {
                     _logger.Error("Sync failed for existing instance '{InstanceName}'. Launch might fail.", instance.Name);
-                    // Return the instance but indicate potential issues by returning null paths or let caller decide
-                    return (instance, clientJarPath, libraryJarPaths); // Return what we have
+                    return (instance, clientJarPath, libraryJarPaths); 
                 }
                 return (instance, clientJarPath, libraryJarPaths);
             }
-            else // Instance was newly created, sync already happened. We need to get the paths.
+            else 
             {
-                 // Since sync was part of create, we need to determine paths now.
-                 // This assumes a successful sync during creation if instance is not null.
-                 // This is a bit awkward. SyncInstanceAsync returns paths, CreateInstanceAsync doesn't directly.
-                 // Let's refine: CreateInstanceAsync will call Sync and if sync fails, it might return null or an unsynced instance.
-                 // GetOrCreate should get paths from a successful sync call.
-
-                 // Simpler: SyncInstanceAsync will be called regardless here to get the paths.
-                 // If the instance was just created, SyncInstanceAsync will find files already there and just verify.
                 var (syncSuccess, clientJarPath, libraryJarPaths) = await SyncInstanceAsync(instance, mcVersion, assetProgress, libraryProgress, cancellationToken);
                  if (!syncSuccess)
                 {
