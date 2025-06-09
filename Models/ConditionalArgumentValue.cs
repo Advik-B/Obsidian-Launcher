@@ -19,7 +19,7 @@ public class ConditionalArgumentValue
         Rules = new List<ArgumentRuleCondition>();
     }
 
-    [JsonPropertyName("rules")] public List<ArgumentRuleCondition> Rules { get; set; }
+    [JsonPropertyName("rules")] public List<ArgumentRuleCondition>? Rules { get; set; }
 
     /// <summary>
     ///     The argument value(s). Can be a single string or a list of strings.
@@ -31,21 +31,22 @@ public class ConditionalArgumentValue
     ///         For simplicity, we'll often see this represented as object and then cast.
     ///         A more robust way with System.Text.Json is often to handle this in post-processing or with a JsonConverter.
     ///         Here, we'll use object and expect the consuming code to check.
+    ///    </string>
     /// </summary>
     [JsonPropertyName("value")]
-    public object Value { get; set; } // Can be string or List<string>
+    public required object Value { get; set; } // Can be string or List<string>
 
     // Helper methods to access the value in a typed way
-    public string GetSingleValue()
+    public string? GetSingleValue()
     {
         return Value as string;
     }
 
-    public List<string> GetListValue()
+    public List<string?>? GetListValue()
     {
         if (Value is JsonElement element && element.ValueKind == JsonValueKind.Array)
-            return element.Deserialize<List<string>>();
-        return Value as List<string>; // If it was already deserialized as List<string>
+            return element.Deserialize<List<string>>()!;
+        return Value as List<string?>; // If it was already deserialized as List<string>
     }
 
     public bool IsSingleValue()

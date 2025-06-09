@@ -17,24 +17,24 @@ public class MinecraftVersion
     }
 
     [JsonPropertyName("assetIndex")]
-    public AssetIndex AssetIndex { get; set; } // Can be null for very early versions if manifest structure differs
+    public AssetIndex? AssetIndex { get; set; } // Can be null for very early versions if manifest structure differs
 
-    [JsonPropertyName("assets")] public string Assets { get; set; } // e.g., "24", "pre-1.6"
+    [JsonPropertyName("assets")] public string? Assets { get; set; } // e.g., "24", "pre-1.6"
 
     [JsonPropertyName("complianceLevel")] public int? ComplianceLevel { get; set; }
 
     [JsonPropertyName("downloads")] public Dictionary<string, DownloadDetails> Downloads { get; set; }
 
-    [JsonPropertyName("id")] public string Id { get; set; }
+    [JsonPropertyName("id")] public required string Id { get; set; }
 
-    [JsonPropertyName("javaVersion")] public JavaVersionInfo JavaVersion { get; set; } // Can be null
+    [JsonPropertyName("javaVersion")] public JavaVersionInfo? JavaVersion { get; set; } // Can be null
 
     [JsonPropertyName("libraries")] public List<Library> Libraries { get; set; }
 
-    [JsonPropertyName("mainClass")] public string MainClass { get; set; }
+    [JsonPropertyName("mainClass")] public required string MainClass { get; set; }
 
     [JsonPropertyName("minecraftArguments")]
-    public string MinecraftArguments { get; set; } // Present in older versions, null in newer
+    public string? MinecraftArguments { get; set; } // Present in older versions, null in newer
 
     [JsonPropertyName("minimumLauncherVersion")]
     public int? MinimumLauncherVersion { get; set; }
@@ -43,10 +43,10 @@ public class MinecraftVersion
 
     [JsonPropertyName("time")] public DateTime Time { get; set; }
 
-    [JsonPropertyName("type")] public string Type { get; set; }
+    [JsonPropertyName("type")] public required string Type { get; set; }
 
     // Newer version manifest fields - can be null for older versions
-    [JsonPropertyName("arguments")] public VersionArguments Arguments { get; set; }
+    [JsonPropertyName("arguments")] public VersionArguments? Arguments { get; set; }
 
-    [JsonPropertyName("logging")] public VersionLogging Logging { get; set; }
+    [JsonPropertyName("logging")] public VersionLogging? Logging { get; set; }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -25,7 +26,7 @@ public class ObsidianLauncher
             eventArgs.Cancel = true;
         };
 
-        LauncherConfig launcherConfig = null;
+        LauncherConfig? launcherConfig = null;
         try
         {
             launcherConfig = new LauncherConfig();
@@ -91,8 +92,8 @@ public class ObsidianLauncher
                 versionManifestAll.Versions.Count);
 
             var versionIdToLaunch = "1.20.4";
-            string cliInstanceNameFromArg = null;
-            string cliPlayerNameFromArg = null; // This will now be the session player name
+            string? cliInstanceNameFromArg = null;
+            string? cliPlayerNameFromArg = null; // This will now be the session player name
 
             if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
             {
@@ -215,7 +216,7 @@ public class ObsidianLauncher
                 currentInstance.LastSessionPlaytime.ToString(@"hh\:mm\:ss"));
 
             Log.Information("--- Ensuring Java Runtime for Minecraft {VersionId} ---", minecraftVersion.Id);
-            JavaRuntimeInfo javaRuntime;
+            JavaRuntimeInfo? javaRuntime;
             if (!string.IsNullOrEmpty(currentInstance.CustomJavaRuntimePath))
             {
                 var customJavaDir = Path.GetFullPath(currentInstance.CustomJavaRuntimePath);

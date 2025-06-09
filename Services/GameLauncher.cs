@@ -44,9 +44,9 @@ public class GameLauncher
     /// </returns>
     public async Task<int> LaunchAsync(
         string javaExecutablePath,
-        List<string> jvmArguments,
+        List<string?> jvmArguments,
         string mainClass,
-        List<string> gameArguments,
+        List<string?> gameArguments,
         string workingDirectory,
         CancellationToken cancellationToken = default)
     {
@@ -107,19 +107,19 @@ public class GameLauncher
         };
 
         // Add JVM arguments
-        if (jvmArguments != null)
-            foreach (var arg in jvmArguments)
-                // Individual JVM arguments from the list should already be complete strings,
-                // possibly already quoted by ReplacePlaceholders if they were path variables.
+        foreach (var arg in jvmArguments)
+            // Individual JVM arguments from the list should already be complete strings,
+            // possibly already quoted by ReplacePlaceholders if they were path variables.
+            if (arg != null)
                 appendQuotedArgument(arg);
 
         // Add main class
         appendQuotedArgument(mainClass);
 
         // Add game arguments
-        if (gameArguments != null)
-            foreach (var arg in gameArguments)
-                // Individual game arguments from the list.
+        foreach (var arg in gameArguments)
+            // Individual game arguments from the list.
+            if (arg != null)
                 appendQuotedArgument(arg);
 
         var finalArguments = argumentsBuilder.ToString();
@@ -149,7 +149,8 @@ public class GameLauncher
                 .Equals("javaw.exe", StringComparison.OrdinalIgnoreCase)
         };
 
-        using var process = new Process { StartInfo = processStartInfo };
+        using var process = new Process();
+        process.StartInfo = processStartInfo;
         process.EnableRaisingEvents = true;
 
         // Use TaskCompletionSource to properly await async event handlers if needed,

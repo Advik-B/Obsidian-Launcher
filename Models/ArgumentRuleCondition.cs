@@ -20,7 +20,7 @@ public class ArgumentRuleCondition
     [JsonConverter(typeof(JsonStringEnumConverter))] // For "allow" / "disallow" strings
     public RuleAction Action { get; set; }
 
-    [JsonPropertyName("os")] public OperatingSystemInfo Os { get; set; } // Nullable if "os" object might be absent
+    [JsonPropertyName("os")] public OperatingSystemInfo? Os { get; set; } // Nullable if "os" object might be absent
 
     [JsonPropertyName("features")]
     public Dictionary<string, bool> Features { get; set; } // Nullable if "features" object might be absent

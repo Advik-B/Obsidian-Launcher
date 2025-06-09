@@ -12,5 +12,5 @@ public class VersionLogging // Renamed from LoggingInfo to be more descriptive a
     ///     Client-specific logging configuration. This property might be null if no client logging is specified.
     /// </summary>
     [JsonPropertyName("client")]
-    public ClientLoggingInfo Client { get; set; } // Nullable if "client" object might be absent
+    public ClientLoggingInfo? Client { get; set; } // Nullable if "client" object might be absent
 }

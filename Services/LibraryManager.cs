@@ -41,7 +41,7 @@ public class LibraryManager
     public async Task<List<string>> EnsureLibrariesAsync(
         MinecraftVersion mcVersion,
         string nativesDir, // e.g., <version_dir>/<version_id>-natives
-        IProgress<LibraryProcessingProgress> progress = null,
+        IProgress<LibraryProcessingProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         if (mcVersion.Libraries == null || !mcVersion.Libraries.Any())
@@ -248,7 +248,7 @@ public class LibraryManager
         return allowed;
     }
 
-    private bool CheckOsRule(OperatingSystemInfo osRule)
+    private bool CheckOsRule(OperatingSystemInfo? osRule)
     {
         if (osRule == null) return true; // No OS specific rule part
 
@@ -470,7 +470,7 @@ public class LibraryManager
             }
     }
 
-    private void ReportLibraryProgress(IProgress<LibraryProcessingProgress> progress, string libraryName, int processed,
+    private void ReportLibraryProgress(IProgress<LibraryProcessingProgress>? progress, string libraryName, int processed,
         int total, string status)
     {
         progress?.Report(new LibraryProcessingProgress

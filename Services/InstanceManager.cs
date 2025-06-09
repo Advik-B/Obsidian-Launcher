@@ -47,11 +47,11 @@ public class InstanceManager
         return name.Replace(" ", "_").Trim();
     }
 
-    public async Task<(bool Success, string ClientJarPath, List<string> LibraryJarPaths)> SyncInstanceAsync(
-        Instance instance,
+    public async Task<(bool, string? clientJarPath, List<string>? libraryJarPaths)> SyncInstanceAsync(
+        Instance? instance,
         MinecraftVersion mcVersion,
-        IProgress<AssetDownloadProgress> assetProgress = null,
-        IProgress<LibraryProcessingProgress> libraryProgress = null,
+        IProgress<AssetDownloadProgress>? assetProgress = null,
+        IProgress<LibraryProcessingProgress>? libraryProgress = null,
         CancellationToken cancellationToken = default)
     {
         if (instance == null) throw new ArgumentNullException(nameof(instance));
@@ -72,7 +72,7 @@ public class InstanceManager
         _logger.Information("[Sync] Assets ensured for instance '{InstanceName}'.", instance.Name);
 
         _logger.Information("[Sync] Ensuring client JAR for Minecraft {VersionId}...", mcVersion.Id);
-        var clientJarPath = await _assetManager.EnsureClientJarAsync(mcVersion, cancellationToken);
+        var clientJarPath = await _assetManager.EnsureClientJarAsync(mcVersion, cancellationToken)!;
         if (string.IsNullOrEmpty(clientJarPath) || cancellationToken.IsCancellationRequested)
         {
             _logger.Error("[Sync] Client JAR processing failed or was cancelled for instance '{InstanceName}'.",
@@ -90,7 +90,7 @@ public class InstanceManager
         var libraryJarPaths =
             await _libraryManager.EnsureLibrariesAsync(mcVersion, instance.NativesPath, libraryProgress,
                 cancellationToken);
-        if (libraryJarPaths == null || cancellationToken.IsCancellationRequested)
+        if (cancellationToken.IsCancellationRequested)
         {
             _logger.Error(
                 "[Sync] Library processing or native extraction failed or was cancelled for instance '{InstanceName}'.",
@@ -107,12 +107,12 @@ public class InstanceManager
     }
 
 
-    public async Task<Instance> CreateInstanceAsync( // playerName parameter removed
+    public async Task<Instance?> CreateInstanceAsync( // playerName parameter removed
         string name,
         string minecraftVersionId,
         MinecraftVersion mcVersion,
-        IProgress<AssetDownloadProgress> assetProgress = null,
-        IProgress<LibraryProcessingProgress> libraryProgress = null,
+        IProgress<AssetDownloadProgress>? assetProgress = null,
+        IProgress<LibraryProcessingProgress>? libraryProgress = null,
         CancellationToken cancellationToken = default)
     {
         var sanitizedName = SanitizeName(name);
@@ -139,11 +139,12 @@ public class InstanceManager
             Name = name,
             MinecraftVersionId = minecraftVersionId,
             InstancePath = Path.GetFullPath(instancePath),
-            // PlayerName removed
             CreationDate = DateTime.UtcNow,
             LastPlayedDate = DateTime.MinValue,
             TotalPlaytime = TimeSpan.Zero,
-            LastSessionPlaytime = TimeSpan.Zero
+            LastSessionPlaytime = TimeSpan.Zero,
+            CustomJavaRuntimePath = null!, // NULL FOR NOW
+            CustomIconPath = null! // NULL FOR NOW
         };
 
         var saved = await SaveInstanceAsync(newInstance);
@@ -182,48 +183,28 @@ public class InstanceManager
         return newInstance;
     }
 
-    public async Task<(Instance Instance, string ClientJarPath, List<string> LibraryJarPaths)>
-        GetOrCreateInstanceAsync( // playerName parameter removed
+    public async Task<(Instance? Instance, string? ClientJarPath, List<string>? LibraryJarPaths)> GetOrCreateInstanceAsync( // playerName parameter removed
             string name,
             string minecraftVersionId,
             MinecraftVersion mcVersion,
-            IProgress<AssetDownloadProgress> assetProgress = null,
-            IProgress<LibraryProcessingProgress> libraryProgress = null,
+            IProgress<AssetDownloadProgress>? assetProgress = null,
+            IProgress<LibraryProcessingProgress>? libraryProgress = null,
             CancellationToken cancellationToken = default)
     {
         var sanitizedName = SanitizeName(name);
         var instance = await LoadInstanceAsync(sanitizedName);
         var needsCreation = false;
 
-        if (instance != null)
+        if (instance?.MinecraftVersionId != minecraftVersionId)
         {
-            if (instance.MinecraftVersionId != minecraftVersionId)
-            {
-                _logger.Error(
-                    "Instance '{InstanceName}' exists but for Minecraft version '{ExistingMcVersion}'. Expected '{McVersion}'. Cannot proceed with this name for a different version.",
-                    instance.Name, instance.MinecraftVersionId, minecraftVersionId);
-                return (null, null, null);
-            }
-
-            // PlayerName update logic removed
-            _logger.Information("Loaded existing instance: '{InstanceName}'. Will ensure it's synced.", instance.Name);
-        }
-        else
-        {
-            _logger.Information("Instance '{SanitizedName}' not found. Creating new instance.", sanitizedName);
-            // Call CreateInstanceAsync without playerName
-            instance = await CreateInstanceAsync(name, minecraftVersionId, mcVersion, assetProgress, libraryProgress,
-                cancellationToken);
-            if (instance == null)
-            {
-                _logger.Error("Failed to create instance '{SanitizedName}'.", sanitizedName);
-                return (null, null, null);
-            }
-
-            needsCreation = true;
+            _logger.Error(
+                "Instance '{InstanceName}' exists but for Minecraft version '{ExistingMcVersion}'. Expected '{McVersion}'. Cannot proceed with this name for a different version.",
+                instance?.Name, instance?.MinecraftVersionId, minecraftVersionId);
+            return (null, null, null);
         }
 
-        if (instance == null) return (null, null, null);
+        // PlayerName update logic removed
+        _logger.Information("Loaded existing instance: '{InstanceName}'. Will ensure it's synced.", instance.Name);
 
         if (!needsCreation)
         {
@@ -233,7 +214,6 @@ public class InstanceManager
             if (!syncSuccess)
             {
                 _logger.Error("Sync failed for existing instance '{InstanceName}'. Launch might fail.", instance.Name);
-                return (instance, clientJarPath, libraryJarPaths);
             }
 
             return (instance, clientJarPath, libraryJarPaths);
@@ -251,7 +231,7 @@ public class InstanceManager
     }
 
 
-    public async Task<Instance> LoadInstanceAsync(string name)
+    public async Task<Instance?> LoadInstanceAsync(string name)
     {
         var instancePath = GetInstancePath(name);
         var metadataFilePath = Path.Combine(instancePath, InstanceMetadataFileName);
@@ -287,7 +267,7 @@ public class InstanceManager
         }
     }
 
-    public async Task<bool> SaveInstanceAsync(Instance instance)
+    public async Task<bool> SaveInstanceAsync(Instance? instance)
     {
         if (instance == null) throw new ArgumentNullException(nameof(instance));
         if (string.IsNullOrWhiteSpace(instance.InstancePath))
@@ -338,7 +318,7 @@ public class InstanceManager
         return instances;
     }
 
-    public async Task UpdateLastPlayedAsync(Instance instance, TimeSpan sessionDuration)
+    public async Task UpdateLastPlayedAsync(Instance? instance, TimeSpan sessionDuration)
     {
         if (instance == null) return;
         instance.LastPlayedDate = DateTime.UtcNow;

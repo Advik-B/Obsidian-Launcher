@@ -16,7 +16,7 @@ public class HttpManager : IDisposable
 {
     // HttpClient is designed to be instantiated once and reused throughout the life of an application.
     // Instantiating an HttpClient class for every request will exhaust the number of sockets available under heavy loads.
-    private static readonly HttpClient httpClient;
+    private static readonly HttpClient HttpClient;
     private readonly ILogger _logger;
 
     static HttpManager() // Static constructor to initialize HttpClient once
@@ -29,13 +29,13 @@ public class HttpManager : IDisposable
         // _httpClient = new HttpClient(handler);
 
         // For most cases, the default handler is fine and uses system CA certs.
-        httpClient = new HttpClient();
+        HttpClient = new HttpClient();
 
         // Set a default timeout if desired (e.g., 30 seconds)
-        httpClient.Timeout = TimeSpan.FromSeconds(30);
+        HttpClient.Timeout = TimeSpan.FromSeconds(30);
 
         // Set a default User-Agent
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
+        HttpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
             "ObsidianLauncher/1.0 (+https://github.com/Advik-B/Obsidian-Launcher)");
     }
 
@@ -60,13 +60,12 @@ public class HttpManager : IDisposable
     ///     Performs an HTTP GET request.
     /// </summary>
     /// <param name="url">The URL to request.</param>
-    /// <param name="parameters">Optional query parameters (will be appended to the URL).</param>
-    /// <param name="headers">Optional custom headers for the request.</param>
+    /// <param name="content">I have no idea</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The HttpResponseMessage from the server.</returns>
     public async Task<HttpResponseMessage> GetAsync(
         string url,
-        HttpContent content = null, // C++ had Parameters and Header, here we generalize a bit
+        HttpContent? content = null, // C++ had Parameters and Header, here we generalize a bit
         // For GET, parameters are usually in URL; headers are separate.
         // HttpContent is more for POST/PUT but can be adapted.
         CancellationToken cancellationToken = default)
@@ -94,7 +93,7 @@ public class HttpManager : IDisposable
             // you might construct HttpRequestMessage manually.
             // However, the C++ version's Get(url, parameters) likely meant URL query parameters.
 
-            var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            var response = await HttpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
             _logger.Verbose("GET Response: {Url}, Status: {StatusCode}, IsSuccess: {IsSuccessStatusCode}",
                 url, response.StatusCode, response.IsSuccessStatusCode);
@@ -143,7 +142,7 @@ public class HttpManager : IDisposable
     public async Task<(HttpResponseMessage Response, string FilePath)> DownloadAsync(
         string url,
         string filePath,
-        IProgress<float> progress = null,
+        IProgress<float>? progress = null,
         CancellationToken cancellationToken = default)
     {
         _logger.Verbose("HTTP DOWNLOAD: {Url} -> {FilePath}", url, filePath);
@@ -155,7 +154,7 @@ public class HttpManager : IDisposable
                 Directory.CreateDirectory(directoryPath); // Ensure directory exists
 
             // Use GetAsync with HttpCompletionOption.ResponseHeadersRead to avoid loading the whole content into memory first.
-            using var response = await httpClient
+            using var response = await HttpClient
                 .GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
