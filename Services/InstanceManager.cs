@@ -134,6 +134,17 @@ public class InstanceManager
         Directory.CreateDirectory(Path.Combine(instancePath, "natives"));
         Directory.CreateDirectory(Path.Combine(instancePath, "logs"));
 
+        // Create global resourcepacks and shaderpacks directories if they don't exist
+        var globalResourcepacks = Path.Combine(_launcherConfig.InstancesRootDir, "resourcepacks");
+        var globalShaderpacks = Path.Combine(_launcherConfig.InstancesRootDir, "shaderpacks");
+        Directory.CreateDirectory(globalResourcepacks);
+        Directory.CreateDirectory(globalShaderpacks);
+        // Link instance resourcepacks and shaderpacks to global
+        var instanceResourcepacks = Path.Combine(instancePath, "resourcepacks");
+        var instanceShaderpacks = Path.Combine(instancePath, "shaderpacks");
+        FolderLinker.CreateFolderLink(instanceResourcepacks, globalResourcepacks);
+        FolderLinker.CreateFolderLink(instanceShaderpacks, globalShaderpacks);
+
         var newInstance = new Instance
         {
             Name = name,
