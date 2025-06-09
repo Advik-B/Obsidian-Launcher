@@ -308,6 +308,48 @@ namespace ObsidianLauncher.Services
                 }
             }
         }
+        
+        public async Task<string> EnsureClientJarAsync(MinecraftVersion mcVersion, CancellationToken cancellationToken)
+        {
+            _logger.Information("Ensuring Client JAR for Minecraft {VersionId}", mcVersion.Id);
+            
+            // Client JAR is stored globally in the versions directory
+            string globalVersionStoreDir = Path.Combine(_config.VersionsDir, mcVersion.Id);
+            Directory.CreateDirectory(globalVersionStoreDir); // Ensure this specific version's global dir exists
+            string clientJarPath = Path.Combine(globalVersionStoreDir, $"{mcVersion.Id}.jar");
+
+            bool clientJarOk = false;
+            if (mcVersion.Downloads.TryGetValue("client", out DownloadDetails clientDownloadDetails))
+            {
+                clientJarOk = await DownloadAndVerifyFileAsync(
+                    clientDownloadDetails.Url, 
+                    clientJarPath, 
+                    clientDownloadDetails.Sha1,
+                    $"Client JAR for {mcVersion.Id}", 
+                    cancellationToken, 
+                    clientDownloadDetails.Size);
+            }
+            else 
+            {
+                _logger.Error("No client JAR download information found for version {VersionId}.", mcVersion.Id);
+                return null;
+            }
+
+            if (cancellationToken.IsCancellationRequested) 
+            {
+                _logger.Warning("Client JAR download cancelled for {VersionId}.", mcVersion.Id);
+                return null;
+            }
+            
+            if (!clientJarOk)
+            {
+                _logger.Error("Failed to download or verify client JAR for version {VersionId}.", mcVersion.Id);
+                return null;
+            }
+            
+            _logger.Information("Client JAR for version {VersionId} is ready at global path {ClientJarPath}", mcVersion.Id, clientJarPath);
+            return Path.GetFullPath(clientJarPath);
+        }
     }
 
     /// <summary>
