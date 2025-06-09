@@ -19,13 +19,13 @@ public class Library
     ///     The Maven-style name of the library (e.g., "com.mojang:brigadier:1.0.18").
     /// </summary>
     [JsonPropertyName("name")]
-    public required string Name { get; set; }
+    public string Name { get; set; }
 
     /// <summary>
     ///     Download information for the library's artifacts. Can be null if not specified.
     /// </summary>
     [JsonPropertyName("downloads")]
-    public LibraryDownloads? Downloads { get; set; } // Nullable if "downloads" object might be absent
+    public LibraryDownloads Downloads { get; set; } // Nullable if "downloads" object might be absent
 
     /// <summary>
     ///     A list of rules that determine if this library should be included based on OS or features.
@@ -46,5 +46,5 @@ public class Library
     ///     Can be null if no special extraction rules apply.
     /// </summary>
     [JsonPropertyName("extract")]
-    public LibraryExtractRule? Extract { get; set; } // Nullable if "extract" object might be absent
+    public LibraryExtractRule Extract { get; set; } // Nullable if "extract" object might be absent
 }

@@ -12,7 +12,7 @@ public class AssetObjectInfo
     ///     The SHA1 hash of the asset file. This hash is also used as part of its storage path.
     /// </summary>
     [JsonPropertyName("hash")]
-    public required string Hash { get; set; }
+    public string Hash { get; set; }
 
     /// <summary>
     ///     The size of the asset file in bytes.

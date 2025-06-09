@@ -15,31 +15,31 @@ namespace ObsidianLauncher.Models;
 public class VersionArgument
 {
     // Private constructors, only used by the converter
-    private VersionArgument(string? plainValue)
+    private VersionArgument(string plainValue)
     {
         PlainStringValue = plainValue;
         ConditionalValue = null;
     }
 
-    private VersionArgument(ConditionalArgumentValue? conditionalValue)
+    private VersionArgument(ConditionalArgumentValue conditionalValue)
     {
         PlainStringValue = null;
         ConditionalValue = conditionalValue;
     }
 
-    public string? PlainStringValue { get; }
-    public ConditionalArgumentValue? ConditionalValue { get; }
+    public string PlainStringValue { get; }
+    public ConditionalArgumentValue ConditionalValue { get; }
 
     public bool IsPlainString => PlainStringValue != null;
     public bool IsConditional => ConditionalValue != null;
 
     // Static factory methods for the converter to use
-    public static VersionArgument Create(string? plainValue)
+    public static VersionArgument Create(string plainValue)
     {
         return new VersionArgument(plainValue);
     }
 
-    public static VersionArgument Create(ConditionalArgumentValue? conditionalValue)
+    public static VersionArgument Create(ConditionalArgumentValue conditionalValue)
     {
         return new VersionArgument(conditionalValue);
     }

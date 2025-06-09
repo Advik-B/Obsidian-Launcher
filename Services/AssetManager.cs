@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -38,7 +37,7 @@ public class AssetManager
     /// <returns>True if all assets are successfully processed, false otherwise.</returns>
     public async Task<bool> EnsureAssetsAsync(
         MinecraftVersion mcVersion,
-        IProgress<AssetDownloadProgress>? progress = null,
+        IProgress<AssetDownloadProgress> progress = null,
         CancellationToken cancellationToken = default)
     {
         if (mcVersion.AssetIndex == null && string.IsNullOrEmpty(mcVersion.Assets))
@@ -65,7 +64,6 @@ public class AssetManager
                 "Minecraft version {VersionId} does not have a direct AssetIndex object. The 'assets' field is '{AssetsString}'. Advanced handling for this might be needed.",
                 mcVersion.Id, mcVersion.Assets);
             // If assetIndexId is "legacy" or "pre-1.6", specific handling is needed which is complex.
-            Debug.Assert(assetIndexId != null, nameof(assetIndexId) + " != null");
             if (assetIndexId.Equals("legacy", StringComparison.OrdinalIgnoreCase) ||
                 assetIndexId.Equals("pre-1.6", StringComparison.OrdinalIgnoreCase))
             {
@@ -103,7 +101,7 @@ public class AssetManager
         }
 
         // 2. Parse the Asset Index JSON
-        AssetIndexDetails? assetIndexDetails;
+        AssetIndexDetails assetIndexDetails;
         try
         {
             var indexJsonContent = await File.ReadAllTextAsync(assetIndexFilePath, cancellationToken);
@@ -233,11 +231,10 @@ public class AssetManager
             else if (!string.IsNullOrEmpty(expectedSha1))
             {
                 _logger.Verbose("Verifying SHA1 for existing file: {LocalPath}", localPath);
-                string? actualSha1 = await CryptoUtils.CalculateFileSHA1Async(localPath, cancellationToken);
+                var actualSha1 = await CryptoUtils.CalculateFileSHA1Async(localPath, cancellationToken);
                 if (cancellationToken.IsCancellationRequested) return false;
 
-                Debug.Assert(actualSha1 != null, nameof(actualSha1) + " != null");
-                if (actualSha1.Equals(expectedSha1, StringComparison.OrdinalIgnoreCase))
+                if (actualSha1 != null && actualSha1.Equals(expectedSha1, StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.Verbose("SHA1 match for existing file: {LocalPath}. No download needed.", localPath);
                     return true;
@@ -245,7 +242,7 @@ public class AssetManager
 
                 _logger.Warning(
                     "SHA1 mismatch for existing file {Description} at {LocalPath}. Expected: {ExpectedSha1}, Actual: {ActualSha1}. Re-downloading.",
-                    fileDescription, localPath, expectedSha1, actualSha1);
+                    fileDescription, localPath, expectedSha1, actualSha1 ?? "N/A");
             }
             else
             {
@@ -302,11 +299,11 @@ public class AssetManager
                 return false;
             }
 
-            if (!actualSha1.Equals(expectedSha1, StringComparison.OrdinalIgnoreCase))
+            if (actualSha1 == null || !actualSha1.Equals(expectedSha1, StringComparison.OrdinalIgnoreCase))
             {
                 _logger.Error(
                     "SHA1 mismatch after downloading {Description} to {LocalPath}. Expected: {ExpectedSha1}, Actual: {ActualSha1}",
-                    fileDescription, localPath, expectedSha1, actualSha1);
+                    fileDescription, localPath, expectedSha1, actualSha1 ?? "N/A");
                 DeletePartialFile(localPath, "SHA1 Mismatch");
                 return false;
             }
@@ -331,7 +328,7 @@ public class AssetManager
             }
     }
 
-    public async Task<string?>? EnsureClientJarAsync(MinecraftVersion mcVersion, CancellationToken cancellationToken)
+    public async Task<string> EnsureClientJarAsync(MinecraftVersion mcVersion, CancellationToken cancellationToken)
     {
         _logger.Information("Ensuring Client JAR for Minecraft {VersionId}", mcVersion.Id);
 
@@ -340,7 +337,7 @@ public class AssetManager
         Directory.CreateDirectory(globalVersionStoreDir); // Ensure this specific version's global dir exists
         var clientJarPath = Path.Combine(globalVersionStoreDir, $"{mcVersion.Id}.jar");
 
-        var clientJarOk = false; // I didn't even use this variable lmfao
+        var clientJarOk = false;
         if (mcVersion.Downloads.TryGetValue("client", out var clientDownloadDetails))
         {
             clientJarOk = await DownloadAndVerifyFileAsync(
@@ -380,7 +377,7 @@ public class AssetManager
 /// </summary>
 public class AssetDownloadProgress
 {
-    public string? CurrentFile { get; set; }
+    public string CurrentFile { get; set; }
     public int ProcessedFiles { get; set; }
     public int TotalFiles { get; set; }
     public long CurrentFileBytesDownloaded { get; set; } // For the currently downloading file

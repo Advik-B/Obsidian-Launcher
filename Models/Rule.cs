@@ -38,7 +38,7 @@ public class Rule
     ///     This property will be null if the rule does not depend on the OS.
     /// </summary>
     [JsonPropertyName("os")]
-    public OperatingSystemInfo? Os { get; set; } // Nullable if "os" object might be absent
+    public OperatingSystemInfo Os { get; set; } // Nullable if "os" object might be absent
 
     /// <summary>
     ///     Feature-specific conditions for this rule.

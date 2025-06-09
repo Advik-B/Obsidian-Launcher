@@ -12,7 +12,7 @@ public class DownloadDetails
     ///     The SHA1 checksum of the downloadable file.
     /// </summary>
     [JsonPropertyName("sha1")]
-    public required string Sha1 { get; set; }
+    public string Sha1 { get; set; }
 
     /// <summary>
     ///     The size of the downloadable file in bytes.
@@ -24,5 +24,5 @@ public class DownloadDetails
     ///     The URL from which the file can be downloaded.
     /// </summary>
     [JsonPropertyName("url")]
-    public required string Url { get; set; }
+    public string Url { get; set; }
 }

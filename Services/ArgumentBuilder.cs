@@ -15,7 +15,7 @@ public class ArgumentBuilder
     private readonly LauncherConfig _config; // Still used for assets_root, etc.
 
     // Launcher settings
-    private readonly string _launcherName = "Obsidian Launcher";
+    private readonly string _launcherName = "ObsidianLauncher.NET";
     private readonly string _launcherVersion = LauncherConfig.VERSION; // Use actual version
     private readonly ILogger _logger;
     private readonly string _quickPlayMultiplayer = "N/A";
@@ -101,7 +101,7 @@ public class ArgumentBuilder
         _logger.Information("Building classpath...");
         var allEntries = new List<string>();
 
-        allEntries.AddRange(libraryJarPaths.Where(p => !string.IsNullOrWhiteSpace(p)));
+        if (libraryJarPaths != null) allEntries.AddRange(libraryJarPaths.Where(p => !string.IsNullOrWhiteSpace(p)));
 
         if (!string.IsNullOrWhiteSpace(clientJarPath) && File.Exists(clientJarPath))
             allEntries.Add(Path.GetFullPath(clientJarPath));
@@ -117,16 +117,16 @@ public class ArgumentBuilder
         return classpathString;
     }
 
-    public List<string?> BuildJvmArguments(
+    public List<string> BuildJvmArguments(
         MinecraftVersion mcVersion,
-        string? classpath,
-        string? nativesDir, // This will be instance specific
-        JavaRuntimeInfo? javaRuntime,
+        string classpath,
+        string nativesDir, // This will be instance specific
+        JavaRuntimeInfo javaRuntime,
         string instancePath) // New parameter
     {
         _logger.Information("Building JVM arguments for version {VersionId} (Instance: {InstancePath})...",
             mcVersion.Id, instancePath);
-        var jvmArgs = new List<string?>();
+        var jvmArgs = new List<string>();
 
         if (mcVersion.Arguments?.Jvm != null)
         {
@@ -139,13 +139,13 @@ public class ArgumentBuilder
                 else if (argWrapper.IsConditional)
                 {
                     var conditionalArg = argWrapper.ConditionalValue;
-                    if (conditionalArg?.Rules != null && AreRulesSatisfied(conditionalArg.Rules, javaRuntime))
+                    if (AreRulesSatisfied(conditionalArg.Rules, javaRuntime))
                     {
                         if (conditionalArg.IsSingleValue())
                             jvmArgs.Add(ReplacePlaceholders(conditionalArg.GetSingleValue(), mcVersion, classpath,
                                 nativesDir, instancePath));
                         else if (conditionalArg.IsListValue())
-                            jvmArgs.AddRange((conditionalArg.GetListValue() ?? throw new InvalidOperationException())
+                            jvmArgs.AddRange(conditionalArg.GetListValue()
                                 .Select(val =>
                                     ReplacePlaceholders(val, mcVersion, classpath, nativesDir, instancePath)));
                     }
@@ -156,7 +156,7 @@ public class ArgumentBuilder
             _logger.Information(
                 "No modern JVM arguments structure found for {VersionId}. Applying default/legacy JVM arguments.",
                 mcVersion.Id);
-            if (nativesDir != null) jvmArgs.Add($"-Djava.library.path=\"{Path.GetFullPath(nativesDir)}\"");
+            jvmArgs.Add($"-Djava.library.path=\"{Path.GetFullPath(nativesDir)}\"");
             jvmArgs.Add("-cp");
             jvmArgs.Add($"\"{classpath}\"");
         }
@@ -170,17 +170,11 @@ public class ArgumentBuilder
             if (File.Exists(logConfigFilePath))
             {
                 // Pass instancePath to ReplacePlaceholders, though this specific placeholder doesn't use it.
-                var replacedArg = ReplacePlaceholders(mcVersion.Logging!.Client!.Argument, mcVersion, classpath, nativesDir, instancePath);
-                if (replacedArg != null)
-                {
-                    var loggingArg = replacedArg.Replace("${path}", $"\"{Path.GetFullPath(logConfigFilePath)}\"");
-                    jvmArgs.Add(loggingArg);
-                    _logger.Information("Added client logging argument: {LoggingArg}", loggingArg);
-                }
-                else
-                {
-                    _logger.Warning("Placeholder replacement for logging argument resulted in null. Logging argument will not be added for: {ClientArgument}", mcVersion.Logging?.Client?.Argument);
-                }
+                var loggingArg = ReplacePlaceholders(mcVersion.Logging.Client.Argument, mcVersion, classpath,
+                        nativesDir, instancePath)
+                    .Replace("${path}", $"\"{Path.GetFullPath(logConfigFilePath)}\"");
+                jvmArgs.Add(loggingArg);
+                _logger.Information("Added client logging argument: {LoggingArg}", loggingArg);
             }
             else
             {
@@ -195,11 +189,11 @@ public class ArgumentBuilder
         return jvmArgs;
     }
 
-    public List<string?> BuildGameArguments(MinecraftVersion mcVersion, string instancePath) // New parameter
+    public List<string> BuildGameArguments(MinecraftVersion mcVersion, string instancePath) // New parameter
     {
         _logger.Information("Building game arguments for version {VersionId} (Instance: {InstancePath})...",
             mcVersion.Id, instancePath);
-        var gameArgs = new List<string?>();
+        var gameArgs = new List<string>();
 
         if (mcVersion.Arguments?.Game != null)
         {
@@ -211,13 +205,13 @@ public class ArgumentBuilder
                 else if (argWrapper.IsConditional)
                 {
                     var conditionalArg = argWrapper.ConditionalValue;
-                    if (AreRulesSatisfied(conditionalArg?.Rules, null))
+                    if (AreRulesSatisfied(conditionalArg.Rules, null))
                     {
-                        if (conditionalArg != null && conditionalArg.IsSingleValue())
+                        if (conditionalArg.IsSingleValue())
                             gameArgs.Add(ReplacePlaceholders(conditionalArg.GetSingleValue(), mcVersion, null, null,
                                 instancePath));
-                        else if (conditionalArg != null && conditionalArg.IsListValue())
-                            gameArgs.AddRange((conditionalArg.GetListValue() ?? throw new InvalidOperationException())
+                        else if (conditionalArg.IsListValue())
+                            gameArgs.AddRange(conditionalArg.GetListValue()
                                 .Select(val => ReplacePlaceholders(val, mcVersion, null, null, instancePath)));
                     }
                 }
@@ -242,7 +236,7 @@ public class ArgumentBuilder
         return gameArgs;
     }
 
-    private string? ReplacePlaceholders(string? argument, MinecraftVersion mcVersion, string? classpath, string? nativesDir,
+    private string ReplacePlaceholders(string argument, MinecraftVersion mcVersion, string classpath, string nativesDir,
         string instancePath)
     {
         if (argument == null) return null;
@@ -262,11 +256,11 @@ public class ArgumentBuilder
         argument = argument.Replace("${auth_uuid}", _authUuid);
         argument = argument.Replace("${auth_access_token}", _authAccessToken);
         argument = argument.Replace("${clientid}", _clientId);
-        argument = argument.Replace("${auth_xuid}", _authXuid);
+        argument = argument.Replace("${auth_xuid}", _authXuid ?? "0");
         argument = argument.Replace("${user_type}", _userType);
 
-        argument = argument.Replace("${version_name}", mcVersion.Id);
-        argument = argument.Replace("${version_type}", mcVersion.Type);
+        argument = argument.Replace("${version_name}", mcVersion.Id ?? "unknown_version");
+        argument = argument.Replace("${version_type}", mcVersion.Type ?? "unknown_type");
 
         argument = argument.Replace("${game_directory}", gameDirectoryPath);
         argument = argument.Replace("${game_dir}", gameDirectoryPath);
@@ -292,7 +286,7 @@ public class ArgumentBuilder
         return argument;
     }
 
-    private bool AreRulesSatisfied(List<ArgumentRuleCondition>? rules, JavaRuntimeInfo? javaRuntimeForJvmRules)
+    private bool AreRulesSatisfied(List<ArgumentRuleCondition> rules, JavaRuntimeInfo javaRuntimeForJvmRules)
     {
         if (rules == null || !rules.Any()) return true;
 
@@ -306,7 +300,7 @@ public class ArgumentBuilder
                 if (!CheckOsRule(rule.Os, javaRuntimeForJvmRules))
                     conditionMet = false;
 
-            if (conditionMet)
+            if (rule.Features != null && conditionMet)
                 foreach (var featureRule in rule.Features)
                 {
                     var currentFeatureState = GetCurrentFeatureState(featureRule.Key);
@@ -324,7 +318,9 @@ public class ArgumentBuilder
                     _logger.Verbose(
                         "Rule matched and DISALLOWED argument due to: OS={RuleOsName}, Features: {Features}",
                         rule.Os?.Name ?? "N/A",
-                        string.Join(",", rule.Features.Select(kv => kv.Key + "=" + kv.Value)));
+                        rule.Features != null
+                            ? string.Join(",", rule.Features.Select(kv => kv.Key + "=" + kv.Value))
+                            : "N/A");
                     return false;
                 }
 
@@ -332,7 +328,9 @@ public class ArgumentBuilder
                 {
                     _logger.Verbose("Rule matched and ALLOWED argument due to: OS={RuleOsName}, Features: {Features}",
                         rule.Os?.Name ?? "N/A",
-                        string.Join(",", rule.Features.Select(kv => kv.Key + "=" + kv.Value)));
+                        rule.Features != null
+                            ? string.Join(",", rule.Features.Select(kv => kv.Key + "=" + kv.Value))
+                            : "N/A");
                     anAllowRuleMatchedAndWasSatisfied = true;
                 }
             }
@@ -342,12 +340,15 @@ public class ArgumentBuilder
     }
 
 
-    private bool CheckOsRule(OperatingSystemInfo osRule, JavaRuntimeInfo? javaRuntimeForJvmRules)
+    private bool CheckOsRule(OperatingSystemInfo osRule, JavaRuntimeInfo javaRuntimeForJvmRules)
     {
+        if (osRule == null) return true;
+
+        var nameMatch = true;
         if (!string.IsNullOrEmpty(osRule.Name))
         {
             var currentOs = OsUtils.GetCurrentOS();
-            string currentOsName;
+            var currentOsName = "";
             switch (currentOs)
             {
                 case OperatingSystemType.Windows: currentOsName = "windows"; break;
@@ -358,7 +359,7 @@ public class ArgumentBuilder
                     return false;
             }
 
-            var nameMatch = osRule.Name.Equals(currentOsName, StringComparison.OrdinalIgnoreCase);
+            nameMatch = osRule.Name.Equals(currentOsName, StringComparison.OrdinalIgnoreCase);
             if (!nameMatch) return false;
         }
 
@@ -370,7 +371,7 @@ public class ArgumentBuilder
         if (!string.IsNullOrEmpty(osRule.Arch))
         {
             var currentHostArch = OsUtils.GetCurrentArchitecture();
-            string currentHostArchString;
+            var currentHostArchString = "";
             switch (currentHostArch)
             {
                 case ArchitectureType.X86: currentHostArchString = "x86"; break;
@@ -411,9 +412,9 @@ public class ArgumentBuilder
         return false;
     }
 
-    private void LogPathString(string prefix, string? pathString, int previewLength)
+    private void LogPathString(string prefix, string pathString, int previewLength)
     {
-        if (pathString != null && pathString.Length > previewLength)
+        if (pathString.Length > previewLength)
             _logger.Verbose("{Prefix} (first {Length} chars): {PathPreview}...", prefix, previewLength,
                 pathString.Substring(0, previewLength));
         else

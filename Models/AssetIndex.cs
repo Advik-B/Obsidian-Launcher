@@ -16,13 +16,13 @@ public class AssetIndex
     ///     or a specific asset version (e.g., "1.20", "legacy").
     /// </summary>
     [JsonPropertyName("id")]
-    public required string Id { get; set; }
+    public string Id { get; set; }
 
     /// <summary>
     ///     The SHA1 checksum of the asset index JSON file itself.
     /// </summary>
     [JsonPropertyName("sha1")]
-    public required string Sha1 { get; set; }
+    public string Sha1 { get; set; }
 
     /// <summary>
     ///     The size of the asset index JSON file in bytes.
@@ -41,5 +41,5 @@ public class AssetIndex
     ///     The URL from which the asset index JSON file can be downloaded.
     /// </summary>
     [JsonPropertyName("url")]
-    public required string Url { get; set; }
+    public string Url { get; set; }
 }

@@ -15,7 +15,7 @@ public class OperatingSystemInfo
     ///     (unless other OS-specific rules exist).
     /// </summary>
     [JsonPropertyName("name")]
-    public string? Name { get; set; }
+    public string Name { get; set; }
 
     /// <summary>
     ///     An optional regular expression pattern to match against the operating system version.
@@ -23,7 +23,7 @@ public class OperatingSystemInfo
     ///     This property will be null if no version constraint is specified.
     /// </summary>
     [JsonPropertyName("version")]
-    public string? Version { get; set; } // Nullable if "version" is not present
+    public string Version { get; set; } // Nullable if "version" is not present
 
     /// <summary>
     ///     The specific processor architecture (e.g., "x86", "x64", "arm64").
@@ -31,5 +31,5 @@ public class OperatingSystemInfo
     ///     This property will be null if no architecture constraint is specified.
     /// </summary>
     [JsonPropertyName("arch")]
-    public string? Arch { get; set; } // Nullable if "arch" is not present
+    public string Arch { get; set; } // Nullable if "arch" is not present
 }

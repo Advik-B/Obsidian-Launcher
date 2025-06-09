@@ -23,7 +23,7 @@ public class VersionManifest
     ///     Information about the latest release and snapshot versions.
     /// </summary>
     [JsonPropertyName("latest")]
-    public required LatestVersionInfo Latest { get; set; }
+    public LatestVersionInfo Latest { get; set; }
 
     /// <summary>
     ///     A list of metadata for all available Minecraft versions.
@@ -42,11 +42,11 @@ public class LatestVersionInfo
     ///     The ID of the latest official release version (e.g., "1.20.4").
     /// </summary>
     [JsonPropertyName("release")]
-    public required string Release { get; set; }
+    public string Release { get; set; }
 
     /// <summary>
     ///     The ID of the latest snapshot version (e.g., "23w45a").
     /// </summary>
     [JsonPropertyName("snapshot")]
-    public required string Snapshot { get; set; }
+    public string Snapshot { get; set; }
 }

@@ -18,7 +18,7 @@ namespace ObsidianLauncher.Services;
 
 public class JavaManager
 {
-    private readonly List<JavaRuntimeInfo?> _availableRuntimes;
+    private readonly List<JavaRuntimeInfo> _availableRuntimes;
 
     private readonly LauncherConfig _config;
 
@@ -32,7 +32,7 @@ public class JavaManager
         _logger = LogHelper.GetLogger<JavaManager>();
         // JavaDownloader now takes HttpManager
         _javaDownloader = new JavaDownloader(httpManager ?? throw new ArgumentNullException(nameof(httpManager)));
-        _availableRuntimes = new List<JavaRuntimeInfo?>();
+        _availableRuntimes = new List<JavaRuntimeInfo>();
 
         _logger.Verbose("JavaManager initializing...");
         InitializeDirectories();
@@ -71,7 +71,7 @@ public class JavaManager
     /// <param name="mcVersion">The Minecraft version details.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Information about the ensured Java runtime, or null if unsuccessful.</returns>
-    public async Task<JavaRuntimeInfo?> EnsureJavaForMinecraftVersionAsync(
+    public async Task<JavaRuntimeInfo> EnsureJavaForMinecraftVersionAsync(
         MinecraftVersion mcVersion,
         CancellationToken cancellationToken = default)
     {
@@ -495,9 +495,9 @@ public class JavaManager
     /// <summary>
     ///     Gets a list of currently known available Java runtimes.
     /// </summary>
-    public List<JavaRuntimeInfo?> GetAvailableRuntimes()
+    public List<JavaRuntimeInfo> GetAvailableRuntimes()
     {
-        return new List<JavaRuntimeInfo?>(_availableRuntimes);
+        return new List<JavaRuntimeInfo>(_availableRuntimes);
         // Return a copy
     }
 

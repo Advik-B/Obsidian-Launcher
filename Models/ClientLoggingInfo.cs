@@ -12,17 +12,17 @@ public class ClientLoggingInfo
     ///     Example: "-Dlog4j.configurationFile=${path}"
     /// </summary>
     [JsonPropertyName("argument")]
-    public required string? Argument { get; set; }
+    public string Argument { get; set; }
 
     /// <summary>
     ///     Details of the logging configuration file to download.
     /// </summary>
     [JsonPropertyName("file")]
-    public required LoggingFile File { get; set; }
+    public LoggingFile File { get; set; }
 
     /// <summary>
     ///     The type of logging system this configuration is for (e.g., "log4j2-xml").
     /// </summary>
     [JsonPropertyName("type")]
-    public required string Type { get; set; }
+    public string Type { get; set; }
 }
