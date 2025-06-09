@@ -1,6 +1,6 @@
-﻿using System;
+﻿// Program.cs
+using System;
 using System.Collections.Generic;
-using System.Diagnostics; // Required for Process related classes
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -9,26 +9,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
 
-// Specific using directives for your project's namespaces
-using ObsidianLauncher; // For LauncherConfig
+using ObsidianLauncher;
+using ObsidianLauncher.Enums;
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Services;
 using ObsidianLauncher.Utils;
-// using ObsidianLauncher.Enums; // If you need direct access to enums here
 
 public class Program
 {
     private static readonly CancellationTokenSource _cts = new CancellationTokenSource();
-
-    // Helper to sanitize instance names (basic example)
-    private static string SanitizeInstanceName(string name)
-    {
-        foreach (char c in Path.GetInvalidFileNameChars())
-        {
-            name = name.Replace(c, '_');
-        }
-        return name.Replace(" ", "_").Trim();
-    }
     
     static async Task Main(string[] args)
     {
@@ -48,7 +37,6 @@ public class Program
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Critical startup error: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
-            Console.Error.WriteLine("Ensure the application has permissions to create directories/files in its working path or the specified data path.");
             Environment.ExitCode = 1;
             return; 
         }
@@ -64,7 +52,8 @@ public class Program
         var javaManager = new JavaManager(launcherConfig, httpManager);
         var assetManager = new AssetManager(launcherConfig, httpManager);
         var libraryManager = new LibraryManager(launcherConfig, httpManager);
-        var argumentBuilder = new ArgumentBuilder(launcherConfig); // Initialized with global config
+        var instanceManager = new InstanceManager(launcherConfig); 
+        var argumentBuilder = new ArgumentBuilder(launcherConfig); 
         var gameLauncher = new GameLauncher(launcherConfig);
 
         try
@@ -99,12 +88,26 @@ public class Program
             Log.Verbose("Version manifest JSON parsed successfully. Found {Count} versions.", versionManifestAll.Versions.Count);
 
             string versionIdToLaunch = "1.20.4"; 
+            string cliInstanceNameFromArg = null; 
+            string cliPlayerNameFromArg = null;
+
             if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
             {
-                versionIdToLaunch = args[0];
-                Log.Information("Overriding target version with command line argument: {VersionId}", versionIdToLaunch);
+                versionIdToLaunch = args[0]; 
+                Log.Information("Target version from command line: {VersionId}", versionIdToLaunch);
+                if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
+                {
+                    cliInstanceNameFromArg = args[1]; 
+                    Log.Information("Target instance name from command line: {InstanceName}", cliInstanceNameFromArg);
+                }
+                if (args.Length > 2 && !string.IsNullOrWhiteSpace(args[2]))
+                {
+                    cliPlayerNameFromArg = args[2];
+                    Log.Information("Target player name from command line: {PlayerName}", cliPlayerNameFromArg);
+                }
             }
             Log.Information("Target Minecraft version for setup: {VersionId}", versionIdToLaunch);
+
 
             var selectedVersionMeta = versionManifestAll.Versions.FirstOrDefault(v => v.Id == versionIdToLaunch);
             if (selectedVersionMeta == null || string.IsNullOrEmpty(selectedVersionMeta.Url))
@@ -140,19 +143,56 @@ public class Program
             }
             Log.Information("Successfully parsed Minecraft version object: {Id} (Type: {Type})", minecraftVersion.Id, minecraftVersion.Type);
             
-            // --- Instance Setup ---
-            string instanceName = SanitizeInstanceName(minecraftVersion.Id); // Or allow user to specify an instance name
-            string instancePath = Path.Combine(launcherConfig.InstancesRootDir, instanceName);
-            Directory.CreateDirectory(instancePath); // Ensure instance directory exists
-            Log.Information("Instance directory set to: {InstancePath}", instancePath);
-            // Game logs, saves, etc., will go into this instancePath when it's used as working directory.
+            string instanceNameToUse = cliInstanceNameFromArg ?? $"Vanilla_{minecraftVersion.Id}"; 
+            string effectivePlayerName = cliPlayerNameFromArg ?? $"Player{Random.Shared.Next(100, 999)}";
+            
+            Instance currentInstance = await instanceManager.GetOrCreateInstanceAsync(instanceNameToUse, minecraftVersion.Id, effectivePlayerName);
+            if (currentInstance == null)
+            {
+                Log.Fatal("Failed to get or create instance '{InstanceName}'. This might be due to a version mismatch with an existing instance directory or other error. Please check logs or use a different instance name.", instanceNameToUse);
+                return;
+            }
+            Log.Information("Using instance: '{InstanceName}' (ID: {InstanceId}) at {InstancePath} for player '{PlayerName}'", 
+                currentInstance.Name, currentInstance.Id, currentInstance.InstancePath, currentInstance.PlayerName);
+            Log.Information("Instance Playtime - Total: {TotalPlaytime}, Last Session: {LastSessionPlaytime}",
+                currentInstance.TotalPlaytime, currentInstance.LastSessionPlaytime);
+            
+            argumentBuilder.SetOfflinePlayerName(currentInstance.PlayerName); 
 
-            // --- Step 3: Ensure Java Runtime (Global) ---
             Log.Information("--- Ensuring Java Runtime for Minecraft {VersionId} ---", minecraftVersion.Id);
-            JavaRuntimeInfo javaRuntime = await javaManager.EnsureJavaForMinecraftVersionAsync(minecraftVersion, _cts.Token);
+            JavaRuntimeInfo javaRuntime;
+            if (!string.IsNullOrEmpty(currentInstance.CustomJavaRuntimePath))
+            {
+                string customJavaDir = Path.GetFullPath(currentInstance.CustomJavaRuntimePath);
+                Log.Information("Instance '{InstanceName}' specifies custom Java path: {CustomJavaPath}", currentInstance.Name, customJavaDir);
+                string assumedBinPath = Path.Combine(customJavaDir, "bin");
+                string javaExeName = OsUtils.GetCurrentOS() == OperatingSystemType.Windows ? "javaw.exe" : "java";
+                string customJavaExePath = Path.Combine(assumedBinPath, javaExeName);
+
+                if (File.Exists(customJavaExePath))
+                {
+                     javaRuntime = new JavaRuntimeInfo 
+                     { 
+                         JavaExecutablePath = customJavaExePath, 
+                         HomePath = customJavaDir, 
+                         ComponentName="custom", 
+                         MajorVersion=0, 
+                         Source="instance_custom" 
+                     };
+                     Log.Information("Using custom Java runtime specified by instance: {JavaPath}", customJavaExePath);
+                }
+                else
+                {
+                    Log.Warning("Custom Java path '{CustomJavaDir}' specified by instance, but executable not found at '{ExpectedExePath}'. Falling back to globally managed Java.", customJavaDir, customJavaExePath);
+                    javaRuntime = await javaManager.EnsureJavaForMinecraftVersionAsync(minecraftVersion, _cts.Token);
+                }
+            }
+            else
+            {
+                 javaRuntime = await javaManager.EnsureJavaForMinecraftVersionAsync(minecraftVersion, _cts.Token);
+            }
 
             if (_cts.IsCancellationRequested) { Log.Warning("Java setup cancelled."); return; }
-
             if (javaRuntime == null)
             {
                 Log.Error("Failed to obtain a suitable Java runtime for Minecraft version '{VersionId}'. Cannot proceed.", minecraftVersion.Id);
@@ -160,8 +200,6 @@ public class Program
             }
             Log.Information("Java Runtime Ensured: {JavaExecutablePath}", javaRuntime.JavaExecutablePath);
 
-
-            // --- Step 4: Download/Verify Assets (Global) ---
             Log.Information("--- Ensuring Assets for Minecraft {VersionId} ---", minecraftVersion.Id);
             var assetProgress = new Progress<AssetDownloadProgress>(report =>
             {
@@ -184,12 +222,9 @@ public class Program
             }
             Log.Information("Assets Ensured for version {VersionId}", minecraftVersion.Id);
 
-            // --- Step 5: Download Libraries (Global) & Extract Natives (Instance Specific) ---
             Log.Information("--- Ensuring Libraries for Minecraft {VersionId} ---", minecraftVersion.Id);
-            // Natives are extracted into the instance directory
-            string nativesDirectory = Path.Combine(instancePath, "natives"); // Instance-specific natives
-            Log.Information("Natives will be extracted to instance directory: {NativesDirectory}", nativesDirectory);
-            // LibraryManager itself will create nativesDirectory if it doesn't exist.
+            Log.Information("Natives will be extracted to instance directory: {NativesDirectory}", currentInstance.NativesPath);
+            Directory.CreateDirectory(currentInstance.NativesPath); 
 
             var libraryProgress = new Progress<LibraryProcessingProgress>(report =>
             {
@@ -199,7 +234,7 @@ public class Program
                         report.ProcessedLibraries, report.TotalLibraries, report.Status, report.CurrentLibraryName);
                 } else { Log.Verbose("[Libs] {Processed}/{Total} - Status: {Status} - Lib: {LibraryName}", report.ProcessedLibraries, report.TotalLibraries, report.Status, report.CurrentLibraryName); }
             });
-            List<string> libraryClasspathEntries = await libraryManager.EnsureLibrariesAsync(minecraftVersion, nativesDirectory, libraryProgress, _cts.Token);
+            List<string> libraryClasspathEntries = await libraryManager.EnsureLibrariesAsync(minecraftVersion, currentInstance.NativesPath, libraryProgress, _cts.Token);
 
             if (_cts.IsCancellationRequested) { Log.Warning("Library processing cancelled."); return; }
             if (libraryClasspathEntries == null)
@@ -209,11 +244,9 @@ public class Program
             }
             Log.Information("All applicable libraries processed. Library classpath entries: {Count}", libraryClasspathEntries.Count);
 
-            // --- Step 5.5: Download Client JAR (Global) ---
             Log.Information("--- Ensuring Client JAR for Minecraft {VersionId} ---", minecraftVersion.Id);
-            // Client JAR is stored globally in the versions directory
             string globalVersionStoreDir = Path.Combine(launcherConfig.VersionsDir, minecraftVersion.Id);
-            Directory.CreateDirectory(globalVersionStoreDir); // Ensure this specific version's global dir exists
+            Directory.CreateDirectory(globalVersionStoreDir);
             string clientJarPath = Path.Combine(globalVersionStoreDir, $"{minecraftVersion.Id}.jar");
             
             bool clientJarOk = false;
@@ -233,31 +266,34 @@ public class Program
             }
             Log.Information("Client JAR for version {VersionId} is ready at global path {ClientJarPath}", minecraftVersion.Id, clientJarPath);
 
-            // --- Step 6: Construct Classpath ---
             Log.Information("--- Constructing Classpath ---");
             string classpathString = argumentBuilder.BuildClasspath(clientJarPath, libraryClasspathEntries);
 
-            // --- Step 7: Construct JVM Arguments ---
             Log.Information("--- Constructing JVM Arguments ---");
-            argumentBuilder.SetOfflinePlayerName("Player" + Random.Shared.Next(100, 999)); // Example
-            // argumentBuilder.SetFeatureFlag("has_custom_resolution", true);
-            // argumentBuilder.SetCustomResolution(1280, 720);
+            List<string> jvmArgs = argumentBuilder.BuildJvmArguments(
+                minecraftVersion, 
+                classpathString, 
+                Path.GetFullPath(currentInstance.NativesPath), 
+                javaRuntime, 
+                currentInstance.InstancePath 
+            );
+            if (currentInstance.CustomJvmArguments != null && currentInstance.CustomJvmArguments.Any())
+            {
+                Log.Information("Applying {Count} custom JVM arguments from instance '{InstanceName}'...", currentInstance.CustomJvmArguments.Count, currentInstance.Name);
+                jvmArgs.AddRange(currentInstance.CustomJvmArguments); 
+            }
 
-            // Pass instancePath for ${game_directory} placeholder in JVM args, and the instance-specific nativesDir
-            List<string> jvmArgs = argumentBuilder.BuildJvmArguments(minecraftVersion, classpathString, Path.GetFullPath(nativesDirectory), javaRuntime, instancePath);
-
-            // --- Step 8: Construct Game Arguments ---
             Log.Information("--- Constructing Game Arguments ---");
-            // Pass instancePath for ${game_directory} placeholder in game args
-            List<string> gameArgs = argumentBuilder.BuildGameArguments(minecraftVersion, instancePath);
+            List<string> gameArgs = argumentBuilder.BuildGameArguments(
+                minecraftVersion, 
+                currentInstance.InstancePath 
+            );
 
-            // --- Step 9: Launch Minecraft ---
-            Log.Information("--- Launching Minecraft {VersionId} ---", minecraftVersion.Id);
-            // Game working directory is the instance path
-            string gameWorkingDirectory = Path.GetFullPath(instancePath); 
+            Log.Information("--- Launching Minecraft {VersionId} for instance '{InstanceName}' ---", minecraftVersion.Id, currentInstance.Name);
+            string gameWorkingDirectory = Path.GetFullPath(currentInstance.GameDataPath); 
             Log.Information("Game working directory (instance path) set to: {GameDir}", gameWorkingDirectory);
 
-
+            DateTime sessionStartTime = DateTime.UtcNow; // Record start time
             int exitCode = await gameLauncher.LaunchAsync(
                 javaRuntime.JavaExecutablePath,
                 jvmArgs,
@@ -266,6 +302,8 @@ public class Program
                 gameWorkingDirectory,
                 _cts.Token
             );
+            TimeSpan sessionDuration = DateTime.UtcNow - sessionStartTime; // Calculate duration
+            await instanceManager.UpdateLastPlayedAsync(currentInstance, sessionDuration); // Update with duration
 
             if (_cts.IsCancellationRequested)
             {
@@ -274,13 +312,15 @@ public class Program
             else
             {
                 Log.Information("Minecraft process finished with exit code: {ExitCode}", exitCode);
+                Log.Information("Instance '{InstanceName}' - Session Playtime: {SessionPlaytime}, Total Playtime: {TotalPlaytime}",
+                    currentInstance.Name, sessionDuration, currentInstance.TotalPlaytime);
                 if (exitCode != 0)
                 {
-                    Log.Warning("Minecraft exited with a non-zero exit code ({ExitCode}), indicating a potential issue or crash. Check Minecraft's own logs (inside instance directory: {InstanceLogPath}) if created.", exitCode, Path.Combine(instancePath, "logs"));
+                    Log.Warning("Minecraft exited with a non-zero exit code ({ExitCode}), indicating a potential issue or crash. Check Minecraft's own logs (inside instance directory: {InstanceLogPath}) if created.", exitCode, Path.Combine(currentInstance.GameDataPath, "logs"));
                 }
             }
 
-            Log.Information("Obsidian Launcher has completed its operation for instance '{InstanceName}' (Version {VersionId}).", instanceName, minecraftVersion.Id);
+            Log.Information("Obsidian Launcher has completed its operation for instance '{InstanceName}' (Version {VersionId}).", currentInstance.Name, minecraftVersion.Id);
         }
         catch (OperationCanceledException)
         {
