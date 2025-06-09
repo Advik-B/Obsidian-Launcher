@@ -19,9 +19,10 @@ public class LauncherConfig
         AssetIndexesDir = Path.Combine(AssetsDir, "indexes");
         LibrariesDir = Path.Combine(BaseDataPath, "libraries");
         VersionsDir = Path.Combine(BaseDataPath, "versions");
-        InstancesRootDir = Path.Combine(BaseDataPath, "instances"); // New
+        InstancesRootDir = Path.Combine(BaseDataPath, "instances");
         MojangDownloadsDir = Path.Combine(JavaRuntimesDir, "_downloads", "mojang");
         AdoptiumDownloadsDir = Path.Combine(JavaRuntimesDir, "_downloads", "adoptium");
+        DataRootDir = Path.Combine(BaseDataPath);
         LogsDir = Path.Combine(BaseDataPath, "logs");
 
         EnsureDirectoryExists(BaseDataPath, "Base Data");
@@ -48,6 +49,8 @@ public class LauncherConfig
     public string MojangDownloadsDir { get; }
     public string AdoptiumDownloadsDir { get; }
     public string LogsDir { get; } // Launcher logs
+    
+    public string DataRootDir { get; } // Root directory for all data
 
     private void EnsureDirectoryExists(string path, string name)
     {
