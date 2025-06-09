@@ -4,14 +4,15 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using ObsidianLauncher;
 using ObsidianLauncher.Enums;
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Services;
 using ObsidianLauncher.Utils;
 using Serilog;
 
-public class Program
+namespace ObsidianLauncher;
+
+public class ObsidianLauncher
 {
     private static readonly CancellationTokenSource _cts = new();
 
