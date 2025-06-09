@@ -135,8 +135,8 @@ public class InstanceManager
         Directory.CreateDirectory(Path.Combine(instancePath, "logs"));
 
         // Create global resourcepacks and shaderpacks directories if they don't exist
-        var globalResourcepacks = Path.Combine(_launcherConfig.InstancesRootDir, "resourcepacks");
-        var globalShaderpacks = Path.Combine(_launcherConfig.InstancesRootDir, "shaderpacks");
+        var globalResourcepacks = Path.Combine(_launcherConfig.DataRootDir, "resourcepacks");
+        var globalShaderpacks = Path.Combine(_launcherConfig.DataRootDir, "shaderpacks");
         Directory.CreateDirectory(globalResourcepacks);
         Directory.CreateDirectory(globalShaderpacks);
         // Link instance resourcepacks and shaderpacks to global
