@@ -24,6 +24,7 @@ public class LauncherConfig
         AdoptiumDownloadsDir = Path.Combine(JavaRuntimesDir, "_downloads", "adoptium");
         DataRootDir = Path.Combine(BaseDataPath);
         LogsDir = Path.Combine(BaseDataPath, "logs");
+        InstallerCacheDir = Path.Combine(BaseDataPath, "installerCache");
 
         EnsureDirectoryExists(BaseDataPath, "Base Data");
         EnsureDirectoryExists(JavaRuntimesDir, "Java Runtimes");
@@ -34,8 +35,9 @@ public class LauncherConfig
         EnsureDirectoryExists(AssetIndexesDir, "Asset Indexes");
         EnsureDirectoryExists(LibrariesDir, "Libraries");
         EnsureDirectoryExists(VersionsDir, "Versions");
-        EnsureDirectoryExists(InstancesRootDir, "Instances Root"); // New
+        EnsureDirectoryExists(InstancesRootDir, "Instances Root");
         EnsureDirectoryExists(LogsDir, "Logs");
+        EnsureDirectoryExists(InstallerCacheDir, "Installer Cache"); // Ensure the new cache directory exists
     }
 
     public string BaseDataPath { get; }
@@ -44,13 +46,13 @@ public class LauncherConfig
     public string AssetObjectsDir { get; }
     public string AssetIndexesDir { get; }
     public string LibrariesDir { get; }
-    public string VersionsDir { get; } // For storing global version JSONs and client JARs
-    public string InstancesRootDir { get; } // Root directory for all instances
+    public string VersionsDir { get; }
+    public string InstancesRootDir { get; }
     public string MojangDownloadsDir { get; }
     public string AdoptiumDownloadsDir { get; }
-    public string LogsDir { get; } // Launcher logs
-    
-    public string DataRootDir { get; } // Root directory for all data
+    public string LogsDir { get; }
+    public string DataRootDir { get; }
+    public string InstallerCacheDir { get; } // New Property
 
     private void EnsureDirectoryExists(string path, string name)
     {
