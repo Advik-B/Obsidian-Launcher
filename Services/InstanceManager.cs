@@ -101,7 +101,7 @@ public class InstanceManager
         return (true, clientJarPath, libraryJarPaths);
     }
     
-    private async Task<LaunchProfile?> BuildLaunchProfileAsync(List<Component> components, CancellationToken cancellationToken)
+    public async Task<LaunchProfile?> BuildLaunchProfileAsync(List<Component> components, CancellationToken cancellationToken)
     {
         var launchProfile = new LaunchProfile();
         _logger.Information("Building launch profile from {ComponentCount} components.", components.Count);
