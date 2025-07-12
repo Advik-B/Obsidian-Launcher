@@ -17,19 +17,21 @@ public class LibraryManager
     private readonly LauncherConfig _config;
     private readonly HttpManager _httpManager;
     private readonly ILogger _logger;
+    private readonly AssetManager _assetManager;
 
     public LibraryManager(LauncherConfig config, HttpManager httpManager)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _httpManager = httpManager ?? throw new ArgumentNullException(nameof(httpManager));
         _logger = LogHelper.GetLogger<LibraryManager>();
+        _assetManager = new AssetManager(config, httpManager); // Instantiate or inject
         _logger.Verbose("LibraryManager initialized.");
     }
     
-    public async Task<List<string>> EnsureLibrariesAsync(
+    public async Task<List<string>?> EnsureLibrariesAsync(
         LaunchProfile launchProfile,
-        string nativesDir, 
-        IProgress<LibraryProcessingProgress> progress = null,
+        string nativesDir,
+        IProgress<LibraryProcessingProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         if (launchProfile.Libraries == null || !launchProfile.Libraries.Any())
@@ -69,14 +71,7 @@ public class LibraryManager
                 var artifactLocalPath = Path.Combine(_config.LibrariesDir, artifact.Path.Replace('/', Path.DirectorySeparatorChar));
 
                 ReportLibraryProgress(progress, library.Name, processedLibraries, totalLibraries, $"Ensuring artifact: {Path.GetFileName(artifactLocalPath)}");
-                mainArtifactOk = await DownloadAndVerifyFileAsync(
-                    artifact.Url,
-                    artifactLocalPath,
-                    artifact.Sha1,
-                    $"Library artifact {library.Name}",
-                    cancellationToken,
-                    artifact.Size
-                );
+                mainArtifactOk = await _assetManager.DownloadAndVerifyFileAsync(artifact.Url, artifactLocalPath, artifact.Sha1, $"Library artifact {library.Name}", cancellationToken, artifact.Size);
 
                 if (mainArtifactOk)
                 {
@@ -104,14 +99,7 @@ public class LibraryManager
                         var nativeJarLocalPath = Path.Combine(_config.LibrariesDir, nativeArtifact.Path.Replace('/', Path.DirectorySeparatorChar));
                         ReportLibraryProgress(progress, library.Name, processedLibraries, totalLibraries, $"Ensuring native: {nativeClassifierKey}");
 
-                        var nativeJarDownloaded = await DownloadAndVerifyFileAsync(
-                            nativeArtifact.Url,
-                            nativeJarLocalPath,
-                            nativeArtifact.Sha1,
-                            $"Native library {library.Name} ({nativeClassifierKey})",
-                            cancellationToken,
-                            nativeArtifact.Size
-                        );
+                        var nativeJarDownloaded = await _assetManager.DownloadAndVerifyFileAsync(nativeArtifact.Url, nativeJarLocalPath, nativeArtifact.Sha1, $"Native library {library.Name} ({nativeClassifierKey})", cancellationToken, nativeArtifact.Size);
 
                         if (nativeJarDownloaded)
                         {
@@ -153,7 +141,7 @@ public class LibraryManager
 
         var applicableLibrariesCount = launchProfile.Libraries.Count(IsLibraryApplicable);
         var allSucceeded = successfullyProcessedLibraries == applicableLibrariesCount;
-        
+
         if (allSucceeded)
         {
             _logger.Information("All {SuccessfullyProcessedCount} applicable libraries for version {VersionId} processed successfully.", successfullyProcessedLibraries, launchProfile.Id);
@@ -167,6 +155,17 @@ public class LibraryManager
         }
 
         return classpathEntries;
+    }
+    
+    private void ReportLibraryProgress(IProgress<LibraryProcessingProgress>? progress, string libraryName, int processed, int total, string status)
+    {
+        progress?.Report(new LibraryProcessingProgress
+        {
+            CurrentLibraryName = libraryName,
+            ProcessedLibraries = processed,
+            TotalLibraries = total,
+            Status = status
+        });
     }
     
     // Unchanged methods...
@@ -264,16 +263,5 @@ public class LibraryManager
     private async Task<bool> DownloadAndVerifyFileAsync(string url, string localPath, string expectedSha1, string fileDescription, CancellationToken cancellationToken, ulong? expectedSize = null)
     {
         return await _assetManager.DownloadAndVerifyFileAsync(url, localPath, expectedSha1, fileDescription, cancellationToken, expectedSize);
-    }
-    
-    private void ReportLibraryProgress(IProgress<LibraryProcessingProgress> progress, string libraryName, int processed, int total, string status)
-    {
-        progress?.Report(new LibraryProcessingProgress
-        {
-            CurrentLibraryName = libraryName,
-            ProcessedLibraries = processed,
-            TotalLibraries = total,
-            Status = status
-        });
     }
 }
