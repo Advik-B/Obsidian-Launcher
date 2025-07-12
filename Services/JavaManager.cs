@@ -9,20 +9,18 @@ using ObsidianLauncher.Enums;
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Utils;
 using Serilog;
+
+
 // For ZipFile
 // For MinecraftVersion, JavaVersionInfo, JavaRuntimeInfo
 // For OsUtils, LoggerSetup (though logger is injected)
 // For OperatingSystemType, ArchitectureType
-
 namespace ObsidianLauncher.Services;
 
 public class JavaManager
 {
     private readonly List<JavaRuntimeInfo> _availableRuntimes;
-
     private readonly LauncherConfig _config;
-
-    // HttpManager is now owned by JavaDownloader
     private readonly JavaDownloader _javaDownloader;
     private readonly ILogger _logger;
 
@@ -30,16 +28,126 @@ public class JavaManager
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _logger = LogHelper.GetLogger<JavaManager>();
-        // JavaDownloader now takes HttpManager
         _javaDownloader = new JavaDownloader(httpManager ?? throw new ArgumentNullException(nameof(httpManager)));
         _availableRuntimes = new List<JavaRuntimeInfo>();
 
         _logger.Verbose("JavaManager initializing...");
         InitializeDirectories();
         ScanForExistingRuntimes();
-        _logger.Verbose("JavaManager initialization complete. Found {Count} existing runtimes.",
-            _availableRuntimes.Count);
+        _logger.Verbose("JavaManager initialization complete. Found {Count} existing runtimes.", _availableRuntimes.Count);
     }
+    
+    public async Task<JavaRuntimeInfo> EnsureJavaForMinecraftVersionAsync(
+        LaunchProfile launchProfile,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.Information("Ensuring Java for Minecraft version: {VersionId}", launchProfile.Id);
+
+        var requiredJava = launchProfile.JavaVersion;
+        if (requiredJava == null)
+        {
+            _logger.Error("Launch profile for {VersionId} does not specify a Java version. Cannot proceed.", launchProfile.Id);
+            return null;
+        }
+
+        _logger.Information("Required Java: Component '{Component}', Major Version '{MajorVersion}'",
+            requiredJava.Component, requiredJava.MajorVersion);
+
+        var existingRuntime = _availableRuntimes.FirstOrDefault(r =>
+            r.ComponentName.Equals(requiredJava.Component, StringComparison.OrdinalIgnoreCase) &&
+            r.MajorVersion == requiredJava.MajorVersion);
+
+        if (existingRuntime != null)
+        {
+            _logger.Information("Found existing suitable Java runtime: Component '{Component}', Version '{MajorVersion}', Source '{Source}', Home '{HomePath}'",
+                existingRuntime.ComponentName, existingRuntime.MajorVersion, existingRuntime.Source, existingRuntime.HomePath);
+            return existingRuntime;
+        }
+        
+        // This part remains the same, but it's important to show the full context.
+        _logger.Information("No existing suitable Java runtime found for {Component} v{MajorVersion}. Attempting download.", requiredJava.Component, requiredJava.MajorVersion);
+
+        string downloadedArchivePath = null;
+        var sourceApi = "unknown";
+        
+        _logger.Information("Attempting download from Adoptium for Java {MajorVersion}...", requiredJava.MajorVersion);
+        downloadedArchivePath = await _javaDownloader.DownloadJavaForSpecificVersionAdoptiumAsync(requiredJava, _config.AdoptiumDownloadsDir, cancellationToken);
+        if (!string.IsNullOrEmpty(downloadedArchivePath))
+        {
+            sourceApi = "adoptium";
+        }
+        else
+        {
+            // The Mojang download depends on the MinecraftVersion object, which we don't have here.
+            // This logic needs to be adapted if Mojang is a required source. For now, we rely on Adoptium.
+            _logger.Warning("Adoptium download failed. Mojang download from a LaunchProfile is not yet fully supported without the original MinecraftVersion object.");
+            // To support this, you would need to pass the MinecraftVersion object alongside the LaunchProfile, or embed it.
+        }
+
+        if (string.IsNullOrEmpty(downloadedArchivePath))
+        {
+            _logger.Error("Failed to download Java for component '{Component}' v{MajorVersion} from all sources.", requiredJava.Component, requiredJava.MajorVersion);
+            return null;
+        }
+
+        _logger.Information("Java archive downloaded via {SourceApi} to: {DownloadedArchivePath}", sourceApi, downloadedArchivePath);
+
+        var extractionTargetDir = GetExtractionPathForRuntime(requiredJava, sourceApi);
+        var runtimeNameForPath = Path.GetFileName(extractionTargetDir);
+
+        if (ExtractJavaArchive(downloadedArchivePath, extractionTargetDir, runtimeNameForPath))
+        {
+            _logger.Information("Java archive extracted to: {ExtractionTargetDir}", extractionTargetDir);
+            var javaExePath = FindJavaExecutable(extractionTargetDir);
+
+            if (!string.IsNullOrEmpty(javaExePath))
+            {
+                var effectiveJavaHome = Path.GetDirectoryName(Path.GetDirectoryName(javaExePath));
+                var newRuntime = new JavaRuntimeInfo
+                {
+                    HomePath = effectiveJavaHome,
+                    JavaExecutablePath = javaExePath,
+                    MajorVersion = requiredJava.MajorVersion,
+                    ComponentName = requiredJava.Component,
+                    Source = sourceApi
+                };
+                _availableRuntimes.Add(newRuntime);
+
+                _logger.Information("Successfully configured Java runtime: Component={Component}, Version={MajorVersion}, Source={Source}, Home='{HomePath}', Executable='{JavaExecutablePath}'",
+                    newRuntime.ComponentName, newRuntime.MajorVersion, newRuntime.Source, newRuntime.HomePath, newRuntime.JavaExecutablePath);
+
+                try
+                {
+                    File.Delete(downloadedArchivePath);
+                    _logger.Information("Removed downloaded archive: {DownloadedArchivePath}", downloadedArchivePath);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warning(ex, "Failed to remove downloaded archive {DownloadedArchivePath}", downloadedArchivePath);
+                }
+
+                return newRuntime;
+            }
+            _logger.Error("Failed to find Java executable in the extracted archive at {ExtractionTargetDir}. Possible extraction issue or unexpected archive structure.", extractionTargetDir);
+        }
+        else
+        {
+            _logger.Error("Failed to extract Java archive {DownloadedArchivePath} to {ExtractionTargetDir}", downloadedArchivePath, extractionTargetDir);
+        }
+        
+        if (File.Exists(downloadedArchivePath))
+            try
+            {
+                File.Delete(downloadedArchivePath);
+                _logger.Information("Cleaned up downloaded archive after failure: {DownloadedArchivePath}", downloadedArchivePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning(ex, "Cleanup: Failed to remove archive {DownloadedArchivePath} after failure", downloadedArchivePath);
+            }
+        return null;
+    }
+    
 
     private void InitializeDirectories()
     {
