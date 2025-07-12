@@ -1,4 +1,5 @@
-﻿using System;
+﻿// Models/Instance.cs
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json.Serialization;
@@ -15,12 +16,16 @@ public class Instance
         CustomJvmArguments = new List<string>();
         TotalPlaytime = TimeSpan.Zero;
         LastSessionPlaytime = TimeSpan.Zero;
+        Components = new List<Component>();
     }
 
     public string Id { get; set; }
     public string Name { get; set; }
-    public string MinecraftVersionId { get; set; }
-    public string InstancePath { get; set; }
+    
+    // Replaced MinecraftVersionId with a list of components
+    public List<Component> Components { get; set; }
+
+    [JsonIgnore] public string InstancePath { get; set; }
 
     [JsonIgnore] public string NativesPath => Path.Combine(InstancePath, "natives");
 
@@ -29,7 +34,6 @@ public class Instance
     public string CustomJavaRuntimePath { get; set; }
 
     public List<string> CustomJvmArguments { get; set; }
-    // PlayerName removed from instance metadata
 
     public DateTime CreationDate { get; set; }
     public DateTime LastPlayedDate { get; set; }
