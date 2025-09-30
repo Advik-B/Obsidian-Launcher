@@ -22,7 +22,9 @@
             <Button Content="Create Instance" Padding="12,6"/>
             <Button Content="Import Instance" Padding="12,6"/>
             <Separator/>
-            <Button Content="Refresh" Padding="12,6"/>
+            <Button Content="Refresh" 
+                    Command="{Binding RefreshCommand}"
+                    Padding="12,6"/>
         </StackPanel>
 
         <!-- Instance Grid -->

@@ -18,6 +18,9 @@
         <DataTemplate DataType="{x:Type vm:ScreenshotViewerViewModel}">
             <views:ScreenshotViewerView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:InstanceSettingsViewModel}">
+            <views:InstanceSettingsView/>
+        </DataTemplate>
     </Application.DataTemplates>
 
     <Application.Styles>

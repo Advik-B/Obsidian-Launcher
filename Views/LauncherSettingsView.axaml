@@ -33,6 +33,7 @@
                                  Margin="0,0,8,0"/>
                         <Button Grid.Column="2" 
                                 Content="Browse..." 
+                                Command="{Binding BrowseGameDataPathCommand}"
                                 Padding="12,6"/>
                     </Grid>
                     
@@ -61,6 +62,7 @@
                                  Margin="0,0,8,0"/>
                         <Button Grid.Column="2" 
                                 Content="Browse..." 
+                                Command="{Binding BrowseJavaPathCommand}"
                                 Padding="12,6"/>
                     </Grid>
                     
@@ -88,8 +90,10 @@
                         Spacing="8" 
                         Margin="0,16,0,0">
                 <Button Content="Reset to Defaults" 
+                        Command="{Binding ResetToDefaultsCommand}"
                         Padding="12,8"/>
                 <Button Content="Save Settings" 
+                        Command="{Binding SaveSettingsCommand}"
                         Padding="12,8" 
                         Classes="accent"/>
             </StackPanel>

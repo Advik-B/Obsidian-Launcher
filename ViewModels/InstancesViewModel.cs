@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Reactive;
 using ReactiveUI;
 using ObsidianLauncher.Models;
+using ObsidianLauncher.Services;
 using Serilog;
 
 namespace ObsidianLauncher.ViewModels;
@@ -10,19 +11,23 @@ namespace ObsidianLauncher.ViewModels;
 public class InstancesViewModel : ViewModelBase
 {
     private readonly ILogger _logger = Log.ForContext<InstancesViewModel>();
+    private readonly InstanceManager _instanceManager;
     
     public ObservableCollection<Instance> Instances { get; }
     public ReactiveCommand<Instance, Unit> LaunchInstanceCommand { get; }
     public ReactiveCommand<Instance, Unit> EditInstanceCommand { get; }
     public ReactiveCommand<Instance, Unit> DeleteInstanceCommand { get; }
+    public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
 
-    public InstancesViewModel()
+    public InstancesViewModel(InstanceManager instanceManager)
     {
+        _instanceManager = instanceManager ?? throw new ArgumentNullException(nameof(instanceManager));
         Instances = new ObservableCollection<Instance>();
         
         LaunchInstanceCommand = ReactiveCommand.Create<Instance>(LaunchInstance);
         EditInstanceCommand = ReactiveCommand.Create<Instance>(EditInstance);
         DeleteInstanceCommand = ReactiveCommand.Create<Instance>(DeleteInstance);
+        RefreshCommand = ReactiveCommand.Create(LoadInstances);
         
         LoadInstances();
     }
@@ -30,25 +35,42 @@ public class InstancesViewModel : ViewModelBase
     private void LaunchInstance(Instance instance)
     {
         _logger.Information("Launching instance: {InstanceName}", instance.Name);
-        // TODO: Implement launch logic
+        // TODO: Implement launch logic by integrating with existing game launcher
     }
 
     private void EditInstance(Instance instance)
     {
         _logger.Information("Editing instance: {InstanceName}", instance.Name);
-        // TODO: Open instance settings dialog
+        // TODO: Show instance settings in a dialog or navigate to settings view
+        // For now, log that this would open the settings
+        var settingsViewModel = new InstanceSettingsViewModel(instance);
     }
 
     private void DeleteInstance(Instance instance)
     {
         _logger.Information("Deleting instance: {InstanceName}", instance.Name);
         // TODO: Implement delete logic with confirmation
+        Instances.Remove(instance);
     }
 
-    private void LoadInstances()
+    private async void LoadInstances()
     {
-        // TODO: Load real instances from InstanceManager
-        // For now, add some sample data for UI testing
-        _logger.Information("Loading instances...");
+        try
+        {
+            _logger.Information("Loading instances...");
+            var instances = await _instanceManager.GetAllInstancesAsync();
+            
+            Instances.Clear();
+            foreach (var instance in instances)
+            {
+                Instances.Add(instance);
+            }
+            
+            _logger.Information("Loaded {Count} instances", instances.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to load instances: {Message}", ex.Message);
+        }
     }
 }

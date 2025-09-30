@@ -14,6 +14,14 @@ public class MainWindowViewModel : ViewModelBase
     private readonly ILogger _logger = Log.ForContext<MainWindowViewModel>();
     private ViewModelBase _currentView;
     private string _title = "Obsidian Launcher";
+    
+    // Service instances
+    private readonly LauncherConfig _launcherConfig;
+    private readonly HttpManager _httpManager;
+    private readonly JavaManager _javaManager;
+    private readonly AssetManager _assetManager;
+    private readonly LibraryManager _libraryManager;
+    private readonly InstanceManager _instanceManager;
 
     public ViewModelBase CurrentView
     {
@@ -38,8 +46,16 @@ public class MainWindowViewModel : ViewModelBase
     {
         Instances = new ObservableCollection<Instance>();
         
-        // Initialize with instances view
-        _currentView = new InstancesViewModel();
+        // Initialize services
+        _launcherConfig = new LauncherConfig();
+        _httpManager = new HttpManager();
+        _javaManager = new JavaManager(_launcherConfig, _httpManager);
+        _assetManager = new AssetManager(_launcherConfig, _httpManager);
+        _libraryManager = new LibraryManager(_launcherConfig, _httpManager);
+        _instanceManager = new InstanceManager(_launcherConfig, _assetManager, _libraryManager);
+        
+        // Initialize with instances view that has access to services
+        _currentView = new InstancesViewModel(_instanceManager);
         
         // Setup commands
         ShowInstancesCommand = ReactiveCommand.Create(ShowInstances);
@@ -53,25 +69,25 @@ public class MainWindowViewModel : ViewModelBase
 
     private void ShowInstances()
     {
-        CurrentView = new InstancesViewModel();
+        CurrentView = new InstancesViewModel(_instanceManager);
         Title = "Obsidian Launcher - Instances";
     }
 
     private void ShowLauncherSettings()
     {
-        CurrentView = new LauncherSettingsViewModel();
+        CurrentView = new LauncherSettingsViewModel(_launcherConfig);
         Title = "Obsidian Launcher - Settings";
     }
 
     private void ShowJavaManager()
     {
-        CurrentView = new JavaManagerViewModel();
+        CurrentView = new JavaManagerViewModel(_javaManager);
         Title = "Obsidian Launcher - Java Manager";
     }
 
     private void ShowScreenshots()
     {
-        CurrentView = new ScreenshotViewerViewModel();
+        CurrentView = new ScreenshotViewerViewModel(_launcherConfig);
         Title = "Obsidian Launcher - Screenshots";
     }
 
@@ -85,8 +101,16 @@ public class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            // TODO: Load instances from InstanceManager
             _logger.Information("Loading instances...");
+            var instances = await _instanceManager.GetAllInstancesAsync();
+            
+            Instances.Clear();
+            foreach (var instance in instances)
+            {
+                Instances.Add(instance);
+            }
+            
+            _logger.Information("Loaded {Count} instances", instances.Count);
         }
         catch (Exception ex)
         {

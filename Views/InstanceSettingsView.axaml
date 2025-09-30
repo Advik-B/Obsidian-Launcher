@@ -1,0 +1,127 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ObsidianLauncher.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
+             x:Class="ObsidianLauncher.Views.InstanceSettingsView"
+             x:DataType="vm:InstanceSettingsViewModel">
+
+    <Design.DataContext>
+        <vm:InstanceSettingsViewModel/>
+    </Design.DataContext>
+
+    <ScrollViewer>
+        <StackPanel Margin="16" Spacing="16">
+            
+            <!-- Instance Information -->
+            <Border Background="{DynamicResource SystemControlBackgroundListLowBrush}" 
+                    CornerRadius="4" 
+                    Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Instance Information" 
+                               FontSize="16" 
+                               FontWeight="Bold"/>
+                    
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" 
+                          Margin="0,8,0,0">
+                        <TextBlock Grid.Row="0" Grid.Column="0" 
+                                   Text="Name:" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,16,8"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" 
+                                 Text="{Binding InstanceName}" 
+                                 Margin="0,0,0,8"/>
+                        
+                        <TextBlock Grid.Row="1" Grid.Column="0" 
+                                   Text="Minecraft Version:" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,16,8"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" 
+                                   Text="{Binding MinecraftVersion}" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,0,8"/>
+                        
+                        <TextBlock Grid.Row="2" Grid.Column="0" 
+                                   Text="Instance Path:" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,16,8"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" 
+                                   Text="{Binding InstancePath}" 
+                                   VerticalAlignment="Center" 
+                                   FontFamily="Consolas"
+                                   FontSize="11"
+                                   Margin="0,0,0,8"/>
+                        
+                        <TextBlock Grid.Row="3" Grid.Column="0" 
+                                   Text="Created:" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,16,8"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" 
+                                   Text="{Binding CreatedDate}" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,0,8"/>
+                        
+                        <TextBlock Grid.Row="4" Grid.Column="0" 
+                                   Text="Total Playtime:" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,16,0"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" 
+                                   Text="{Binding TotalPlaytime}" 
+                                   VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Java Settings -->
+            <Border Background="{DynamicResource SystemControlBackgroundListLowBrush}" 
+                    CornerRadius="4" 
+                    Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Java Settings" 
+                               FontSize="16" 
+                               FontWeight="Bold"/>
+                    
+                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+                        <TextBlock Grid.Column="0" 
+                                   Text="Java Runtime Path:" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,16,0"/>
+                        <TextBox Grid.Column="1" 
+                                 Text="{Binding JavaRuntimePath}" 
+                                 Watermark="Use launcher default"
+                                 Margin="0,0,8,0"/>
+                        <Button Grid.Column="2" 
+                                Content="Browse..." 
+                                Command="{Binding BrowseJavaCommand}"
+                                Padding="12,6"/>
+                    </Grid>
+                    
+                    <StackPanel Spacing="8" Margin="0,8,0,0">
+                        <TextBlock Text="Custom JVM Arguments:" />
+                        <TextBox Text="{Binding CustomJvmArgumentsText}" 
+                                 Watermark="e.g. -Xmx8G -XX:+UseG1GC"
+                                 AcceptsReturn="False"/>
+                        <TextBlock Text="Separate arguments with spaces. These will be added to the default JVM arguments."
+                                   FontSize="11" 
+                                   Opacity="0.7"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Action Buttons -->
+            <StackPanel Orientation="Horizontal" 
+                        HorizontalAlignment="Right" 
+                        Spacing="8" 
+                        Margin="0,16,0,0">
+                <Button Content="Cancel" 
+                        Command="{Binding CancelCommand}"
+                        Padding="12,8"/>
+                <Button Content="Save Settings" 
+                        Command="{Binding SaveCommand}"
+                        Padding="12,8" 
+                        Classes="accent"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -23,6 +23,7 @@
                     Command="{Binding RefreshCommand}"
                     Padding="12,6"/>
             <Button Content="Open Screenshots Folder" 
+                    Command="{Binding OpenScreenshotsFolderCommand}"
                     Padding="12,6"/>
         </StackPanel>
 
