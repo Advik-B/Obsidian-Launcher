@@ -12,6 +12,7 @@ public class InstancesViewModel : ViewModelBase
 {
     private readonly ILogger _logger = Log.ForContext<InstancesViewModel>();
     private readonly InstanceManager _instanceManager;
+    private readonly Action<Instance>? _showInstanceSettings;
     
     public ObservableCollection<Instance> Instances { get; }
     public ReactiveCommand<Instance, Unit> LaunchInstanceCommand { get; }
@@ -19,9 +20,10 @@ public class InstancesViewModel : ViewModelBase
     public ReactiveCommand<Instance, Unit> DeleteInstanceCommand { get; }
     public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
 
-    public InstancesViewModel(InstanceManager instanceManager)
+    public InstancesViewModel(InstanceManager instanceManager, Action<Instance>? showInstanceSettings = null)
     {
         _instanceManager = instanceManager ?? throw new ArgumentNullException(nameof(instanceManager));
+        _showInstanceSettings = showInstanceSettings;
         Instances = new ObservableCollection<Instance>();
         
         LaunchInstanceCommand = ReactiveCommand.Create<Instance>(LaunchInstance);
@@ -41,9 +43,16 @@ public class InstancesViewModel : ViewModelBase
     private void EditInstance(Instance instance)
     {
         _logger.Information("Editing instance: {InstanceName}", instance.Name);
-        // TODO: Show instance settings in a dialog or navigate to settings view
-        // For now, log that this would open the settings
-        var settingsViewModel = new InstanceSettingsViewModel(instance);
+        
+        if (_showInstanceSettings != null)
+        {
+            _showInstanceSettings(instance);
+        }
+        else
+        {
+            // Fallback: Create settings view model but no way to show it
+            _logger.Warning("No callback provided to show instance settings");
+        }
     }
 
     private void DeleteInstance(Instance instance)

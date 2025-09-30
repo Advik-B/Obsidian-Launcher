@@ -8,7 +8,7 @@
              x:DataType="vm:InstanceSettingsViewModel">
 
     <Design.DataContext>
-        <vm:InstanceSettingsViewModel/>
+        <!-- InstanceSettingsViewModel requires Instance parameter, so no design data context -->
     </Design.DataContext>
 
     <ScrollViewer>

@@ -8,7 +8,7 @@
              x:DataType="vm:JavaManagerViewModel">
 
     <Design.DataContext>
-        <vm:JavaManagerViewModel/>
+        <!-- JavaManagerViewModel requires JavaManager parameter, so no design data context -->
     </Design.DataContext>
 
     <Grid>

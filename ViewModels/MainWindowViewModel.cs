@@ -9,7 +9,7 @@ using Serilog;
 
 namespace ObsidianLauncher.ViewModels;
 
-public class MainWindowViewModel : ViewModelBase
+public class MainWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly ILogger _logger = Log.ForContext<MainWindowViewModel>();
     private ViewModelBase _currentView;
@@ -55,7 +55,7 @@ public class MainWindowViewModel : ViewModelBase
         _instanceManager = new InstanceManager(_launcherConfig, _assetManager, _libraryManager);
         
         // Initialize with instances view that has access to services
-        _currentView = new InstancesViewModel(_instanceManager);
+        _currentView = new InstancesViewModel(_instanceManager, ShowInstanceSettings);
         
         // Setup commands
         ShowInstancesCommand = ReactiveCommand.Create(ShowInstances);
@@ -69,7 +69,7 @@ public class MainWindowViewModel : ViewModelBase
 
     private void ShowInstances()
     {
-        CurrentView = new InstancesViewModel(_instanceManager);
+        CurrentView = new InstancesViewModel(_instanceManager, ShowInstanceSettings);
         Title = "Obsidian Launcher - Instances";
     }
 
@@ -89,6 +89,12 @@ public class MainWindowViewModel : ViewModelBase
     {
         CurrentView = new ScreenshotViewerViewModel(_launcherConfig);
         Title = "Obsidian Launcher - Screenshots";
+    }
+
+    public void ShowInstanceSettings(Instance instance)
+    {
+        CurrentView = new InstanceSettingsViewModel(instance, _instanceManager, () => ShowInstances());
+        Title = $"Obsidian Launcher - {instance.Name} Settings";
     }
 
     private void CreateInstance()
@@ -116,5 +122,10 @@ public class MainWindowViewModel : ViewModelBase
         {
             _logger.Error(ex, "Failed to load instances");
         }
+    }
+
+    public void Dispose()
+    {
+        _httpManager?.Dispose();
     }
 }

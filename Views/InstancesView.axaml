@@ -8,7 +8,7 @@
              x:DataType="vm:InstancesViewModel">
 
     <Design.DataContext>
-        <vm:InstancesViewModel/>
+        <!-- InstancesViewModel requires InstanceManager parameter, so no design data context -->
     </Design.DataContext>
 
     <Grid>

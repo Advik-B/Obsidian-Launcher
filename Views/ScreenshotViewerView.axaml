@@ -8,7 +8,7 @@
              x:DataType="vm:ScreenshotViewerViewModel">
 
     <Design.DataContext>
-        <vm:ScreenshotViewerViewModel/>
+        <!-- ScreenshotViewerViewModel requires LauncherConfig parameter, so no design data context -->
     </Design.DataContext>
 
     <Grid>

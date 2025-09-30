@@ -8,7 +8,7 @@
              x:DataType="vm:LauncherSettingsViewModel">
 
     <Design.DataContext>
-        <vm:LauncherSettingsViewModel/>
+        <!-- LauncherSettingsViewModel requires LauncherConfig parameter, so no design data context -->
     </Design.DataContext>
 
     <ScrollViewer>

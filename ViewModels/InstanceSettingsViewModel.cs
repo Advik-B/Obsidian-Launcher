@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Reactive;
+using System.Threading.Tasks;
 using ReactiveUI;
 using ObsidianLauncher.Models;
+using ObsidianLauncher.Services;
 using Serilog;
 
 namespace ObsidianLauncher.ViewModels;
@@ -11,6 +13,8 @@ public class InstanceSettingsViewModel : ViewModelBase
 {
     private readonly ILogger _logger = Log.ForContext<InstanceSettingsViewModel>();
     private readonly Instance _instance;
+    private readonly InstanceManager? _instanceManager;
+    private readonly Action? _onCancel;
     
     private string _instanceName;
     private string _javaRuntimePath;
@@ -45,9 +49,11 @@ public class InstanceSettingsViewModel : ViewModelBase
     public string LastPlayed => _instance.LastPlayedFormatted;
     public string TotalPlaytime => _instance.TotalPlaytime.ToString(@"d\.hh\:mm\:ss");
 
-    public InstanceSettingsViewModel(Instance instance)
+    public InstanceSettingsViewModel(Instance instance, InstanceManager? instanceManager = null, Action? onCancel = null)
     {
         _instance = instance ?? throw new ArgumentNullException(nameof(instance));
+        _instanceManager = instanceManager;
+        _onCancel = onCancel;
         
         // Load current values
         _instanceName = instance.Name;
@@ -60,7 +66,7 @@ public class InstanceSettingsViewModel : ViewModelBase
         BrowseJavaCommand = ReactiveCommand.Create(BrowseJava);
     }
 
-    private void Save()
+    private async void Save()
     {
         _instance.Name = InstanceName;
         _instance.CustomJavaRuntimePath = string.IsNullOrWhiteSpace(JavaRuntimePath) ? null : JavaRuntimePath;
@@ -77,13 +83,36 @@ public class InstanceSettingsViewModel : ViewModelBase
         }
         
         _logger.Information("Saved settings for instance: {InstanceName}", InstanceName);
-        // TODO: Save instance to disk
+        
+        // Save to disk if InstanceManager is available
+        if (_instanceManager != null)
+        {
+            try
+            {
+                var saved = await _instanceManager.SaveInstanceAsync(_instance);
+                if (saved)
+                {
+                    _logger.Information("Successfully saved instance {InstanceName} to disk", InstanceName);
+                }
+                else
+                {
+                    _logger.Error("Failed to save instance {InstanceName} to disk", InstanceName);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error saving instance {InstanceName} to disk", InstanceName);
+            }
+        }
+        
+        // Call cancel to go back (same as closing the dialog)
+        Cancel();
     }
 
     private void Cancel()
     {
         _logger.Information("Instance settings dialog cancelled");
-        // TODO: Close dialog without saving
+        _onCancel?.Invoke();
     }
 
     private void BrowseJava()
