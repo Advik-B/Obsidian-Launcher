@@ -1,21 +1,16 @@
-﻿// Program.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics; // Required for Process related classes
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Serilog;
-
-// Specific using directives for your project's namespaces
-using ObsidianLauncher; // For LauncherConfig
+using ObsidianLauncher;
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Services;
 using ObsidianLauncher.Utils;
-// using ObsidianLauncher.Enums; // If you need direct access to enums here
+using Serilog;
 
 public class Program
 {
@@ -283,7 +278,7 @@ public class Program
             await Log.CloseAndFlushAsync();
             if (Environment.ExitCode != 0 || _cts.IsCancellationRequested)
             {
-                 Console.WriteLine("Launcher exited prematurely or with errors. Check logs for details.");
+                Console.WriteLine("Launcher exited prematurely or with errors. Check logs for details.");
             }
         }
     }
