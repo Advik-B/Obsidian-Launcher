@@ -80,8 +80,19 @@ public class ScreenshotViewerViewModel : ViewModelBase
         try
         {
             _logger.Information("Opening screenshot: {FilePath}", screenshot.FilePath);
-            // TODO: Use Process.Start to open with default application
-            // System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(screenshot.FilePath) { UseShellExecute = true });
+            
+            if (File.Exists(screenshot.FilePath))
+            {
+                var processInfo = new System.Diagnostics.ProcessStartInfo(screenshot.FilePath)
+                {
+                    UseShellExecute = true
+                };
+                System.Diagnostics.Process.Start(processInfo);
+            }
+            else
+            {
+                _logger.Warning("Screenshot file does not exist: {FilePath}", screenshot.FilePath);
+            }
         }
         catch (Exception ex)
         {
@@ -103,13 +114,30 @@ public class ScreenshotViewerViewModel : ViewModelBase
                 var screenshotsPath = Path.Combine(firstInstance, "screenshots");
                 if (Directory.Exists(screenshotsPath))
                 {
-                    // TODO: Use Process.Start to open folder
                     _logger.Information("Opening screenshots folder: {Path}", screenshotsPath);
+                    var processInfo = new System.Diagnostics.ProcessStartInfo(screenshotsPath)
+                    {
+                        UseShellExecute = true
+                    };
+                    System.Diagnostics.Process.Start(processInfo);
                     return;
                 }
             }
             
-            _logger.Warning("No screenshots folder found");
+            // Fallback to instances directory
+            if (Directory.Exists(_launcherConfig.InstancesRootDir))
+            {
+                _logger.Information("Opening instances folder: {Path}", _launcherConfig.InstancesRootDir);
+                var processInfo = new System.Diagnostics.ProcessStartInfo(_launcherConfig.InstancesRootDir)
+                {
+                    UseShellExecute = true
+                };
+                System.Diagnostics.Process.Start(processInfo);
+            }
+            else
+            {
+                _logger.Warning("No screenshots folder found");
+            }
         }
         catch (Exception ex)
         {

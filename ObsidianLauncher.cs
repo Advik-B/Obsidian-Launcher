@@ -181,7 +181,8 @@ public class ObsidianLauncher
             Log.Verbose("Version manifest JSON parsed successfully. Found {Count} versions.",
                 versionManifestAll.Versions.Count);
 
-            var versionIdToLaunch = "1.20.4";
+            // Use the latest release version from the manifest instead of hardcoded version
+            var versionIdToLaunch = versionManifestAll.Latest?.Release ?? "1.20.4"; // Fallback to 1.20.4 if Latest is not available
             string cliInstanceNameFromArg = null;
             string cliPlayerNameFromArg = null;
 

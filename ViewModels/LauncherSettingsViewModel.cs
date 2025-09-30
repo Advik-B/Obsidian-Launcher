@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reactive;
 using ReactiveUI;
 using Serilog;
@@ -82,15 +83,63 @@ public class LauncherSettingsViewModel : ViewModelBase
         _logger.Information("Settings reset to defaults");
     }
 
-    private void BrowseJavaPath()
+    private async void BrowseJavaPath()
     {
-        // TODO: Open file dialog to select Java executable
-        _logger.Information("Browse Java path clicked");
+        try
+        {
+            var dialog = new Avalonia.Controls.OpenFileDialog
+            {
+                Title = "Select Java Executable",
+                AllowMultiple = false
+            };
+
+            // Set filters for Java executables
+            dialog.Filters = new List<Avalonia.Controls.FileDialogFilter>
+            {
+                new() { Name = "Java Executable", Extensions = { "exe" } },
+                new() { Name = "All Files", Extensions = { "*" } }
+            };
+
+            if (App.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop && 
+                desktop.MainWindow != null)
+            {
+                var result = await dialog.ShowAsync(desktop.MainWindow);
+                if (result != null && result.Length > 0)
+                {
+                    JavaPath = result[0];
+                    _logger.Information("Selected Java path: {JavaPath}", JavaPath);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to show Java path dialog");
+        }
     }
 
-    private void BrowseGameDataPath()
+    private async void BrowseGameDataPath()
     {
-        // TODO: Open folder dialog to select game data directory
-        _logger.Information("Browse game data path clicked");
+        try
+        {
+            var dialog = new Avalonia.Controls.OpenFolderDialog
+            {
+                Title = "Select Game Data Directory"
+            };
+
+            if (App.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop && 
+                desktop.MainWindow != null)
+            {
+                var result = await dialog.ShowAsync(desktop.MainWindow);
+                if (!string.IsNullOrEmpty(result))
+                {
+                    GameDataPath = result;
+                    _logger.Information("Selected game data path: {GameDataPath}", GameDataPath);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to show game data path dialog");
+        }
     }
 }

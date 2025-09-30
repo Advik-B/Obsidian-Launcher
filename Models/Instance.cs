@@ -46,4 +46,15 @@ public class Instance
     public TimeSpan LastSessionPlaytime { get; set; }
 
     public string CustomIconPath { get; set; }
+
+    // Instance setup state properties
+    public bool IsSetupComplete { get; set; } = false;
+    public string SetupStatus { get; set; } = "Ready";
+    public double SetupProgress { get; set; } = 0.0;
+
+    [JsonIgnore]
+    public bool IsEnabled => IsSetupComplete;
+
+    [JsonIgnore]
+    public bool IsSettingUp => !IsSetupComplete && SetupProgress > 0;
 }

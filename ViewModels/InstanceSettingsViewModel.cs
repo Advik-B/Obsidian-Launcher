@@ -115,9 +115,39 @@ public class InstanceSettingsViewModel : ViewModelBase
         _onCancel?.Invoke();
     }
 
-    private void BrowseJava()
+    private async void BrowseJava()
     {
-        _logger.Information("Browse Java runtime clicked");
-        // TODO: Open file dialog to select Java executable
+        try
+        {
+            _logger.Information("Browse Java runtime clicked");
+            
+            var dialog = new Avalonia.Controls.OpenFileDialog
+            {
+                Title = "Select Java Executable",
+                AllowMultiple = false
+            };
+
+            // Set filters for Java executables
+            dialog.Filters = new List<Avalonia.Controls.FileDialogFilter>
+            {
+                new() { Name = "Java Executable", Extensions = { "exe" } },
+                new() { Name = "All Files", Extensions = { "*" } }
+            };
+
+            if (App.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop && 
+                desktop.MainWindow != null)
+            {
+                var result = await dialog.ShowAsync(desktop.MainWindow);
+                if (result != null && result.Length > 0)
+                {
+                    JavaRuntimePath = result[0];
+                    _logger.Information("Selected Java runtime: {JavaPath}", JavaRuntimePath);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to show Java runtime dialog");
+        }
     }
 }

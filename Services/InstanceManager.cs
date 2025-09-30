@@ -361,4 +361,161 @@ public class InstanceManager
             instance.Name, instance.LastSessionPlaytime.ToString(@"hh\:mm\:ss"),
             instance.TotalPlaytime.ToString(@"d\.hh\:mm\:ss"));
     }
+
+    public string GetInstancesDirectory()
+    {
+        return _launcherConfig.InstancesRootDir;
+    }
+
+    public async Task<bool> CreateInstanceAsync(Instance instance, string minecraftVersionId)
+    {
+        try
+        {
+            _logger.Information("Creating instance: {InstanceName} with version {Version}", instance.Name, minecraftVersionId);
+            
+            // Set initial setup state
+            instance.IsSetupComplete = false;
+            instance.SetupStatus = "Setting up directories...";
+            instance.SetupProgress = 0.0;
+            
+            // Create instance directory structure
+            Directory.CreateDirectory(instance.InstancePath);
+            Directory.CreateDirectory(Path.Combine(instance.InstancePath, "natives"));
+            Directory.CreateDirectory(Path.Combine(instance.InstancePath, "logs"));
+            Directory.CreateDirectory(Path.Combine(instance.InstancePath, "screenshots"));
+            Directory.CreateDirectory(Path.Combine(instance.InstancePath, "saves"));
+            
+            // Create global resourcepacks and shaderpacks directories if they don't exist
+            var globalResourcepacks = Path.Combine(_launcherConfig.DataRootDir, "resourcepacks");
+            var globalShaderpacks = Path.Combine(_launcherConfig.DataRootDir, "shaderpacks");
+            Directory.CreateDirectory(globalResourcepacks);
+            Directory.CreateDirectory(globalShaderpacks);
+            
+            // Link instance resourcepacks and shaderpacks to global
+            var instanceResourcepacks = Path.Combine(instance.InstancePath, "resourcepacks");
+            var instanceShaderpacks = Path.Combine(instance.InstancePath, "shaderpacks");
+            FolderLinker.CreateFolderLink(instanceResourcepacks, globalResourcepacks);
+            FolderLinker.CreateFolderLink(instanceShaderpacks, globalShaderpacks);
+
+            instance.SetupProgress = 10.0;
+            instance.SetupStatus = "Saving instance metadata...";
+
+            // Save instance metadata
+            var saved = await SaveInstanceAsync(instance);
+            if (!saved)
+            {
+                _logger.Error("Failed to save instance metadata for {InstanceName}", instance.Name);
+                // Cleanup on failure
+                if (Directory.Exists(instance.InstancePath))
+                {
+                    Directory.Delete(instance.InstancePath, true);
+                }
+                return false;
+            }
+
+            _logger.Information("Successfully created instance: {InstanceName} (setup not complete)", instance.Name);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to create instance: {InstanceName}", instance.Name);
+            return false;
+        }
+    }
+
+    public async Task SetupInstanceAsync(Instance instance, MinecraftVersion mcVersion, 
+        IProgress<InstanceSetupProgress> progress = null, CancellationToken cancellationToken = default)
+    {
+        var setupProgress = new InstanceSetupProgress
+        {
+            Phase = "Starting setup",
+            CurrentTask = "Initializing...",
+            OverallProgress = 0.0
+        };
+
+        try
+        {
+            progress?.Report(setupProgress);
+
+            // Update instance status
+            instance.SetupStatus = "Setting up assets and libraries...";
+            instance.SetupProgress = 20.0;
+            await SaveInstanceAsync(instance);
+
+            setupProgress.Phase = "Downloading assets";
+            setupProgress.CurrentTask = "Preparing asset download...";
+            setupProgress.OverallProgress = 20.0;
+            progress?.Report(setupProgress);
+
+            // Create progress handlers that update our overall progress
+            var assetProgressHandler = new Progress<Services.AssetDownloadProgress>(assetProg =>
+            {
+                setupProgress.AssetProgress = assetProg;
+                setupProgress.CurrentTask = $"Downloading assets: {assetProg.CurrentFile}";
+                var assetPercent = assetProg.TotalFiles > 0 ? (double)assetProg.ProcessedFiles / assetProg.TotalFiles : 0;
+                setupProgress.OverallProgress = 20.0 + (assetPercent * 40.0); // Assets take 40% of progress (20-60%)
+                
+                instance.SetupProgress = setupProgress.OverallProgress;
+                instance.SetupStatus = setupProgress.CurrentTask;
+                SaveInstanceAsync(instance); // Fire and forget to avoid blocking
+                
+                progress?.Report(setupProgress);
+            });
+
+            var libraryProgressHandler = new Progress<Services.LibraryProcessingProgress>(libProg =>
+            {
+                setupProgress.LibraryProgress = libProg;
+                setupProgress.CurrentTask = $"Processing libraries: {libProg.CurrentLibraryName}";
+                var libraryPercent = libProg.TotalLibraries > 0 ? (double)libProg.ProcessedLibraries / libProg.TotalLibraries : 0;
+                setupProgress.OverallProgress = 60.0 + (libraryPercent * 35.0); // Libraries take 35% of progress (60-95%)
+                
+                instance.SetupProgress = setupProgress.OverallProgress;
+                instance.SetupStatus = setupProgress.CurrentTask;
+                SaveInstanceAsync(instance); // Fire and forget to avoid blocking
+                
+                progress?.Report(setupProgress);
+            });
+
+            // Perform the actual sync
+            var (syncSuccess, _, _) = await SyncInstanceAsync(instance, mcVersion, assetProgressHandler, libraryProgressHandler, cancellationToken);
+
+            if (syncSuccess && !cancellationToken.IsCancellationRequested)
+            {
+                // Setup complete
+                instance.IsSetupComplete = true;
+                instance.SetupStatus = "Ready";
+                instance.SetupProgress = 100.0;
+                await SaveInstanceAsync(instance);
+
+                setupProgress.Phase = "Complete";
+                setupProgress.CurrentTask = "Instance ready to launch";
+                setupProgress.OverallProgress = 100.0;
+                setupProgress.IsComplete = true;
+                progress?.Report(setupProgress);
+
+                _logger.Information("Instance setup completed successfully: {InstanceName}", instance.Name);
+            }
+            else
+            {
+                // Setup failed
+                instance.SetupStatus = cancellationToken.IsCancellationRequested ? "Setup cancelled" : "Setup failed";
+                await SaveInstanceAsync(instance);
+
+                setupProgress.ErrorMessage = cancellationToken.IsCancellationRequested ? "Setup was cancelled" : "Setup failed";
+                progress?.Report(setupProgress);
+
+                _logger.Error("Instance setup failed: {InstanceName}", instance.Name);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error during instance setup: {InstanceName}", instance.Name);
+            
+            instance.SetupStatus = "Setup failed";
+            await SaveInstanceAsync(instance);
+
+            setupProgress.ErrorMessage = $"Setup error: {ex.Message}";
+            progress?.Report(setupProgress);
+        }
+    }
 }

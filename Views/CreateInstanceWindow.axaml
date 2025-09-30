@@ -1,0 +1,117 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:ObsidianLauncher.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="350"
+        x:Class="ObsidianLauncher.Views.CreateInstanceWindow"
+        x:DataType="vm:CreateInstanceViewModel"
+        Title="Create New Instance"
+        Width="450" Height="350"
+        MinWidth="400" MinHeight="300"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <Design.DataContext>
+        <!-- CreateInstanceViewModel requires InstanceManager parameter, so no design data context -->
+    </Design.DataContext>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" 
+                   Text="Create New Minecraft Instance" 
+                   FontSize="18" 
+                   FontWeight="Bold" 
+                   Margin="0,0,0,20"/>
+
+        <!-- Form -->
+        <StackPanel Grid.Row="1" Spacing="16">
+            
+            <!-- Instance Name -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Instance Name:" FontWeight="SemiBold"/>
+                <TextBox Text="{Binding InstanceName}" 
+                         Watermark="Enter instance name..." 
+                         IsEnabled="{Binding !IsLoading}"/>
+            </StackPanel>
+
+            <!-- Minecraft Version -->
+            <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Minecraft Version:" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <Button Content="Refresh" 
+                            Command="{Binding RefreshVersionsCommand}"
+                            Padding="8,4" 
+                            FontSize="11"
+                            IsEnabled="{Binding !IsLoading}"/>
+                </StackPanel>
+                <ComboBox ItemsSource="{Binding AvailableVersions}"
+                          SelectedItem="{Binding SelectedVersion}"
+                          IsEnabled="{Binding !IsLoading}"
+                          HorizontalAlignment="Stretch"/>
+                <CheckBox Content="Include development snapshots" 
+                          IsChecked="{Binding IncludeSnapshots}"
+                          IsEnabled="{Binding !IsLoading}"
+                          FontSize="12"
+                          Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <!-- Loading indicator -->
+            <StackPanel Orientation="Horizontal" 
+                        Spacing="8" 
+                        IsVisible="{Binding IsLoading}">
+                <ProgressBar IsIndeterminate="True" 
+                             Width="200" 
+                             Height="4"/>
+                <TextBlock Text="Loading..." 
+                           VerticalAlignment="Center" 
+                           FontSize="12" 
+                           Opacity="0.7"/>
+            </StackPanel>
+
+            <!-- Info -->
+            <Border Background="{DynamicResource SystemControlBackgroundListLowBrush}" 
+                    CornerRadius="4" 
+                    Padding="12"
+                    IsVisible="{Binding !IsLoading}">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Info:" FontWeight="SemiBold" FontSize="12"/>
+                    <TextBlock Text="• The instance will be created in the launcher's instances directory" 
+                               FontSize="11" 
+                               Opacity="0.8"/>
+                    <TextBlock Text="• Game files will be downloaded automatically on first launch" 
+                               FontSize="11" 
+                               Opacity="0.8"/>
+                    <TextBlock Text="• You can modify settings after creation" 
+                               FontSize="11" 
+                               Opacity="0.8"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Spacing="8" 
+                    Margin="0,20,0,0">
+            <Button Content="Cancel" 
+                    Command="{Binding CancelCommand}"
+                    Padding="16,8" 
+                    MinWidth="80"
+                    IsEnabled="{Binding !IsLoading}"/>
+            <Button Content="Create" 
+                    Command="{Binding CreateCommand}"
+                    Padding="16,8" 
+                    MinWidth="80"
+                    Classes="accent"
+                    IsEnabled="{Binding CanCreate}"/>
+        </StackPanel>
+    </Grid>
+</Window>
