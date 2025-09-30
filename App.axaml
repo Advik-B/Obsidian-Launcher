@@ -1,0 +1,17 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ObsidianLauncher.App"
+             RequestedThemeVariant="Default">
+    <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+
+    <Application.Resources>
+        <!-- Primary colors inspired by obsidian theme -->
+        <Color x:Key="ObsidianPurple">#7C3AED</Color>
+        <Color x:Key="ObsidianDark">#1E1B2E</Color>
+        <Color x:Key="ObsidianAccent">#A855F7</Color>
+    </Application.Resources>
+</Application>

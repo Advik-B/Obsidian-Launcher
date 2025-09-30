@@ -1,0 +1,216 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ObsidianLauncher.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+        x:Class="ObsidianLauncher.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Obsidian Launcher"
+        MinWidth="800" MinHeight="600"
+        Width="1000" Height="700">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <!-- Main Grid Layout -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Toolbar -->
+            <RowDefinition Height="Auto"/>
+            <!-- Main Content -->
+            <RowDefinition Height="*"/>
+            <!-- Status Bar -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Toolbar -->
+        <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" 
+                BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" Margin="10,8">
+                <Button Name="LaunchButton" 
+                        Command="{Binding LaunchCommand}"
+                        IsEnabled="{Binding !IsLoading}"
+                        Background="{DynamicResource AccentButtonBackground}"
+                        Content="Launch" 
+                        Padding="20,8" 
+                        Margin="0,0,10,0"/>
+                <Button Content="Create Instance" 
+                        Command="{Binding CreateInstanceCommand}"
+                        Padding="15,8" 
+                        Margin="0,0,10,0"/>
+                <Button Content="Delete Instance" 
+                        Command="{Binding DeleteInstanceCommand}"
+                        Padding="15,8" 
+                        Margin="0,0,10,0"/>
+                <Separator/>
+                <Button Content="Settings" 
+                        Command="{Binding SettingsCommand}"
+                        Padding="15,8" 
+                        Margin="10,0,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <!-- Instance List Sidebar -->
+                <ColumnDefinition Width="300" MinWidth="250"/>
+                <ColumnDefinition Width="Auto"/>
+                <!-- Main Content -->
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Sidebar - Instance List -->
+            <Border Grid.Column="0" 
+                    Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" 
+                    BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Instance List Header -->
+                    <TextBlock Grid.Row="0" 
+                               Text="Instances" 
+                               FontSize="16" 
+                               FontWeight="SemiBold" 
+                               Margin="15,15,15,10"/>
+
+                    <!-- Instance List -->
+                    <ListBox Grid.Row="1" 
+                             ItemsSource="{Binding Instances}"
+                             SelectedItem="{Binding SelectedInstance}"
+                             Margin="10,0,10,10"
+                             Background="Transparent"
+                             BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="Transparent" 
+                                        Padding="10,8" 
+                                        Margin="0,2"
+                                        CornerRadius="4">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" 
+                                                   FontWeight="Medium"
+                                                   FontSize="14"/>
+                                        <TextBlock Text="{Binding Version}" 
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                   FontSize="12"
+                                                   Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Column="1" 
+                          Width="1" 
+                          Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+            <!-- Main Content Area -->
+            <Border Grid.Column="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Instance Details Header -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                        <TextBlock Text="{Binding SelectedInstance.Name, FallbackValue='No Instance Selected'}" 
+                                   FontSize="24" 
+                                   FontWeight="Bold"/>
+                        <TextBlock Text="{Binding SelectedInstance.Version, StringFormat='Minecraft {0}'}" 
+                                   FontSize="16" 
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <!-- Instance Details Content -->
+                    <ScrollViewer Grid.Row="1">
+                        <StackPanel Spacing="20">
+                            <!-- Instance Info -->
+                            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                    CornerRadius="8" 
+                                    Padding="20">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="Instance Information" 
+                                               FontSize="16" 
+                                               FontWeight="SemiBold"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:" Margin="0,0,20,5"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedInstance.Name}" FontWeight="Medium"/>
+
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Version:" Margin="0,0,20,5"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedInstance.Version}" FontWeight="Medium"/>
+
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Type:" Margin="0,0,20,5"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedInstance.Type}" FontWeight="Medium"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- News/Updates placeholder -->
+                            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                    CornerRadius="8" 
+                                    Padding="20">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="News and Updates" 
+                                               FontSize="16" 
+                                               FontWeight="SemiBold"/>
+                                    <TextBlock Text="Welcome to Obsidian Launcher! This is where we'll show Minecraft news and launcher updates."
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" 
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" 
+                BorderThickness="0,1,0,0">
+            <Grid Margin="10,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" 
+                           Text="{Binding StatusText}" 
+                           VerticalAlignment="Center"/>
+
+                <ProgressBar Grid.Column="1" 
+                             IsVisible="{Binding IsLoading}"
+                             Width="150" 
+                             Height="16" 
+                             IsIndeterminate="True"
+                             VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
