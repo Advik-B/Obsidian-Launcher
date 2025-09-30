@@ -13,6 +13,7 @@ namespace ObsidianLauncher.ViewModels;
 public class MainWindowViewModel : ViewModelBase
 {
     private readonly ILogger _logger;
+    private readonly LauncherService _launcherService;
     private bool _isLoading;
     private string _statusText = "Ready";
     private MinecraftInstanceViewModel? _selectedInstance;
@@ -20,6 +21,7 @@ public class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel()
     {
         _logger = Log.ForContext<MainWindowViewModel>();
+        _launcherService = new LauncherService();
         
         // Initialize with some sample instances for now
         Instances = new ObservableCollection<MinecraftInstanceViewModel>
@@ -70,11 +72,19 @@ public class MainWindowViewModel : ViewModelBase
             StatusText = $"Launching {SelectedInstance.Name}...";
             _logger.Information("Starting launch of instance: {InstanceName}", SelectedInstance.Name);
 
-            // For now, just simulate launching
-            await Task.Delay(2000);
+            var progress = new Progress<string>(status => StatusText = status);
+            bool success = await _launcherService.LaunchMinecraftAsync(SelectedInstance.Version, progress);
             
-            StatusText = $"Launched {SelectedInstance.Name}";
-            _logger.Information("Successfully launched instance: {InstanceName}", SelectedInstance.Name);
+            if (success)
+            {
+                StatusText = $"Successfully launched {SelectedInstance.Name}";
+                _logger.Information("Successfully launched instance: {InstanceName}", SelectedInstance.Name);
+            }
+            else
+            {
+                StatusText = $"Failed to launch {SelectedInstance.Name}";
+                _logger.Error("Failed to launch instance: {InstanceName}", SelectedInstance.Name);
+            }
         }
         catch (Exception ex)
         {

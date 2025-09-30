@@ -1,0 +1,11 @@
+07:16:07.148 AM [INF] [] Logger initialized. Console Level: "Information", File Level: "Verbose" (Path: /home/runner/work/Obsidian-Launcher/Obsidian-Launcher/.ObsidianLauncher/logs/launcher-.log)
+07:16:07.195 AM [INF] [] Starting Obsidian Launcher UI...
+07:16:07.315 AM [FTL] [] Application terminated unexpectedly
+System.Exception: XOpenDisplay failed
+   at Avalonia.X11.AvaloniaX11Platform.Initialize(X11PlatformOptions options)
+   at Avalonia.AvaloniaX11PlatformExtensions.<>c.<UseX11>b__0_0()
+   at Avalonia.AppBuilder.SetupUnsafe()
+   at Avalonia.AppBuilder.Setup()
+   at Avalonia.AppBuilder.SetupWithLifetime(IApplicationLifetime lifetime)
+   at Avalonia.ClassicDesktopStyleApplicationLifetimeExtensions.StartWithClassicDesktopLifetime(AppBuilder builder, String[] args, Action`1 lifetimeBuilder)
+   at Program.Main(String[] args) in /home/runner/work/Obsidian-Launcher/Obsidian-Launcher/Program.cs:line 32
