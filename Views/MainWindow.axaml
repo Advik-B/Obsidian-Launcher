@@ -6,7 +6,7 @@
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="ObsidianLauncher.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="Images/icon.ico"
+        Icon="avares://ObsidianLauncher/Images/icon.ico"
         Title="{Binding Title}"
         MinWidth="800" MinHeight="600"
         Width="1200" Height="800">
