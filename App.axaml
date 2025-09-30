@@ -1,0 +1,27 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ObsidianLauncher.App"
+             xmlns:vm="using:ObsidianLauncher.ViewModels"
+             xmlns:views="using:ObsidianLauncher.Views"
+             RequestedThemeVariant="Default">
+
+    <Application.DataTemplates>
+        <DataTemplate DataType="{x:Type vm:InstancesViewModel}">
+            <views:InstancesView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:LauncherSettingsViewModel}">
+            <views:LauncherSettingsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:JavaManagerViewModel}">
+            <views:JavaManagerView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ScreenshotViewerViewModel}">
+            <views:ScreenshotViewerView/>
+        </DataTemplate>
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+    </Application.Styles>
+</Application>

@@ -22,6 +22,14 @@ public class Instance
     public string MinecraftVersionId { get; set; }
     public string InstancePath { get; set; }
 
+    [JsonIgnore] 
+    public string MinecraftVersion => MinecraftVersionId; // Alias for UI binding
+
+    [JsonIgnore]
+    public string LastPlayedFormatted => LastPlayedDate == DateTime.MinValue 
+        ? "Never" 
+        : LastPlayedDate.ToString("yyyy-MM-dd");
+
     [JsonIgnore] public string NativesPath => Path.Combine(InstancePath, "natives");
 
     [JsonIgnore] public string GameDataPath => InstancePath;

@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ObsidianLauncher.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="ObsidianLauncher.Views.LauncherSettingsView"
+             x:DataType="vm:LauncherSettingsViewModel">
+
+    <Design.DataContext>
+        <vm:LauncherSettingsViewModel/>
+    </Design.DataContext>
+
+    <ScrollViewer>
+        <StackPanel Margin="16" Spacing="16">
+            
+            <!-- General Settings -->
+            <Border Background="{DynamicResource SystemControlBackgroundListLowBrush}" 
+                    CornerRadius="4" 
+                    Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="General Settings" 
+                               FontSize="16" 
+                               FontWeight="Bold"/>
+                    
+                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+                        <TextBlock Grid.Column="0" 
+                                   Text="Game Data Path:" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,16,0"/>
+                        <TextBox Grid.Column="1" 
+                                 Text="{Binding GameDataPath}" 
+                                 Margin="0,0,8,0"/>
+                        <Button Grid.Column="2" 
+                                Content="Browse..." 
+                                Padding="12,6"/>
+                    </Grid>
+                    
+                    <CheckBox Content="Enable automatic updates" 
+                              IsChecked="{Binding AutoUpdate}" 
+                              Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Java Settings -->
+            <Border Background="{DynamicResource SystemControlBackgroundListLowBrush}" 
+                    CornerRadius="4" 
+                    Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Java Settings" 
+                               FontSize="16" 
+                               FontWeight="Bold"/>
+                    
+                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+                        <TextBlock Grid.Column="0" 
+                                   Text="Java Path:" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,16,0"/>
+                        <TextBox Grid.Column="1" 
+                                 Text="{Binding JavaPath}" 
+                                 Margin="0,0,8,0"/>
+                        <Button Grid.Column="2" 
+                                Content="Browse..." 
+                                Padding="12,6"/>
+                    </Grid>
+                    
+                    <Grid ColumnDefinitions="Auto,150,Auto" Margin="0,8,0,0">
+                        <TextBlock Grid.Column="0" 
+                                   Text="Memory Allocation:" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,16,0"/>
+                        <NumericUpDown Grid.Column="1" 
+                                       Value="{Binding MemoryAllocation}" 
+                                       Minimum="512" 
+                                       Maximum="32768" 
+                                       Increment="512"/>
+                        <TextBlock Grid.Column="2" 
+                                   Text="MB" 
+                                   VerticalAlignment="Center" 
+                                   Margin="8,0,0,0"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Action Buttons -->
+            <StackPanel Orientation="Horizontal" 
+                        HorizontalAlignment="Right" 
+                        Spacing="8" 
+                        Margin="0,16,0,0">
+                <Button Content="Reset to Defaults" 
+                        Padding="12,8"/>
+                <Button Content="Save Settings" 
+                        Padding="12,8" 
+                        Classes="accent"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

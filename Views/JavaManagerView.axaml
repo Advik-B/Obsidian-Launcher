@@ -1,0 +1,90 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ObsidianLauncher.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="ObsidianLauncher.Views.JavaManagerView"
+             x:DataType="vm:JavaManagerViewModel">
+
+    <Design.DataContext>
+        <vm:JavaManagerViewModel/>
+    </Design.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8" Spacing="8">
+            <Button Content="Download Java Runtime" 
+                    Command="{Binding DownloadJavaCommand}"
+                    Padding="12,6" 
+                    Classes="accent"/>
+            <Button Content="Refresh" 
+                    Command="{Binding RefreshCommand}"
+                    Padding="12,6"/>
+        </StackPanel>
+
+        <!-- Java Runtimes List -->
+        <DataGrid Grid.Row="1" 
+                  ItemsSource="{Binding JavaRuntimes}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="Horizontal"
+                  HeadersVisibility="Column"
+                  Margin="8">
+            
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Version" 
+                                    Binding="{Binding JavaVersion}" 
+                                    Width="120"/>
+                <DataGridTextColumn Header="Architecture" 
+                                    Binding="{Binding Architecture}" 
+                                    Width="100"/>
+                <DataGridTextColumn Header="Vendor" 
+                                    Binding="{Binding Vendor}" 
+                                    Width="120"/>
+                <DataGridTextColumn Header="Path" 
+                                    Binding="{Binding JavaExecutablePath}" 
+                                    Width="*"/>
+                <DataGridTemplateColumn Header="Actions" Width="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <Button Content="Delete" 
+                                        FontSize="11"
+                                        Padding="8,4"
+                                        Command="{Binding $parent[DataGrid].DataContext.DeleteJavaCommand}"
+                                        CommandParameter="{Binding}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Empty State -->
+        <StackPanel Grid.Row="1" 
+                    VerticalAlignment="Center" 
+                    HorizontalAlignment="Center"
+                    IsVisible="{Binding !JavaRuntimes.Count}">
+            <TextBlock Text="No Java runtimes found" 
+                       FontSize="18" 
+                       Opacity="0.6" 
+                       TextAlignment="Center" 
+                       Margin="0,0,0,16"/>
+            <TextBlock Text="Click 'Download Java Runtime' to install a Java version for Minecraft" 
+                       Opacity="0.5" 
+                       TextAlignment="Center" 
+                       Margin="0,0,0,16"/>
+            <Button Content="Download Java Runtime" 
+                    Command="{Binding DownloadJavaCommand}"
+                    Padding="16,8" 
+                    Classes="accent"
+                    HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

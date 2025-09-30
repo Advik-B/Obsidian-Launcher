@@ -1,0 +1,53 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ObsidianLauncher.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="ObsidianLauncher.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="Images/icon.ico"
+        Title="{Binding Title}"
+        MinWidth="800" MinHeight="600"
+        Width="1200" Height="800">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Menu Bar -->
+        <Menu Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+            <MenuItem Header="File">
+                <MenuItem Header="Create Instance" Command="{Binding CreateInstanceCommand}"/>
+                <Separator/>
+                <MenuItem Header="Exit"/>
+            </MenuItem>
+            <MenuItem Header="View">
+                <MenuItem Header="Instances" Command="{Binding ShowInstancesCommand}"/>
+                <MenuItem Header="Screenshots" Command="{Binding ShowScreenshotsCommand}"/>
+                <Separator/>
+                <MenuItem Header="Java Manager" Command="{Binding ShowJavaManagerCommand}"/>
+            </MenuItem>
+            <MenuItem Header="Settings">
+                <MenuItem Header="Launcher Settings" Command="{Binding ShowLauncherSettingsCommand}"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Main Content Area -->
+        <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="8">
+            <ContentControl Content="{Binding CurrentView}"/>
+        </Border>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="8,4">
+            <TextBlock Text="Ready" FontSize="12"/>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,154 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ObsidianLauncher.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="ObsidianLauncher.Views.ScreenshotViewerView"
+             x:DataType="vm:ScreenshotViewerViewModel">
+
+    <Design.DataContext>
+        <vm:ScreenshotViewerViewModel/>
+    </Design.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8" Spacing="8">
+            <Button Content="Refresh" 
+                    Command="{Binding RefreshCommand}"
+                    Padding="12,6"/>
+            <Button Content="Open Screenshots Folder" 
+                    Padding="12,6"/>
+        </StackPanel>
+
+        <!-- Screenshots Gallery -->
+        <Grid Grid.Row="1" ColumnDefinitions="300,*" Margin="8">
+            
+            <!-- Screenshot List -->
+            <Border Grid.Column="0" 
+                    Background="{DynamicResource SystemControlBackgroundListLowBrush}" 
+                    CornerRadius="4" 
+                    Margin="0,0,4,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" 
+                               Text="Screenshots" 
+                               FontWeight="Bold" 
+                               Margin="12,12,12,8"/>
+                    
+                    <ListBox Grid.Row="1" 
+                             ItemsSource="{Binding Screenshots}"
+                             SelectedItem="{Binding SelectedScreenshot}"
+                             Background="Transparent"
+                             BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="8" Spacing="4">
+                                    <TextBlock Text="{Binding InstanceName}" 
+                                               FontWeight="SemiBold" 
+                                               FontSize="12"/>
+                                    <TextBlock Text="{Binding DateTaken, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" 
+                                               FontSize="10" 
+                                               Opacity="0.7"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- Screenshot Preview -->
+            <Border Grid.Column="1" 
+                    Background="{DynamicResource SystemControlBackgroundListLowBrush}" 
+                    CornerRadius="4" 
+                    Margin="4,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Screenshot Info -->
+                    <StackPanel Grid.Row="0" 
+                                Margin="12" 
+                                Spacing="4"
+                                IsVisible="{Binding SelectedScreenshot, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <TextBlock Text="{Binding SelectedScreenshot.DisplayName}" 
+                                   FontWeight="Bold" 
+                                   FontSize="14"/>
+                        <TextBlock Text="{Binding SelectedScreenshot.FilePath}" 
+                                   FontSize="11" 
+                                   Opacity="0.6"/>
+                    </StackPanel>
+
+                    <!-- Screenshot Image -->
+                    <Viewbox Grid.Row="1" 
+                             Margin="12"
+                             IsVisible="{Binding SelectedScreenshot, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <Image Source="{Binding SelectedScreenshot.FilePath}" 
+                               MaxWidth="800" 
+                               MaxHeight="600"/>
+                    </Viewbox>
+
+                    <!-- Empty State -->
+                    <StackPanel Grid.Row="1" 
+                                VerticalAlignment="Center" 
+                                HorizontalAlignment="Center"
+                                IsVisible="{Binding SelectedScreenshot, Converter={x:Static ObjectConverters.IsNull}}">
+                        <TextBlock Text="Select a screenshot to preview" 
+                                   FontSize="16" 
+                                   Opacity="0.6" 
+                                   TextAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Action Buttons -->
+                    <StackPanel Grid.Row="2" 
+                                Orientation="Horizontal" 
+                                HorizontalAlignment="Right" 
+                                Margin="12" 
+                                Spacing="8"
+                                IsVisible="{Binding SelectedScreenshot, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <Button Content="Open" 
+                                Command="{Binding OpenScreenshotCommand}"
+                                CommandParameter="{Binding SelectedScreenshot}"
+                                Padding="12,6"/>
+                        <Button Content="Delete" 
+                                Command="{Binding DeleteScreenshotCommand}"
+                                CommandParameter="{Binding SelectedScreenshot}"
+                                Padding="12,6"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Empty State -->
+        <StackPanel Grid.Row="1" 
+                    VerticalAlignment="Center" 
+                    HorizontalAlignment="Center"
+                    IsVisible="{Binding !Screenshots.Count}">
+            <TextBlock Text="No screenshots found" 
+                       FontSize="18" 
+                       Opacity="0.6" 
+                       TextAlignment="Center" 
+                       Margin="0,0,0,16"/>
+            <TextBlock Text="Screenshots will appear here automatically when you take them in-game (F2)" 
+                       Opacity="0.5" 
+                       TextAlignment="Center" 
+                       Margin="0,0,0,16"/>
+            <Button Content="Refresh" 
+                    Command="{Binding RefreshCommand}"
+                    Padding="16,8" 
+                    HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
