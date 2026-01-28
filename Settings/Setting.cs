@@ -77,8 +77,17 @@ public class Setting<T>
     /// </summary>
     public void Reset()
     {
-        Value = _defaultValue;
-        _isOverridden = false;
+        if (!Equals(_value, _defaultValue))
+        {
+            var oldValue = _value;
+            _value = _defaultValue;
+            _isOverridden = false;
+            OnValueChanged(oldValue, _defaultValue);
+        }
+        else
+        {
+            _isOverridden = false;
+        }
     }
 
     /// <summary>

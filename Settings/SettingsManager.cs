@@ -20,6 +20,7 @@ public class SettingsManager
     private readonly SettingsManager _parent;
     private readonly Dictionary<string, object> _settings;
     private readonly string _section;
+    private readonly string _configFilePath;
 
     /// <summary>
     ///     Creates a new settings manager.
@@ -29,6 +30,7 @@ public class SettingsManager
     /// <param name="parent">Parent settings manager for hierarchical overrides (null for global settings).</param>
     public SettingsManager(string configFilePath, string section = "", SettingsManager parent = null)
     {
+        _configFilePath = configFilePath;
         _iniFile = new IniFile(configFilePath);
         _section = section ?? string.Empty;
         _parent = parent;
@@ -210,7 +212,7 @@ public class SettingsManager
         }
 
         _iniFile.Save();
-        _logger.Information("Saved all settings to {ConfigPath}", _iniFile);
+        _logger.Information("Saved all settings to {ConfigPath}", _configFilePath);
     }
 
     /// <summary>
@@ -247,7 +249,7 @@ public class SettingsManager
             }
         }
 
-        _logger.Information("Reloaded settings from {ConfigPath}", _iniFile);
+        _logger.Information("Reloaded settings from {ConfigPath}", _configFilePath);
     }
 
     // Helper methods

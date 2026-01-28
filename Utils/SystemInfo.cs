@@ -3,7 +3,9 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+#if WINDOWS
 using System.Management;
+#endif
 using Serilog;
 
 namespace ObsidianLauncher.Utils;
@@ -188,43 +190,63 @@ public static class SystemInfo
     // Windows-specific implementations
     private static long GetWindowsTotalMemoryMB()
     {
+#if WINDOWS
         using var searcher = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem");
-        foreach (var obj in searcher.Get())
+        foreach (ManagementObject obj in searcher.Get())
         {
-            var totalBytes = Convert.ToInt64(obj["TotalPhysicalMemory"]);
-            return totalBytes / (1024 * 1024);
+            using (obj)
+            {
+                var totalBytes = Convert.ToInt64(obj["TotalPhysicalMemory"]);
+                return totalBytes / (1024 * 1024);
+            }
         }
+#endif
         return -1;
     }
 
     private static long GetWindowsAvailableMemoryMB()
     {
+#if WINDOWS
         using var searcher = new ManagementObjectSearcher("SELECT FreePhysicalMemory FROM Win32_OperatingSystem");
-        foreach (var obj in searcher.Get())
+        foreach (ManagementObject obj in searcher.Get())
         {
-            var freeKB = Convert.ToInt64(obj["FreePhysicalMemory"]);
-            return freeKB / 1024;
+            using (obj)
+            {
+                var freeKB = Convert.ToInt64(obj["FreePhysicalMemory"]);
+                return freeKB / 1024;
+            }
         }
+#endif
         return -1;
     }
 
     private static string GetWindowsCPUName()
     {
+#if WINDOWS
         using var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_Processor");
-        foreach (var obj in searcher.Get())
+        foreach (ManagementObject obj in searcher.Get())
         {
-            return obj["Name"]?.ToString()?.Trim() ?? "Unknown CPU";
+            using (obj)
+            {
+                return obj["Name"]?.ToString()?.Trim() ?? "Unknown CPU";
+            }
         }
+#endif
         return "Unknown CPU";
     }
 
     private static string GetWindowsGPUName()
     {
+#if WINDOWS
         using var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_VideoController");
-        foreach (var obj in searcher.Get())
+        foreach (ManagementObject obj in searcher.Get())
         {
-            return obj["Name"]?.ToString()?.Trim() ?? "Unknown GPU";
+            using (obj)
+            {
+                return obj["Name"]?.ToString()?.Trim() ?? "Unknown GPU";
+            }
         }
+#endif
         return "Unknown GPU";
     }
 
@@ -264,12 +286,12 @@ public static class SystemInfo
     {
         try
         {
-            var process = new Process
+            using var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "lspci",
-                    Arguments = "",
+                    Arguments = "-nn",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
@@ -282,8 +304,9 @@ public static class SystemInfo
             var match = System.Text.RegularExpressions.Regex.Match(output, @"VGA compatible controller:\s+(.+)");
             return match.Success ? match.Groups[1].Value.Trim() : "Unknown GPU";
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.Debug(ex, "Failed to query GPU information on Linux");
             return "Unknown GPU";
         }
     }
@@ -293,7 +316,7 @@ public static class SystemInfo
     {
         try
         {
-            var process = new Process
+            using var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
@@ -313,7 +336,10 @@ public static class SystemInfo
                 return totalBytes / (1024 * 1024);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.Debug(ex, "Failed to query total memory on macOS");
+        }
         return -1;
     }
 
@@ -321,7 +347,26 @@ public static class SystemInfo
     {
         try
         {
-            var process = new Process
+            // First get page size
+            using var pageSizeProcess = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "sysctl",
+                    Arguments = "-n hw.pagesize",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            pageSizeProcess.Start();
+            var pageSizeOutput = pageSizeProcess.StandardOutput.ReadToEnd().Trim();
+            pageSizeProcess.WaitForExit();
+
+            var pageSize = int.TryParse(pageSizeOutput, out var ps) ? ps : 4096;
+
+            // Now get free pages
+            using var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
@@ -339,11 +384,13 @@ public static class SystemInfo
             var match = System.Text.RegularExpressions.Regex.Match(output, @"Pages free:\s+(\d+)");
             if (match.Success && long.TryParse(match.Groups[1].Value, out var freePages))
             {
-                // macOS page size is typically 4096 bytes
-                return (freePages * 4096) / (1024 * 1024);
+                return (freePages * pageSize) / (1024 * 1024);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.Debug(ex, "Failed to query available memory on macOS");
+        }
         return -1;
     }
 
@@ -351,7 +398,7 @@ public static class SystemInfo
     {
         try
         {
-            var process = new Process
+            using var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
@@ -368,8 +415,9 @@ public static class SystemInfo
 
             return !string.IsNullOrWhiteSpace(output) ? output : "Unknown CPU";
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.Debug(ex, "Failed to query CPU name on macOS");
             return "Unknown CPU";
         }
     }
@@ -378,7 +426,7 @@ public static class SystemInfo
     {
         try
         {
-            var process = new Process
+            using var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
@@ -396,8 +444,9 @@ public static class SystemInfo
             var match = System.Text.RegularExpressions.Regex.Match(output, @"Chipset Model:\s+(.+)");
             return match.Success ? match.Groups[1].Value.Trim() : "Unknown GPU";
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.Debug(ex, "Failed to query GPU name on macOS");
             return "Unknown GPU";
         }
     }
