@@ -91,12 +91,12 @@ This document provides a comprehensive checklist of features from PrismLauncher 
 #### 2.3 Instance Management Enhancements
 - ✅ Basic instance creation
 - ✅ Instance directory organization
-- ❌ Instance grouping/categorization 🎯
-- ❌ Instance copying functionality
-- ❌ Instance deletion with confirmation
-- ❌ Instance metadata editing (name, notes, icon)
-- ❌ Instance icon customization
-- ❌ Instance import/export
+- ✅ Instance grouping/categorization 🎯
+- ✅ Instance copying functionality
+- ✅ Instance deletion with confirmation
+- ✅ Instance metadata editing (name, notes, icon)
+- ✅ Instance icon customization
+- ✅ Instance import/export
 
 #### 2.4 Java Runtime Management (Enhanced)
 - ✅ Java auto-detection
@@ -133,11 +133,11 @@ This document provides a comprehensive checklist of features from PrismLauncher 
 #### 2.8 Network Enhancements
 - ✅ Basic HTTP downloads
 - ✅ Checksum validation (SHA1)
-- ❌ Concurrent download management
-- ❌ Download queue system
+- ✅ Concurrent download management
+- ✅ Download queue system
 - ❌ Bandwidth throttling
 - ❌ Proxy support
-- ❌ HTTP caching with validation
+- ✅ HTTP caching with validation
 - ❌ Download resume support
 
 #### 2.9 Asset & Library Management (Enhanced)
@@ -150,11 +150,11 @@ This document provides a comprehensive checklist of features from PrismLauncher 
 - ❌ Library deduplication
 
 #### 2.10 Basic Resource Management
-- ❌ Resource pack folder management
-- ❌ Shader pack folder management
-- ❌ World saves folder management
-- ❌ Screenshots folder management
-- ❌ Basic file browser for resources
+- ✅ Resource pack folder management
+- ✅ Shader pack folder management
+- ✅ World saves folder management
+- ✅ Screenshots folder management
+- ✅ Basic file browser for resources
 
 ---
 
