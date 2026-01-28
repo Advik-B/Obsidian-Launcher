@@ -16,7 +16,6 @@ public class RecursiveFileWatcher : IDisposable
     private static readonly ILogger _logger = Log.ForContext(typeof(RecursiveFileWatcher));
     
     private readonly FileSystemWatcher _watcher;
-    private readonly Dictionary<string, FileSystemWatcher> _subWatchers;
     private bool _disposed;
 
     /// <summary>
@@ -51,8 +50,6 @@ public class RecursiveFileWatcher : IDisposable
         {
             throw new DirectoryNotFoundException($"Directory not found: {path}");
         }
-
-        _subWatchers = new Dictionary<string, FileSystemWatcher>();
         
         _watcher = new FileSystemWatcher(path)
         {
@@ -138,12 +135,6 @@ public class RecursiveFileWatcher : IDisposable
 
         _watcher.EnableRaisingEvents = false;
         _watcher.Dispose();
-
-        foreach (var subWatcher in _subWatchers.Values)
-        {
-            subWatcher.Dispose();
-        }
-        _subWatchers.Clear();
 
         _disposed = true;
         _logger.Debug("Disposed file watcher for: {Path}", _watcher.Path);

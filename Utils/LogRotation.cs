@@ -115,10 +115,10 @@ public static class LogRotation
                 return;
             }
 
-            var threshold = DateTime.Now.AddDays(-olderThanDays);
+            var threshold = DateTime.UtcNow.AddDays(-olderThanDays);
             var logFiles = Directory.GetFiles(logDirectory, logFilePattern)
                                    .Select(f => new FileInfo(f))
-                                   .Where(f => f.LastWriteTime < threshold)
+                                   .Where(f => f.LastWriteTimeUtc < threshold)
                                    .Where(f => !f.Name.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
                                    .ToList();
 
@@ -184,10 +184,10 @@ public static class LogRotation
                 _logger.Information("Created archive directory: {Directory}", archiveDirectory);
             }
 
-            var threshold = DateTime.Now.AddDays(-olderThanDays);
+            var threshold = DateTime.UtcNow.AddDays(-olderThanDays);
             var logFiles = Directory.GetFiles(logDirectory, logFilePattern)
                                    .Select(f => new FileInfo(f))
-                                   .Where(f => f.LastWriteTime < threshold)
+                                   .Where(f => f.LastWriteTimeUtc < threshold)
                                    .ToList();
 
             _logger.Information("Found {Count} log files older than {Days} days to archive", logFiles.Count, olderThanDays);
@@ -201,7 +201,7 @@ public static class LogRotation
                     if (File.Exists(archivePath))
                     {
                         // Add timestamp to avoid conflicts
-                        var timestamp = file.LastWriteTime.ToString("yyyyMMdd_HHmmss");
+                        var timestamp = file.LastWriteTimeUtc.ToString("yyyyMMdd_HHmmss");
                         var nameWithoutExt = Path.GetFileNameWithoutExtension(file.Name);
                         var ext = Path.GetExtension(file.Name);
                         archivePath = Path.Combine(archiveDirectory, $"{nameWithoutExt}_{timestamp}{ext}");

@@ -159,7 +159,7 @@ public static class ConfigVersioning
                 return null;
             }
 
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
             var backupPath = $"{configPath}.backup_{timestamp}";
 
             File.Copy(configPath, backupPath, overwrite: false);
