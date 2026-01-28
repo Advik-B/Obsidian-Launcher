@@ -1,10 +1,9 @@
-﻿namespace ObsidianLauncher.Enums
+﻿namespace ObsidianLauncher.Enums;
+
+public enum OperatingSystemType
 {
-    public enum OperatingSystemType
-    {
-        Windows,
-        MacOS,
-        Linux,
-        Unknown
-    }
+    Windows,
+    MacOS,
+    Linux,
+    Unknown
 }

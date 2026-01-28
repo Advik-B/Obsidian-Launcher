@@ -1,4 +1,4 @@
-##  Obsidian Launcher
+## Obsidian Launcher
 
 ![GitHub stars](https://img.shields.io/github/stars/Advik-B/Obsidian-Launcher?style=for-the-badge)
 ![GitHub last commit](https://img.shields.io/github/last-commit/Advik-B/Obsidian-Launcher?style=for-the-badge)
@@ -16,15 +16,22 @@ This project, **Obsidian Launcher**, is a custom *'cracked'* Minecraft launcher.
 It didn't start its life in C#, though. My first attempt was in **C++**.
 👉 [Click here to browse the last C++ commit](https://github.com/Advik-B/Obsidian-Launcher/tree/ff27925ef0075a02787c2754d71c0096c27b33f1)
 
-Why the switch? Let’s just say C++ development, while powerful, presented a series of... *[character-building](./Images/rage-commits.png)* experiences that eventually led me to the more streamlined environment of **C#** and **.NET**.
+Why the switch? Let’s just say C++ development, while powerful, presented a series of...
+*[character-building](./Images/rage-commits.png)* experiences that eventually led me to the more streamlined environment
+of **C#** and **.NET**.
 
 ### 🔍 A few highlights from the C++ trenches:
 
-* ⚔️ **The Great Library Hunt & CMake Wars**: Simply getting a reliable compression and archive library integrated felt like a quest. I wrestled with CMake for *days* just to get a clean build across setups. Hours spent debugging build scripts could've built actual features! 
+* ⚔️ **The Great Library Hunt & CMake Wars**: Simply getting a reliable compression and archive library integrated felt
+  like a quest. I wrestled with CMake for *days* just to get a clean build across setups. Hours spent debugging build
+  scripts could've built actual features!
 
-* 🔐 **The SSL Certificate Fiasco**: Remember OpenSSL’s lovely inability to easily read system certs on some platforms? I do. I embedded `cacert.pem` manually. It *mostly* worked—except for one URL that always failed outside of tests. The kicker? Tests passed *every single time*. Eventually, I gave up and disabled SSL verification altogether.
+* 🔐 **The SSL Certificate Fiasco**: Remember OpenSSL’s lovely inability to easily read system certs on some platforms? I
+  do. I embedded `cacert.pem` manually. It *mostly* worked—except for one URL that always failed outside of tests. The
+  kicker? Tests passed *every single time*. Eventually, I gave up and disabled SSL verification altogether.
 
-It was clear that for this project, the *everything-is-manual* nature of C++ was a roadblock. So, I ditched it and started fresh with **C#** 
+It was clear that for this project, the *everything-is-manual* nature of C++ was a roadblock. So, I ditched it and
+started fresh with **C#**
 
 ---
 
