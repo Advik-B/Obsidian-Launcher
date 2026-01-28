@@ -47,7 +47,7 @@ Actively in development 🔄
 Here's what's working or in progress:
 
 * 📜 **Version Manifests**: Fetches and parses Mojang's data.
-* ☕ **Java Management**: Finds Java, downloads, extracts archives (`.zip` ✅, `.tar.gz` 🔜).
+* ☕ **Java Management**: Finds Java, downloads, extracts archives (`.zip` ✅, `.tar.gz` ✅).
 * 🎨 **Asset Management**: Downloads and verifies game assets.
 * 📦 **Library Management**: Handles downloads, verification, extraction + native rules.
 * 🧠 **Argument & Classpath Builder**: Fully functional with placeholder support.
@@ -95,6 +95,10 @@ ObsidianLauncher/
 
 ## 🛠️ Building and Running
 
+### Cross-Platform Support
+
+This launcher runs on **Windows, Linux, and macOS** thanks to .NET 10!
+
 1. 🧬 Clone the repository.
 2. 🔄 Restore packages:
 
@@ -107,8 +111,40 @@ ObsidianLauncher/
    dotnet build "Obsidian Launcher.csproj" -c Release
    ```
 4. 🚀 Run it:
-   `bin/Release/net10.0/Obsidian Launcher.exe`
+
+   **On Windows:**
+   ```bash
+   dotnet run --configuration Release
+   # Or directly: bin\Release\net10.0\Obsidian Launcher.exe
+   ```
+   
+   **On Linux/macOS:**
+   ```bash
+   dotnet run --configuration Release
+   # Or directly: ./bin/Release/net10.0/Obsidian\ Launcher
+   ```
+   
    (Data will be stored in `.ObsidianLauncher`)
+
+### Publishing for a Specific Platform
+
+To create a standalone executable for a specific platform:
+
+```bash
+# For Windows (x64)
+dotnet publish -c Release -r win-x64 --self-contained
+
+# For Linux (x64)
+dotnet publish -c Release -r linux-x64 --self-contained
+
+# For macOS (x64)
+dotnet publish -c Release -r osx-x64 --self-contained
+
+# For macOS (ARM64 - M1/M2/M3)
+dotnet publish -c Release -r osx-arm64 --self-contained
+```
+
+The standalone executable will be in `bin/Release/net10.0/{runtime-id}/publish/`
 
 ---
 
@@ -124,6 +160,24 @@ ObsidianLauncher/
 * 💡 And lots more!
 
 ---
+
+
+See [`.ai-docs/PRISM_LAUNCHER_FEATURE_COMPARISON.md`](.ai-docs/PRISM_LAUNCHER_FEATURE_COMPARISON.md) for a comprehensive feature comparison with PrismLauncher and a roadmap for future development.
+
+---
+
+## 📚 Documentation
+
+### AI-Generated Documentation
+
+This project includes AI-generated documentation to help with development, testing, and feature planning. These documents are located in the [`.ai-docs/`](.ai-docs/) folder:
+
+* **[Testing Plan](.ai-docs/END_TO_END_TESTING_PLAN.md)** - Comprehensive testing scenarios and procedures
+* **[Feature Comparison](.ai-docs/PRISM_LAUNCHER_FEATURE_COMPARISON.md)** - Detailed comparison with PrismLauncher and implementation roadmap
+* **[Task Summaries](.ai-docs/TASK_COMPLETION_SUMMARY.md)** - Summaries of completed development tasks
+
+These documents are provided as reference material and should be reviewed and validated as the project evolves.
+
 
 ## 🤝 Contributing
 
