@@ -4,7 +4,7 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/Advik-B/Obsidian-Launcher?style=for-the-badge)
 ![GitHub issues](https://img.shields.io/github/issues/Advik-B/Obsidian-Launcher?style=for-the-badge)
 ![License](https://img.shields.io/github/license/Advik-B/Obsidian-Launcher?style=for-the-badge)
-![.NET](https://img.shields.io/badge/.NET-9.0-blueviolet?style=for-the-badge)
+![.NET](https://img.shields.io/badge/.NET-10.0-blueviolet?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)
 
 ---
@@ -89,7 +89,7 @@ ObsidianLauncher/
 
 ## 📦 Prerequisites
 
-* .NET 9.0 SDK (or newer) ✅
+* .NET 10.0 SDK (or newer) ✅
 
 ---
 
@@ -107,7 +107,7 @@ ObsidianLauncher/
    dotnet build "Obsidian Launcher.csproj" -c Release
    ```
 4. 🚀 Run it:
-   `bin/Release/net9.0/Obsidian Launcher.exe`
+   `bin/Release/net10.0/Obsidian Launcher.exe`
    (Data will be stored in `.ObsidianLauncher`)
 
 ---
