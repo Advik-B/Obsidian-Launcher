@@ -154,7 +154,6 @@ The standalone executable will be in `bin/Release/net10.0/{runtime-id}/publish/`
 * 🖼️ **UI**: Build a GUI! (Console ≠ user-friendly 😅)
 * 📁 **Profile Management**
 * 🧩 **Mod Management**
-* 🧰 **TAR.GZ Support** for Linux/macOS Java runtimes
 * 🧠 **Placeholder Replacements**: Finish ‘em all.
 * 🧪 **Unit Tests**
 * 💡 And lots more!

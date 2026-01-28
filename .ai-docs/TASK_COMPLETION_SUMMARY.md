@@ -1,5 +1,7 @@
 # Task Completion Summary
 
+> **📝 Note:** This document describes the initial .NET 10 upgrade work. As of 2026-01-28, additional improvements have been made including cross-platform support (see CHANGES_SUMMARY.md for details). Some platform-specific references below are now outdated.
+
 ## ✅ All Tasks Completed Successfully
 
 This document summarizes the work completed for the three main tasks.

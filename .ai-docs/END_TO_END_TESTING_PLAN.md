@@ -1,10 +1,12 @@
 # End-to-End Testing Plan for Obsidian Launcher
 
+> **📝 Note:** This document was created before cross-platform support was added. As of 2026-01-28, the application now supports Windows, Linux, and macOS. Some Windows-specific references below are outdated but the testing procedures remain valid for all platforms.
+
 ## Overview
-This document provides a comprehensive testing plan for Obsidian Launcher. The application is built for Windows (win-x64) and requires a Windows environment for execution.
+This document provides a comprehensive testing plan for Obsidian Launcher. The application supports Windows, Linux, and macOS platforms.
 
 ## Prerequisites
-- Windows operating system (x64)
+- **Operating System**: Windows (x64), Linux (x64), or macOS (x64/ARM64)
 - .NET 10.0 Runtime installed
 - Internet connection for downloading Minecraft assets
 - At least 5GB of free disk space
@@ -19,9 +21,17 @@ dotnet build "Obsidian Launcher.csproj" -c Release
 ```
 
 ### Locating the Executable
+**Platform-agnostic (default build):**
 ```
-bin/Release/net10.0/win-x64/Obsidian Launcher.exe
+bin/Release/net10.0/Obsidian Launcher        # Linux/macOS executable
+bin/Release/net10.0/Obsidian Launcher.exe    # Windows executable
 ```
+
+**Platform-specific publish:**
+```
+bin/Release/net10.0/{runtime-id}/publish/Obsidian Launcher
+```
+Where `{runtime-id}` can be: `win-x64`, `linux-x64`, `osx-x64`, or `osx-arm64`
 
 ## Test Scenarios
 
@@ -526,12 +536,11 @@ bin/Release/net10.0/win-x64/Obsidian Launcher.exe
 
 ## Known Limitations (For Testing Awareness)
 
-1. **Windows-Only Executable**: Built for win-x64, won't run on Linux/macOS without platform-specific build
-2. **Offline Mode Only**: No Microsoft authentication yet
-3. **Console-Only Interface**: No GUI
-4. **Single Instance**: Doesn't support multiple Minecraft instances
-5. **No Mod Support**: Vanilla Minecraft only
-6. **No Update Checker**: No launcher self-update
+1. **Offline Mode Only**: No Microsoft authentication yet
+2. **Console-Only Interface**: No GUI
+3. **Single Instance**: Doesn't support multiple Minecraft instances
+4. **No Mod Support**: Vanilla Minecraft only
+5. **No Update Checker**: No launcher self-update
 
 ## Regression Testing Checklist
 
