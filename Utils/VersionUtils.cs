@@ -20,7 +20,7 @@ public static class VersionUtils
     /// </summary>
     /// <param name="versionString">The version string to parse.</param>
     /// <returns>A Version object if successful, null otherwise.</returns>
-    public static Version ParseVersion(string versionString)
+    public static Version? ParseVersion(string? versionString)
     {
         if (string.IsNullOrWhiteSpace(versionString))
         {
@@ -64,7 +64,7 @@ public static class VersionUtils
     ///     1 if version1 &gt; version2,
     ///     null if either version is invalid.
     /// </returns>
-    public static int? CompareVersions(string version1, string version2)
+    public static int? CompareVersions(string? version1, string? version2)
     {
         var v1 = ParseVersion(version1);
         var v2 = ParseVersion(version2);
@@ -84,7 +84,7 @@ public static class VersionUtils
     /// <param name="version1">First version string.</param>
     /// <param name="version2">Second version string.</param>
     /// <returns>True if version1 is newer, false otherwise.</returns>
-    public static bool IsNewer(string version1, string version2)
+    public static bool IsNewer(string? version1, string? version2)
     {
         var result = CompareVersions(version1, version2);
         return result.HasValue && result.Value > 0;
@@ -96,7 +96,7 @@ public static class VersionUtils
     /// <param name="version1">First version string.</param>
     /// <param name="version2">Second version string.</param>
     /// <returns>True if version1 is older, false otherwise.</returns>
-    public static bool IsOlder(string version1, string version2)
+    public static bool IsOlder(string? version1, string? version2)
     {
         var result = CompareVersions(version1, version2);
         return result.HasValue && result.Value < 0;
@@ -108,7 +108,7 @@ public static class VersionUtils
     /// <param name="version1">First version string.</param>
     /// <param name="version2">Second version string.</param>
     /// <returns>True if versions are equal, false otherwise.</returns>
-    public static bool AreEqual(string version1, string version2)
+    public static bool AreEqual(string? version1, string? version2)
     {
         var result = CompareVersions(version1, version2);
         return result.HasValue && result.Value == 0;
@@ -119,7 +119,7 @@ public static class VersionUtils
     /// </summary>
     /// <param name="versionString">The version string to validate.</param>
     /// <returns>True if valid, false otherwise.</returns>
-    public static bool IsValidVersion(string versionString)
+    public static bool IsValidVersion(string? versionString)
     {
         return ParseVersion(versionString) != null;
     }
@@ -129,7 +129,7 @@ public static class VersionUtils
     /// </summary>
     /// <param name="versionString">The version string.</param>
     /// <returns>The major version number, or -1 if invalid.</returns>
-    public static int GetMajorVersion(string versionString)
+    public static int GetMajorVersion(string? versionString)
     {
         var version = ParseVersion(versionString);
         return version?.Major ?? -1;
@@ -140,7 +140,7 @@ public static class VersionUtils
     /// </summary>
     /// <param name="versionString">The version string.</param>
     /// <returns>The minor version number, or -1 if invalid.</returns>
-    public static int GetMinorVersion(string versionString)
+    public static int GetMinorVersion(string? versionString)
     {
         var version = ParseVersion(versionString);
         return version?.Minor ?? -1;
@@ -151,7 +151,7 @@ public static class VersionUtils
     /// </summary>
     /// <param name="versionString">The version string.</param>
     /// <returns>The pre-release tag, or null if none exists.</returns>
-    public static string GetPreReleaseTag(string versionString)
+    public static string? GetPreReleaseTag(string? versionString)
     {
         if (string.IsNullOrWhiteSpace(versionString))
             return null;

@@ -10,14 +10,14 @@ namespace ObsidianLauncher.Settings;
 
 /// <summary>
 ///     Manages hierarchical settings with support for global and per-instance overrides.
-///     Settings are persisted to INI files.
+///     Settings are persisted to TOML files.
 /// </summary>
 public class SettingsManager
 {
     private static readonly ILogger _logger = Log.ForContext(typeof(SettingsManager));
     
-    private readonly IniFile _iniFile;
-    private readonly SettingsManager _parent;
+    private readonly TomlFile _tomlFile;
+    private readonly SettingsManager? _parent;
     private readonly Dictionary<string, object> _settings;
     private readonly string _section;
     private readonly string _configFilePath;
@@ -25,19 +25,19 @@ public class SettingsManager
     /// <summary>
     ///     Creates a new settings manager.
     /// </summary>
-    /// <param name="configFilePath">Path to the INI configuration file.</param>
-    /// <param name="section">Section name in the INI file (empty for default section).</param>
+    /// <param name="configFilePath">Path to the TOML configuration file.</param>
+    /// <param name="section">Section name in the TOML file (empty for root).</param>
     /// <param name="parent">Parent settings manager for hierarchical overrides (null for global settings).</param>
-    public SettingsManager(string configFilePath, string section = "", SettingsManager parent = null)
+    public SettingsManager(string configFilePath, string section = "", SettingsManager? parent = null)
     {
         _configFilePath = configFilePath;
-        _iniFile = new IniFile(configFilePath);
+        _tomlFile = new TomlFile(configFilePath);
         _section = section ?? string.Empty;
         _parent = parent;
         _settings = new Dictionary<string, object>();
         
         _logger.Information("Created settings manager for {ConfigPath} (section: {Section})", 
-            configFilePath, string.IsNullOrEmpty(_section) ? "<default>" : _section);
+            configFilePath, string.IsNullOrEmpty(_section) ? "<root>" : _section);
     }
 
     /// <summary>
@@ -52,7 +52,7 @@ public class SettingsManager
         var setting = new Setting<string>(key, defaultValue, description);
         _settings[key] = setting;
         
-        // Load value from INI file or parent
+        // Load value from TOML file or parent
         var value = GetEffectiveValue(key, defaultValue);
         setting.SetValueSilently(value);
         
@@ -146,7 +146,7 @@ public class SettingsManager
     public bool IsOverridden(string key)
     {
         // First check if we have a local override
-        if (_iniFile.KeyExists(_section, key))
+        if (_tomlFile.KeyExists(_section, key))
             return true;
 
         // If not, check if setting object is marked as overridden
@@ -171,9 +171,9 @@ public class SettingsManager
     /// <param name="key">Setting key name.</param>
     public void Reset(string key)
     {
-        // Delete from INI file
-        _iniFile.DeleteKey(_section, key);
-        _iniFile.Save();
+        // Delete from TOML file
+        _tomlFile.DeleteKey(_section, key);
+        _tomlFile.Save();
 
         // Reset setting object if it exists
         if (_settings.TryGetValue(key, out var setting))
@@ -192,7 +192,7 @@ public class SettingsManager
     }
 
     /// <summary>
-    ///     Saves all settings to the INI file.
+    ///     Saves all settings to the TOML file.
     /// </summary>
     public void SaveAll()
     {
@@ -202,25 +202,25 @@ public class SettingsManager
             var setting = kvp.Value;
 
             if (setting is Setting<string> strSetting && strSetting.IsOverridden)
-                _iniFile.Write(_section, key, strSetting.Value);
+                _tomlFile.Write(_section, key, strSetting.Value);
             else if (setting is Setting<int> intSetting && intSetting.IsOverridden)
-                _iniFile.Write(_section, key, intSetting.Value);
+                _tomlFile.Write(_section, key, intSetting.Value);
             else if (setting is Setting<bool> boolSetting && boolSetting.IsOverridden)
-                _iniFile.Write(_section, key, boolSetting.Value);
+                _tomlFile.Write(_section, key, boolSetting.Value);
             else if (setting is Setting<long> longSetting && longSetting.IsOverridden)
-                _iniFile.Write(_section, key, longSetting.Value);
+                _tomlFile.Write(_section, key, longSetting.Value);
         }
 
-        _iniFile.Save();
+        _tomlFile.Save();
         _logger.Information("Saved all settings to {ConfigPath}", _configFilePath);
     }
 
     /// <summary>
-    ///     Reloads all settings from the INI file.
+    ///     Reloads all settings from the TOML file.
     /// </summary>
     public void Reload()
     {
-        _iniFile.Load();
+        _tomlFile.Load();
 
         foreach (var kvp in _settings)
         {
@@ -256,10 +256,10 @@ public class SettingsManager
 
     private T GetEffectiveValue<T>(string key, T defaultValue)
     {
-        // First, check if we have a local value in the INI file
-        if (_iniFile.KeyExists(_section, key))
+        // First, check if we have a local value in the TOML file
+        if (_tomlFile.KeyExists(_section, key))
         {
-            return ReadFromIni<T>(key, defaultValue);
+            return ReadFromToml<T>(key, defaultValue);
         }
 
         // If not, check parent settings (hierarchical override)
@@ -276,16 +276,16 @@ public class SettingsManager
         return defaultValue;
     }
 
-    private T ReadFromIni<T>(string key, T defaultValue)
+    private T ReadFromToml<T>(string key, T defaultValue)
     {
         if (typeof(T) == typeof(string))
-            return (T)(object)_iniFile.Read(_section, key, defaultValue?.ToString() ?? "");
+            return (T)(object)_tomlFile.Read(_section, key, defaultValue?.ToString() ?? "");
         if (typeof(T) == typeof(int))
-            return (T)(object)_iniFile.ReadInt(_section, key, Convert.ToInt32(defaultValue));
+            return (T)(object)_tomlFile.ReadInt(_section, key, Convert.ToInt32(defaultValue));
         if (typeof(T) == typeof(bool))
-            return (T)(object)_iniFile.ReadBool(_section, key, Convert.ToBoolean(defaultValue));
+            return (T)(object)_tomlFile.ReadBool(_section, key, Convert.ToBoolean(defaultValue));
         if (typeof(T) == typeof(long))
-            return (T)(object)_iniFile.ReadLong(_section, key, Convert.ToInt64(defaultValue));
+            return (T)(object)_tomlFile.ReadLong(_section, key, Convert.ToInt64(defaultValue));
 
         return defaultValue;
     }
@@ -293,15 +293,15 @@ public class SettingsManager
     private void SaveSetting<T>(string key, T value)
     {
         if (typeof(T) == typeof(string))
-            _iniFile.Write(_section, key, value?.ToString() ?? "");
+            _tomlFile.Write(_section, key, value?.ToString() ?? "");
         else if (typeof(T) == typeof(int))
-            _iniFile.Write(_section, key, Convert.ToInt32(value));
+            _tomlFile.Write(_section, key, Convert.ToInt32(value));
         else if (typeof(T) == typeof(bool))
-            _iniFile.Write(_section, key, Convert.ToBoolean(value));
+            _tomlFile.Write(_section, key, Convert.ToBoolean(value));
         else if (typeof(T) == typeof(long))
-            _iniFile.Write(_section, key, Convert.ToInt64(value));
+            _tomlFile.Write(_section, key, Convert.ToInt64(value));
 
-        _iniFile.Save();
+        _tomlFile.Save();
         _logger.Debug("Saved setting: {Key} = {Value}", key, value);
     }
 }

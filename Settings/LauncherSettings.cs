@@ -47,7 +47,7 @@ public class LauncherSettings
     /// <summary>
     ///     Creates launcher settings from the specified configuration file.
     /// </summary>
-    /// <param name="configFilePath">Path to the launcher configuration INI file.</param>
+    /// <param name="configFilePath">Path to the launcher configuration TOML file.</param>
     public LauncherSettings(string configFilePath)
     {
         _settingsManager = new SettingsManager(configFilePath, "General");

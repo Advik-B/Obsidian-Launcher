@@ -17,7 +17,7 @@ public class Setting<T>
     /// <summary>
     ///     Occurs when the setting value changes.
     /// </summary>
-    public event EventHandler<SettingChangedEventArgs<T>> ValueChanged;
+    public event EventHandler<SettingChangedEventArgs<T>>? ValueChanged;
 
     /// <summary>
     ///     Gets or sets the setting value.

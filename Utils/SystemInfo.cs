@@ -177,7 +177,14 @@ public static class SystemInfo
     {
         try
         {
-            var driveInfo = new System.IO.DriveInfo(System.IO.Path.GetPathRoot(path));
+            var rootPath = System.IO.Path.GetPathRoot(path);
+            if (string.IsNullOrEmpty(rootPath))
+            {
+                _logger.Warning("Could not determine root path for: {Path}", path);
+                return (-1, -1);
+            }
+
+            var driveInfo = new System.IO.DriveInfo(rootPath);
             return (driveInfo.AvailableFreeSpace, driveInfo.TotalSize);
         }
         catch (Exception ex)

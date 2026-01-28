@@ -2,12 +2,37 @@
 
 This document provides a comprehensive checklist of features from PrismLauncher that should be implemented in Obsidian Launcher, organized by complexity level (Low → Critical).
 
+## ⚠️ Important Notes
+
+### Plugin System Support
+**Obsidian Launcher is designed to support .NET plugins** for extensibility and customization. The plugin system will allow:
+- **Mod loaders**: Custom implementations for Forge, Fabric, Quilt, etc.
+- **Authentication providers**: Microsoft Account, custom auth backends
+- **Theme providers**: Custom UI themes and skins
+- **Instance providers**: Custom instance types and formats
+- **Download providers**: Custom mod platforms beyond Modrinth/CurseForge
+
+**Plugin Architecture Requirements:**
+- Plugin discovery via assembly scanning
+- Dependency injection for plugin services
+- Event-based plugin lifecycle (load, enable, disable, unload)
+- Sandboxed execution with configurable permissions
+- Version compatibility checking
+- Hot-reload support for development
+
+**Implementation Priority:** Medium (Level 2-3)  
+**Status:** Planned - Framework design in progress
+
+### Configuration Format
+**All configuration files use TOML format** (not INI) for better type safety, readability, and standard compliance.
+
 ## Legend
 - ✅ Already Implemented
 - 🚧 Partially Implemented
 - ❌ Not Implemented
 - 🎯 High Priority
 - 💡 Enhancement Opportunity
+- 🔌 Plugin-Extensible Feature
 
 ---
 
@@ -39,9 +64,9 @@ This document provides a comprehensive checklist of features from PrismLauncher 
 - ❌ Environment variable helpers
 
 #### 1.4 Basic Configuration
-- ❌ INI file reading/writing
+- ❌ TOML file reading/writing ✅ (Implemented)
 - ❌ Configuration versioning
-- ❌ Default value handling
+- ❌ Default value handling ✅ (Implemented)
 - ❌ Configuration validation
 
 #### 1.5 Basic Logging Enhancements
@@ -56,14 +81,14 @@ This document provides a comprehensive checklist of features from PrismLauncher 
 ### 🟡 Level 2: MEDIUM COMPLEXITY (Core Features)
 
 #### 2.1 Settings System
-- ❌ Hierarchical settings (global + per-instance) 🎯
-- ❌ Settings persistence (INI-based)
-- ❌ Settings override mechanism
+- ❌ Hierarchical settings (global + per-instance) 🎯 ✅ (Implemented)
+- ❌ Settings persistence (TOML-based) ✅ (Implemented)
+- ❌ Settings override mechanism ✅ (Implemented)
 - ❌ Settings UI pages/dialogs
 - ❌ Import/Export settings
-- ❌ Settings validation and defaults
+- ❌ Settings validation and defaults ✅ (Implemented)
 
-#### 2.2 Instance Management Enhancements
+#### 2.3 Instance Management Enhancements
 - ✅ Basic instance creation
 - ✅ Instance directory organization
 - ❌ Instance grouping/categorization 🎯
@@ -73,7 +98,7 @@ This document provides a comprehensive checklist of features from PrismLauncher 
 - ❌ Instance icon customization
 - ❌ Instance import/export
 
-#### 2.3 Java Runtime Management (Enhanced)
+#### 2.4 Java Runtime Management (Enhanced)
 - ✅ Java auto-detection
 - ✅ Java version checking
 - ✅ Java download from Adoptium/Mojang
@@ -82,7 +107,7 @@ This document provides a comprehensive checklist of features from PrismLauncher 
 - ❌ Java memory configuration UI
 - ❌ Java argument presets
 
-#### 2.4 Basic GUI Framework
+#### 2.5 Basic GUI Framework
 - ❌ Main window with instance list 🎯
 - ❌ Instance selection/launching UI
 - ❌ Progress bars for downloads
@@ -91,21 +116,21 @@ This document provides a comprehensive checklist of features from PrismLauncher 
 - ❌ Basic menu system
 - ❌ Toolbar with common actions
 
-#### 2.5 Theme System
+#### 2.6 Theme System
 - ❌ Dark theme
 - ❌ Light theme
 - ❌ System theme detection
 - ❌ Custom theme support
 - ❌ Theme preview/switching
 
-#### 2.6 News & Updates
+#### 2.7 News & Updates
 - ❌ News feed display
 - ❌ Markdown rendering for news
 - ❌ Update checking
 - ❌ Release notes display
 - ❌ Auto-update notifications
 
-#### 2.7 Network Enhancements
+#### 2.8 Network Enhancements
 - ✅ Basic HTTP downloads
 - ✅ Checksum validation (SHA1)
 - ❌ Concurrent download management
@@ -115,7 +140,7 @@ This document provides a comprehensive checklist of features from PrismLauncher 
 - ❌ HTTP caching with validation
 - ❌ Download resume support
 
-#### 2.8 Asset & Library Management (Enhanced)
+#### 2.9 Asset & Library Management (Enhanced)
 - ✅ Asset downloading
 - ✅ Library downloading
 - ✅ Native library extraction
@@ -124,7 +149,7 @@ This document provides a comprehensive checklist of features from PrismLauncher 
 - ❌ Asset verification and repair
 - ❌ Library deduplication
 
-#### 2.9 Basic Resource Management
+#### 2.10 Basic Resource Management
 - ❌ Resource pack folder management
 - ❌ Shader pack folder management
 - ❌ World saves folder management
@@ -203,11 +228,11 @@ This document provides a comprehensive checklist of features from PrismLauncher 
 
 #### 3.8 Mod Loader Support (Enhanced)
 - 🚧 Fabric support (basic)
-- ❌ Forge support 🎯
-- ❌ NeoForge support
-- ❌ Quilt support
-- ❌ LiteLoader support (legacy)
-- ❌ Mod loader auto-detection
+- ❌ Forge support 🎯 🔌
+- ❌ NeoForge support 🔌
+- ❌ Quilt support 🔌
+- ❌ LiteLoader support (legacy) 🔌
+- ❌ Mod loader auto-detection 🔌
 - ❌ Mod loader version selection UI
 
 #### 3.9 Translation/Internationalization
