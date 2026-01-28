@@ -44,36 +44,36 @@ This document provides a comprehensive checklist of features from PrismLauncher 
 - ✅ File system operations (copy, move, delete)
 - ✅ Directory creation and management
 - ✅ Path normalization and validation
-- ❌ Recursive directory watching for changes
-- ❌ File size formatting (human-readable)
-- ❌ Disk space checking utilities
+- ✅ Recursive directory watching for changes
+- ✅ File size formatting (human-readable)
+- ✅ Disk space checking utilities
 
 #### 1.2 String & Data Utilities
 - ✅ JSON serialization/deserialization
 - ✅ SHA1 checksum validation
-- ❌ SHA256 checksum validation
-- ❌ Version number parsing and comparison
-- ❌ String template/placeholder system (basic)
-- ❌ UUID generation utilities
+- ✅ SHA256 checksum validation
+- ✅ Version number parsing and comparison
+- ✅ String template/placeholder system (basic)
+- ✅ UUID generation utilities
 
 #### 1.3 OS & Platform Detection
 - ✅ Operating system detection (Windows, Linux, macOS)
 - ✅ Architecture detection (x86, x64, ARM, ARM64)
-- ❌ System information gathering (RAM, CPU, GPU)
-- ❌ Platform-specific path resolution
-- ❌ Environment variable helpers
+- ✅ System information gathering (RAM, CPU, GPU)
+- ✅ Platform-specific path resolution
+- ✅ Environment variable helpers
 
 #### 1.4 Basic Configuration
-- ❌ TOML file reading/writing ✅ (Implemented)
-- ❌ Configuration versioning
-- ❌ Default value handling ✅ (Implemented)
-- ❌ Configuration validation
+- ✅ TOML file reading/writing
+- ✅ Configuration versioning
+- ✅ Default value handling
+- ✅ Configuration validation
 
 #### 1.5 Basic Logging Enhancements
 - ✅ Console logging (Serilog)
 - ✅ File logging (Serilog)
 - ❌ Log level filtering UI
-- ❌ Log file rotation
+- ✅ Log file rotation
 - ❌ Log export functionality
 
 ---
