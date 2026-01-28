@@ -346,4 +346,431 @@ public class InstanceManager
         _logger.Information("Updated playtime for instance '{InstanceName}'. Last Session: {LastSessionPlaytimeFormat}, Total Playtime: {TotalPlaytimeFormat}",
             instance.Name, instance.LastSessionPlaytime.ToString(@"hh\:mm\:ss"), instance.TotalPlaytime.ToString(@"d\.hh\:mm\:ss"));
     }
+
+    /// <summary>
+    ///     Copies an instance to create a new instance with the same configuration.
+    /// </summary>
+    /// <param name="sourceInstanceName">Name of the source instance to copy.</param>
+    /// <param name="newInstanceName">Name for the new copied instance.</param>
+    /// <param name="copyPlaytimeData">Whether to copy playtime data (default: false).</param>
+    /// <returns>The newly created instance, or null if copy failed.</returns>
+    public async Task<Instance?> CopyInstanceAsync(string sourceInstanceName, string newInstanceName, bool copyPlaytimeData = false)
+    {
+        if (string.IsNullOrWhiteSpace(sourceInstanceName))
+            throw new ArgumentException("Source instance name cannot be empty.", nameof(sourceInstanceName));
+        if (string.IsNullOrWhiteSpace(newInstanceName))
+            throw new ArgumentException("New instance name cannot be empty.", nameof(newInstanceName));
+
+        _logger.Information("Copying instance '{SourceName}' to '{NewName}'...", sourceInstanceName, newInstanceName);
+
+        // Load source instance
+        var sourceInstance = await LoadInstanceAsync(sourceInstanceName);
+        if (sourceInstance == null)
+        {
+            _logger.Error("Source instance '{SourceName}' not found.", sourceInstanceName);
+            return null;
+        }
+
+        var sourcePath = GetInstancePath(sourceInstanceName);
+        var newPath = GetInstancePath(newInstanceName);
+
+        // Check if destination already exists
+        if (Directory.Exists(newPath))
+        {
+            _logger.Error("Instance '{NewName}' already exists at {NewPath}.", newInstanceName, newPath);
+            return null;
+        }
+
+        try
+        {
+            // Copy entire directory structure
+            CopyDirectory(sourcePath, newPath);
+
+            // Load the copied instance
+            var newInstance = await LoadInstanceAsync(newInstanceName);
+            if (newInstance == null)
+            {
+                _logger.Error("Failed to load copied instance '{NewName}'.", newInstanceName);
+                return null;
+            }
+
+            // Update instance metadata
+            newInstance.Id = Guid.NewGuid().ToString();
+            newInstance.Name = newInstanceName;
+            newInstance.CreationDate = DateTime.UtcNow;
+            newInstance.LastModifiedDate = DateTime.UtcNow;
+
+            if (!copyPlaytimeData)
+            {
+                newInstance.TotalPlaytime = TimeSpan.Zero;
+                newInstance.LastSessionPlaytime = TimeSpan.Zero;
+                newInstance.LastPlayedDate = DateTime.MinValue;
+            }
+
+            // Save updated metadata
+            await SaveInstanceAsync(newInstance);
+
+            _logger.Information("Successfully copied instance '{SourceName}' to '{NewName}' at {NewPath}", 
+                sourceInstanceName, newInstanceName, newPath);
+            return newInstance;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to copy instance '{SourceName}' to '{NewName}'", sourceInstanceName, newInstanceName);
+            
+            // Clean up if copy failed
+            if (Directory.Exists(newPath))
+            {
+                try
+                {
+                    Directory.Delete(newPath, true);
+                    _logger.Information("Cleaned up failed copy at {NewPath}", newPath);
+                }
+                catch (Exception cleanupEx)
+                {
+                    _logger.Warning(cleanupEx, "Failed to clean up failed copy at {NewPath}", newPath);
+                }
+            }
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Deletes an instance and all its data.
+    /// </summary>
+    /// <param name="instanceName">Name of the instance to delete.</param>
+    /// <param name="createBackup">Whether to create a backup before deletion (default: true).</param>
+    /// <returns>True if deletion was successful, false otherwise.</returns>
+    public async Task<bool> DeleteInstanceAsync(string instanceName, bool createBackup = true)
+    {
+        if (string.IsNullOrWhiteSpace(instanceName))
+            throw new ArgumentException("Instance name cannot be empty.", nameof(instanceName));
+
+        var instancePath = GetInstancePath(instanceName);
+
+        if (!Directory.Exists(instancePath))
+        {
+            _logger.Warning("Instance '{InstanceName}' not found at {InstancePath}.", instanceName, instancePath);
+            return false;
+        }
+
+        _logger.Information("Deleting instance '{InstanceName}' at {InstancePath}...", instanceName, instancePath);
+
+        try
+        {
+            // Create backup if requested
+            if (createBackup)
+            {
+                var backupPath = Path.Combine(_launcherConfig.BaseDataPath, "backups", "instances", 
+                    $"{SanitizeName(instanceName)}_{DateTime.UtcNow:yyyyMMdd_HHmmss}");
+                
+                Directory.CreateDirectory(Path.GetDirectoryName(backupPath)!);
+                CopyDirectory(instancePath, backupPath);
+                _logger.Information("Created backup of instance '{InstanceName}' at {BackupPath}", instanceName, backupPath);
+            }
+
+            // Delete the instance directory
+            Directory.Delete(instancePath, true);
+            _logger.Information("Successfully deleted instance '{InstanceName}'", instanceName);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to delete instance '{InstanceName}'", instanceName);
+            return false;
+        }
+    }
+
+    /// <summary>
+    ///     Updates instance metadata (name, notes, tags, etc.).
+    /// </summary>
+    /// <param name="instanceName">Current name of the instance.</param>
+    /// <param name="updateAction">Action to update the instance properties.</param>
+    /// <param name="renameInstance">Whether to rename the instance directory if name changes (default: false).</param>
+    /// <returns>True if update was successful, false otherwise.</returns>
+    public async Task<bool> UpdateInstanceMetadataAsync(string instanceName, Action<Instance> updateAction, bool renameInstance = false)
+    {
+        if (string.IsNullOrWhiteSpace(instanceName))
+            throw new ArgumentException("Instance name cannot be empty.", nameof(instanceName));
+
+        var instance = await LoadInstanceAsync(instanceName);
+        if (instance == null)
+        {
+            _logger.Error("Instance '{InstanceName}' not found.", instanceName);
+            return false;
+        }
+
+        var oldName = instance.Name;
+        var oldPath = instance.InstancePath;
+
+        // Apply updates
+        updateAction(instance);
+        instance.LastModifiedDate = DateTime.UtcNow;
+
+        // Handle renaming if name changed and renaming is requested
+        if (renameInstance && !string.Equals(oldName, instance.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            var newPath = GetInstancePath(instance.Name);
+
+            if (Directory.Exists(newPath))
+            {
+                _logger.Error("Cannot rename instance to '{NewName}': directory already exists at {NewPath}", 
+                    instance.Name, newPath);
+                return false;
+            }
+
+            try
+            {
+                Directory.Move(oldPath, newPath);
+                instance.InstancePath = newPath;
+                _logger.Information("Renamed instance directory from '{OldName}' to '{NewName}'", oldName, instance.Name);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to rename instance directory from '{OldName}' to '{NewName}'", 
+                    oldName, instance.Name);
+                return false;
+            }
+        }
+
+        // Save updated metadata
+        var saved = await SaveInstanceAsync(instance);
+        if (saved)
+        {
+            _logger.Information("Updated metadata for instance '{InstanceName}'", instance.Name);
+        }
+
+        return saved;
+    }
+
+    /// <summary>
+    ///     Exports an instance to a zip file.
+    /// </summary>
+    /// <param name="instanceName">Name of the instance to export.</param>
+    /// <param name="exportPath">Path where the zip file should be created.</param>
+    /// <param name="includeConfig">Whether to include configuration files (default: true).</param>
+    /// <param name="includeWorlds">Whether to include world saves (default: true).</param>
+    /// <param name="includeResourcePacks">Whether to include resource packs (default: false).</param>
+    /// <param name="includeScreenshots">Whether to include screenshots (default: false).</param>
+    /// <returns>Path to the created zip file, or null if export failed.</returns>
+    public async Task<string?> ExportInstanceAsync(
+        string instanceName,
+        string exportPath,
+        bool includeConfig = true,
+        bool includeWorlds = true,
+        bool includeResourcePacks = false,
+        bool includeScreenshots = false)
+    {
+        if (string.IsNullOrWhiteSpace(instanceName))
+            throw new ArgumentException("Instance name cannot be empty.", nameof(instanceName));
+        if (string.IsNullOrWhiteSpace(exportPath))
+            throw new ArgumentException("Export path cannot be empty.", nameof(exportPath));
+
+        var instance = await LoadInstanceAsync(instanceName);
+        if (instance == null)
+        {
+            _logger.Error("Instance '{InstanceName}' not found for export.", instanceName);
+            return null;
+        }
+
+        var instancePath = GetInstancePath(instanceName);
+        
+        try
+        {
+            // Ensure export directory exists
+            var exportDir = Path.GetDirectoryName(exportPath);
+            if (!string.IsNullOrEmpty(exportDir))
+            {
+                Directory.CreateDirectory(exportDir);
+            }
+
+            // Create temporary directory for export content
+            var tempDir = Path.Combine(Path.GetTempPath(), $"instance_export_{Guid.NewGuid()}");
+            Directory.CreateDirectory(tempDir);
+
+            try
+            {
+                // Copy instance metadata
+                var metadataPath = Path.Combine(instancePath, InstanceMetadataFileName);
+                if (File.Exists(metadataPath))
+                {
+                    File.Copy(metadataPath, Path.Combine(tempDir, InstanceMetadataFileName));
+                }
+
+                // Copy configuration files
+                if (includeConfig)
+                {
+                    var configFiles = new[] { "config", "options.txt", "servers.dat", "servers.dat_old" };
+                    foreach (var configFile in configFiles)
+                    {
+                        var sourcePath = Path.Combine(instancePath, configFile);
+                        var destPath = Path.Combine(tempDir, configFile);
+
+                        if (File.Exists(sourcePath))
+                        {
+                            File.Copy(sourcePath, destPath);
+                        }
+                        else if (Directory.Exists(sourcePath))
+                        {
+                            CopyDirectory(sourcePath, destPath);
+                        }
+                    }
+                }
+
+                // Copy worlds
+                if (includeWorlds)
+                {
+                    var savesPath = Path.Combine(instancePath, "saves");
+                    if (Directory.Exists(savesPath))
+                    {
+                        CopyDirectory(savesPath, Path.Combine(tempDir, "saves"));
+                    }
+                }
+
+                // Copy resource packs
+                if (includeResourcePacks)
+                {
+                    var resourcePacksPath = Path.Combine(instancePath, "resourcepacks");
+                    if (Directory.Exists(resourcePacksPath))
+                    {
+                        CopyDirectory(resourcePacksPath, Path.Combine(tempDir, "resourcepacks"));
+                    }
+                }
+
+                // Copy screenshots
+                if (includeScreenshots)
+                {
+                    var screenshotsPath = Path.Combine(instancePath, "screenshots");
+                    if (Directory.Exists(screenshotsPath))
+                    {
+                        CopyDirectory(screenshotsPath, Path.Combine(tempDir, "screenshots"));
+                    }
+                }
+
+                // Create zip file
+                if (File.Exists(exportPath))
+                {
+                    File.Delete(exportPath);
+                }
+
+                System.IO.Compression.ZipFile.CreateFromDirectory(tempDir, exportPath);
+                _logger.Information("Exported instance '{InstanceName}' to {ExportPath}", instanceName, exportPath);
+                
+                return exportPath;
+            }
+            finally
+            {
+                // Clean up temporary directory
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, true);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to export instance '{InstanceName}' to {ExportPath}", instanceName, exportPath);
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Imports an instance from a zip file.
+    /// </summary>
+    /// <param name="zipPath">Path to the zip file containing the instance.</param>
+    /// <param name="instanceName">Name for the imported instance.</param>
+    /// <returns>The imported instance, or null if import failed.</returns>
+    public async Task<Instance?> ImportInstanceAsync(string zipPath, string instanceName)
+    {
+        if (string.IsNullOrWhiteSpace(zipPath))
+            throw new ArgumentException("Zip path cannot be empty.", nameof(zipPath));
+        if (string.IsNullOrWhiteSpace(instanceName))
+            throw new ArgumentException("Instance name cannot be empty.", nameof(instanceName));
+
+        if (!File.Exists(zipPath))
+        {
+            _logger.Error("Zip file not found: {ZipPath}", zipPath);
+            return null;
+        }
+
+        var instancePath = GetInstancePath(instanceName);
+
+        if (Directory.Exists(instancePath))
+        {
+            _logger.Error("Instance '{InstanceName}' already exists at {InstancePath}", instanceName, instancePath);
+            return null;
+        }
+
+        try
+        {
+            // Extract zip to instance directory
+            System.IO.Compression.ZipFile.ExtractToDirectory(zipPath, instancePath);
+            
+            // Load instance
+            var instance = await LoadInstanceAsync(instanceName);
+            if (instance == null)
+            {
+                _logger.Error("Failed to load imported instance '{InstanceName}'", instanceName);
+                return null;
+            }
+
+            // Update instance metadata
+            instance.Id = Guid.NewGuid().ToString();
+            instance.Name = instanceName;
+            instance.CreationDate = DateTime.UtcNow;
+            instance.LastModifiedDate = DateTime.UtcNow;
+            instance.InstancePath = instancePath;
+
+            // Save updated metadata
+            await SaveInstanceAsync(instance);
+
+            _logger.Information("Successfully imported instance '{InstanceName}' from {ZipPath}", instanceName, zipPath);
+            return instance;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to import instance '{InstanceName}' from {ZipPath}", instanceName, zipPath);
+            
+            // Clean up if import failed
+            if (Directory.Exists(instancePath))
+            {
+                try
+                {
+                    Directory.Delete(instancePath, true);
+                }
+                catch (Exception cleanupEx)
+                {
+                    _logger.Warning(cleanupEx, "Failed to clean up failed import at {InstancePath}", instancePath);
+                }
+            }
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Helper method to recursively copy a directory.
+    /// </summary>
+    private static void CopyDirectory(string sourceDir, string destDir)
+    {
+        // Create destination directory
+        Directory.CreateDirectory(destDir);
+
+        // Copy files
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            var fileName = Path.GetFileName(file);
+            var destFile = Path.Combine(destDir, fileName);
+            File.Copy(file, destFile, true);
+        }
+
+        // Copy subdirectories
+        foreach (var subDir in Directory.GetDirectories(sourceDir))
+        {
+            var dirName = Path.GetFileName(subDir);
+            var destSubDir = Path.Combine(destDir, dirName);
+            CopyDirectory(subDir, destSubDir);
+        }
+    }
 }
