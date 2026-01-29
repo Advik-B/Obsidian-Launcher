@@ -3,6 +3,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Services;
 using ObsidianLauncher.Settings;
@@ -318,10 +320,13 @@ public class MainWindowViewModel : ViewModelBase
             _logger.Information("Opening settings dialog");
             
             var settingsViewModel = new SettingsViewModel(_launcherSettings);
-            var settingsDialog = new Views.SettingsDialog(settingsViewModel);
+            var settingsWindow = new Views.SettingsWindow(settingsViewModel);
             
-            // Show the dialog
-            await settingsDialog.ShowAsync();
+            // Get the main window to show the dialog as modal
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                await settingsWindow.ShowDialog(desktop.MainWindow);
+            }
             
             StatusText = "Settings updated";
         }
