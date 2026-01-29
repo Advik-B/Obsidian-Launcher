@@ -51,10 +51,10 @@ public class InstanceManager
         return name.Replace(" ", "_").Trim();
     }
     
-    public async Task<(bool Success, string ClientJarPath, List<string> LibraryJarPaths)> SyncInstanceAsync(
+    public async Task<(bool Success, string? ClientJarPath, List<string>? LibraryJarPaths)> SyncInstanceAsync(
         Instance instance,
-        IProgress<AssetDownloadProgress> assetProgress = null,
-        IProgress<LibraryProcessingProgress> libraryProgress = null,
+        IProgress<AssetDownloadProgress>? assetProgress = null,
+        IProgress<LibraryProcessingProgress>? libraryProgress = null,
         CancellationToken cancellationToken = default)
     {
         if (instance == null) throw new ArgumentNullException(nameof(instance));
@@ -262,7 +262,7 @@ public class InstanceManager
     }
     
     // Unchanged methods...
-    public async Task<Instance> LoadInstanceAsync(string name)
+    public async Task<Instance?> LoadInstanceAsync(string name)
     {
         var instancePath = GetInstancePath(name);
         var metadataFilePath = Path.Combine(instancePath, InstanceMetadataFileName);

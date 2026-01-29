@@ -61,7 +61,8 @@ public class ArgumentBuilder
             {
                 if (argWrapper.IsPlainString)
                 {
-                    jvmArgs.Add(ReplacePlaceholders(argWrapper.PlainStringValue, launchProfile, classpath, nativesDir, instancePath));
+                    var arg = ReplacePlaceholders(argWrapper.PlainStringValue, launchProfile, classpath, nativesDir, instancePath);
+                    if (arg != null) jvmArgs.Add(arg);
                 }
                 else if (argWrapper.IsConditional)
                 {
@@ -69,9 +70,14 @@ public class ArgumentBuilder
                     if (AreRulesSatisfied(conditionalArg.Rules, javaRuntime))
                     {
                         if (conditionalArg.IsSingleValue())
-                            jvmArgs.Add(ReplacePlaceholders(conditionalArg.GetSingleValue(), launchProfile, classpath, nativesDir, instancePath));
+                        {
+                            var arg = ReplacePlaceholders(conditionalArg.GetSingleValue(), launchProfile, classpath, nativesDir, instancePath);
+                            if (arg != null) jvmArgs.Add(arg);
+                        }
                         else if (conditionalArg.IsListValue())
-                            jvmArgs.AddRange(conditionalArg.GetListValue().Select(val => ReplacePlaceholders(val, launchProfile, classpath, nativesDir, instancePath)));
+                            jvmArgs.AddRange(conditionalArg.GetListValue()
+                                .Select(val => ReplacePlaceholders(val, launchProfile, classpath, nativesDir, instancePath))
+                                .Where(s => s != null)!);
                     }
                 }
             }
@@ -92,7 +98,7 @@ public class ArgumentBuilder
 
             if (File.Exists(logConfigFilePath))
             {
-                var loggingArg = ReplacePlaceholders(launchProfile.Logging.Client.Argument, launchProfile, classpath, nativesDir, instancePath)
+                var loggingArg = ReplacePlaceholders(launchProfile.Logging.Client.Argument, launchProfile, classpath, nativesDir, instancePath)!
                     .Replace("${path}", $"\"{Path.GetFullPath(logConfigFilePath)}\"");
                 jvmArgs.Add(loggingArg);
                 _logger.Information("Added client logging argument: {LoggingArg}", loggingArg);
@@ -119,7 +125,8 @@ public class ArgumentBuilder
             {
                 if (argWrapper.IsPlainString)
                 {
-                    gameArgs.Add(ReplacePlaceholders(argWrapper.PlainStringValue, launchProfile, null, null, instancePath));
+                    var arg = ReplacePlaceholders(argWrapper.PlainStringValue, launchProfile, null, null, instancePath);
+                    if (arg != null) gameArgs.Add(arg);
                 }
                 else if (argWrapper.IsConditional)
                 {
@@ -127,9 +134,14 @@ public class ArgumentBuilder
                     if (AreRulesSatisfied(conditionalArg.Rules, null))
                     {
                         if (conditionalArg.IsSingleValue())
-                            gameArgs.Add(ReplacePlaceholders(conditionalArg.GetSingleValue(), launchProfile, null, null, instancePath));
+                        {
+                            var arg = ReplacePlaceholders(conditionalArg.GetSingleValue(), launchProfile, null, null, instancePath);
+                            if (arg != null) gameArgs.Add(arg);
+                        }
                         else if (conditionalArg.IsListValue())
-                            gameArgs.AddRange(conditionalArg.GetListValue().Select(val => ReplacePlaceholders(val, launchProfile, null, null, instancePath)));
+                            gameArgs.AddRange(conditionalArg.GetListValue()
+                                .Select(val => ReplacePlaceholders(val, launchProfile, null, null, instancePath))
+                                .Where(s => s != null)!);
                     }
                 }
             }
@@ -144,7 +156,7 @@ public class ArgumentBuilder
         return gameArgs;
     }
     
-    private string ReplacePlaceholders(string argument, LaunchProfile launchProfile, string classpath, string nativesDir, string instancePath)
+    private string? ReplacePlaceholders(string? argument, LaunchProfile launchProfile, string? classpath, string? nativesDir, string instancePath)
     {
         if (argument == null) return null;
 
@@ -270,8 +282,9 @@ public class ArgumentBuilder
             foreach (var argWrapper in mcVersion.Arguments.Jvm)
                 if (argWrapper.IsPlainString)
                 {
-                    jvmArgs.Add(ReplacePlaceholders(argWrapper.PlainStringValue, mcVersion, classpath, nativesDir,
-                        instancePath));
+                    var arg = ReplacePlaceholders(argWrapper.PlainStringValue, mcVersion, classpath, nativesDir,
+                        instancePath);
+                    if (arg != null) jvmArgs.Add(arg);
                 }
                 else if (argWrapper.IsConditional)
                 {
@@ -279,12 +292,16 @@ public class ArgumentBuilder
                     if (AreRulesSatisfied(conditionalArg.Rules, javaRuntime))
                     {
                         if (conditionalArg.IsSingleValue())
-                            jvmArgs.Add(ReplacePlaceholders(conditionalArg.GetSingleValue(), mcVersion, classpath,
-                                nativesDir, instancePath));
+                        {
+                            var arg = ReplacePlaceholders(conditionalArg.GetSingleValue(), mcVersion, classpath,
+                                nativesDir, instancePath);
+                            if (arg != null) jvmArgs.Add(arg);
+                        }
                         else if (conditionalArg.IsListValue())
                             jvmArgs.AddRange(conditionalArg.GetListValue()
                                 .Select(val =>
-                                    ReplacePlaceholders(val, mcVersion, classpath, nativesDir, instancePath)));
+                                    ReplacePlaceholders(val, mcVersion, classpath, nativesDir, instancePath))
+                                .Where(s => s != null)!);
                     }
                 }
         }
@@ -308,7 +325,7 @@ public class ArgumentBuilder
             {
                 // Pass instancePath to ReplacePlaceholders, though this specific placeholder doesn't use it.
                 var loggingArg = ReplacePlaceholders(mcVersion.Logging.Client.Argument, mcVersion, classpath,
-                        nativesDir, instancePath)
+                        nativesDir, instancePath)!
                     .Replace("${path}", $"\"{Path.GetFullPath(logConfigFilePath)}\"");
                 jvmArgs.Add(loggingArg);
                 _logger.Information("Added client logging argument: {LoggingArg}", loggingArg);
@@ -337,7 +354,8 @@ public class ArgumentBuilder
             foreach (var argWrapper in mcVersion.Arguments.Game)
                 if (argWrapper.IsPlainString)
                 {
-                    gameArgs.Add(ReplacePlaceholders(argWrapper.PlainStringValue, mcVersion, null, null, instancePath));
+                    var arg = ReplacePlaceholders(argWrapper.PlainStringValue, mcVersion, null, null, instancePath);
+                    if (arg != null) gameArgs.Add(arg);
                 }
                 else if (argWrapper.IsConditional)
                 {
@@ -345,11 +363,15 @@ public class ArgumentBuilder
                     if (AreRulesSatisfied(conditionalArg.Rules, null))
                     {
                         if (conditionalArg.IsSingleValue())
-                            gameArgs.Add(ReplacePlaceholders(conditionalArg.GetSingleValue(), mcVersion, null, null,
-                                instancePath));
+                        {
+                            var arg = ReplacePlaceholders(conditionalArg.GetSingleValue(), mcVersion, null, null,
+                                instancePath);
+                            if (arg != null) gameArgs.Add(arg);
+                        }
                         else if (conditionalArg.IsListValue())
                             gameArgs.AddRange(conditionalArg.GetListValue()
-                                .Select(val => ReplacePlaceholders(val, mcVersion, null, null, instancePath)));
+                                .Select(val => ReplacePlaceholders(val, mcVersion, null, null, instancePath))
+                                .Where(s => s != null)!);
                     }
                 }
         }
@@ -359,7 +381,8 @@ public class ArgumentBuilder
             var legacyArgsRaw =
                 mcVersion.MinecraftArguments.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             gameArgs.AddRange(
-                legacyArgsRaw.Select(arg => ReplacePlaceholders(arg, mcVersion, null, null, instancePath)));
+                legacyArgsRaw.Select(arg => ReplacePlaceholders(arg, mcVersion, null, null, instancePath))
+                    .Where(s => s != null)!);
         }
         else
         {
@@ -373,7 +396,7 @@ public class ArgumentBuilder
         return gameArgs;
     }
 
-    private string ReplacePlaceholders(string argument, MinecraftVersion mcVersion, string classpath, string nativesDir,
+    private string? ReplacePlaceholders(string? argument, MinecraftVersion mcVersion, string? classpath, string? nativesDir,
         string instancePath)
     {
         if (argument == null) return null;

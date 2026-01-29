@@ -32,7 +32,7 @@ public class AssetManager
     /// </summary>
     public async Task<bool> EnsureAssetsAsync(
         LaunchProfile launchProfile,
-        IProgress<AssetDownloadProgress> progress = null,
+        IProgress<AssetDownloadProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         if (launchProfile.AssetIndex == null && string.IsNullOrEmpty(launchProfile.Assets))
@@ -75,7 +75,7 @@ public class AssetManager
             return false;
         }
 
-        AssetIndexDetails assetIndexDetails;
+        AssetIndexDetails? assetIndexDetails;
         try
         {
             var indexJsonContent = await File.ReadAllTextAsync(assetIndexFilePath, cancellationToken);
@@ -284,7 +284,7 @@ public class AssetManager
             }
     }
     
-    public async Task<string> EnsureClientJarAsync(LaunchProfile launchProfile, CancellationToken cancellationToken)
+    public async Task<string?> EnsureClientJarAsync(LaunchProfile launchProfile, CancellationToken cancellationToken)
     {
         _logger.Information("Ensuring Client JAR for Minecraft {VersionId}", launchProfile.Id);
 

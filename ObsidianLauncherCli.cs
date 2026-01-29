@@ -23,7 +23,7 @@ public class ObsidianLauncher
             eventArgs.Cancel = true;
         };
 
-        LauncherConfig launcherConfig = null;
+        LauncherConfig? launcherConfig = null;
         try
         {
             launcherConfig = new LauncherConfig();
@@ -58,7 +58,7 @@ public class ObsidianLauncher
             var instanceName = "Fabric 1.20.4";
             var loaderName = "fabric";
             var loaderVersion = "0.15.7";
-            string cliPlayerNameFromArg = null;
+            string? cliPlayerNameFromArg = null;
             
             // Basic command-line parsing
             if (args.Length > 0) mcVersion = args[0];
@@ -77,7 +77,7 @@ public class ObsidianLauncher
 
             if (!string.IsNullOrEmpty(loaderName) && !string.IsNullOrEmpty(loaderVersion))
             {
-                string loaderUid = loaderName.ToLower() switch
+                string? loaderUid = loaderName.ToLower() switch
                 {
                     "fabric" => "net.fabricmc.fabric-loader",
                     // Add other loaders here
@@ -99,10 +99,10 @@ public class ObsidianLauncher
             });
             var libraryProgress = new Progress<LibraryProcessingProgress>(report =>
             {
-                if (report.Status.Contains("failed", StringComparison.OrdinalIgnoreCase) || report.Status.Contains("Skipped") || report.ProcessedLibraries % Math.Max(1, report.TotalLibraries / 10) == 0 || report.ProcessedLibraries == report.TotalLibraries)
-                    Log.Information("[Libs] {Processed}/{Total} - Status: {Status} - Lib: {LibraryName}", report.ProcessedLibraries, report.TotalLibraries, report.Status, report.CurrentLibraryName);
+                if (report.Status?.Contains("failed", StringComparison.OrdinalIgnoreCase) == true || report.Status?.Contains("Skipped") == true || report.ProcessedLibraries % Math.Max(1, report.TotalLibraries / 10) == 0 || report.ProcessedLibraries == report.TotalLibraries)
+                    Log.Information("[Libs] {Processed}/{Total} - Status: {Status} - Lib: {LibraryName}", report.ProcessedLibraries, report.TotalLibraries, report.Status, report.CurrentLibraryName ?? "");
                 else
-                    Log.Verbose("[Libs] {Processed}/{Total} - Status: {Status} - Lib: {LibraryName}", report.ProcessedLibraries, report.TotalLibraries, report.Status, report.CurrentLibraryName);
+                    Log.Verbose("[Libs] {Processed}/{Total} - Status: {Status} - Lib: {LibraryName}", report.ProcessedLibraries, report.TotalLibraries, report.Status, report.CurrentLibraryName ?? "");
             });
             
             var (currentInstance, clientJarPath, libraryClasspathEntries) = await instanceManager.GetOrCreateInstanceAsync(
@@ -139,7 +139,7 @@ public class ObsidianLauncher
             }
             Log.Information("Java Runtime Ensured: {JavaExecutablePath}", javaRuntime.JavaExecutablePath);
             
-            var classpathString = argumentBuilder.BuildClasspath(clientJarPath, libraryClasspathEntries);
+            var classpathString = argumentBuilder.BuildClasspath(clientJarPath!, libraryClasspathEntries!);
             var jvmArgs = argumentBuilder.BuildJvmArguments(launchProfile, classpathString, currentInstance.NativesPath, javaRuntime, currentInstance.InstancePath);
             var gameArgs = argumentBuilder.BuildGameArguments(launchProfile, currentInstance.InstancePath);
             

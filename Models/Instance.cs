@@ -20,19 +20,19 @@ public class Instance
         Tags = new List<string>();
     }
 
-    public string Id { get; set; }
-    public string Name { get; set; }
+    public string Id { get; set; } = string.Empty;
+    public required string Name { get; set; }
     
     // Replaced MinecraftVersionId with a list of components
     public List<Component> Components { get; set; }
 
-    [JsonIgnore] public string InstancePath { get; set; }
+    [JsonIgnore] public required string InstancePath { get; set; }
 
     [JsonIgnore] public string NativesPath => Path.Combine(InstancePath, "natives");
 
     [JsonIgnore] public string GameDataPath => InstancePath;
 
-    public string CustomJavaRuntimePath { get; set; }
+    public string CustomJavaRuntimePath { get; set; } = string.Empty;
 
     public List<string> CustomJvmArguments { get; set; }
 
@@ -42,7 +42,7 @@ public class Instance
     public TimeSpan TotalPlaytime { get; set; }
     public TimeSpan LastSessionPlaytime { get; set; }
 
-    public string CustomIconPath { get; set; }
+    public string CustomIconPath { get; set; } = string.Empty;
 
     /// <summary>
     ///     Optional group ID this instance belongs to.

@@ -25,7 +25,7 @@ public class JavaDownloader
         _logger.Verbose("JavaDownloader initialized.");
     }
 
-    private async Task<JsonDocument> FetchMojangJavaManifestAsync(CancellationToken cancellationToken = default)
+    private async Task<JsonDocument?> FetchMojangJavaManifestAsync(CancellationToken cancellationToken = default)
     {
         const string javaManifestUrl =
             "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
@@ -63,7 +63,7 @@ public class JavaDownloader
     /// <param name="baseDownloadDir">The directory where the Java archive will be downloaded.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The path to the downloaded Java archive, or null if an error occurred.</returns>
-    public async Task<string> DownloadJavaForMinecraftVersionMojangAsync(
+    public async Task<string?> DownloadJavaForMinecraftVersionMojangAsync(
         MinecraftVersion mcVersion,
         string baseDownloadDir,
         CancellationToken cancellationToken = default)
@@ -104,8 +104,8 @@ public class JavaDownloader
             return null;
         }
 
-        string downloadUrl = null;
-        string expectedSha1 = null;
+        string? downloadUrl = null;
+        string? expectedSha1 = null;
 
         foreach (var entry in componentElement.EnumerateArray())
         {
@@ -120,8 +120,8 @@ public class JavaDownloader
                 else if (nameElement.ValueKind == JsonValueKind.String)
                 {
                     var nameStr = nameElement.GetString();
-                    var parts = nameStr.Split('.');
-                    if (parts.Length > 0 && uint.TryParse(parts[0], out var parsedVersion))
+                    var parts = nameStr?.Split('.');
+                    if (parts?.Length > 0 && uint.TryParse(parts[0], out var parsedVersion))
                         entryMajorVersion = parsedVersion;
                     else
                         _logger.Warning(
@@ -201,7 +201,7 @@ public class JavaDownloader
     /// <param name="baseDownloadDir">Directory to download the archive into.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Path to the downloaded archive, or null on failure.</returns>
-    public async Task<string> DownloadJavaForSpecificVersionAdoptiumAsync(
+    public async Task<string?> DownloadJavaForSpecificVersionAdoptiumAsync(
         JavaVersionInfo requiredJava,
         string baseDownloadDir,
         CancellationToken cancellationToken = default)
@@ -278,11 +278,11 @@ public class JavaDownloader
         _logger.Information("Filename: {Filename}, Expected SHA256: {ExpectedSha256}", filename, expectedSha256);
 
         Directory.CreateDirectory(baseDownloadDir); // Ensure directory exists
-        var downloadPath = Path.Combine(baseDownloadDir, filename);
+        var downloadPath = Path.Combine(baseDownloadDir, filename!);
 
         _logger.Information("Adoptium API - Downloading Java to: {DownloadPath}...", downloadPath);
         var (dlResponse, _) =
-            await _httpManager.DownloadAsync(downloadUrl, downloadPath, cancellationToken: cancellationToken);
+            await _httpManager.DownloadAsync(downloadUrl!, downloadPath, cancellationToken: cancellationToken);
 
         if (!dlResponse.IsSuccessStatusCode)
         {

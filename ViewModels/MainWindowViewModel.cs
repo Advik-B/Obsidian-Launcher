@@ -232,7 +232,7 @@ public class MainWindowViewModel : ViewModelBase
 
             // Build arguments
             _argumentBuilder.SetOfflinePlayerName($"Player{Random.Shared.Next(100, 999)}");
-            var classpathString = _argumentBuilder.BuildClasspath(clientJarPath, libraryJarPaths);
+            var classpathString = _argumentBuilder.BuildClasspath(clientJarPath!, libraryJarPaths!);
             var jvmArgs = _argumentBuilder.BuildJvmArguments(launchProfile, classpathString, SelectedInstance.NativesPath, javaRuntime, SelectedInstance.InstancePath);
             var gameArgs = _argumentBuilder.BuildGameArguments(launchProfile, SelectedInstance.InstancePath);
 
@@ -325,7 +325,7 @@ public class MainWindowViewModel : ViewModelBase
             // Get the main window to show the dialog as modal
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                await settingsWindow.ShowDialog(desktop.MainWindow);
+                await settingsWindow.ShowDialog(desktop.MainWindow!);
             }
             
             StatusText = "Settings updated";
