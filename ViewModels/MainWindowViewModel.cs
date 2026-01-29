@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Services;
+using ObsidianLauncher.Settings;
 using ObsidianLauncher.Utils;
 using Serilog;
 
@@ -14,6 +15,7 @@ public class MainWindowViewModel : ViewModelBase
 {
     private readonly ILogger _logger;
     private readonly LauncherConfig _launcherConfig;
+    private readonly LauncherSettings _launcherSettings;
     private readonly InstanceManager _instanceManager;
     private readonly InstanceGroupManager _groupManager;
     private readonly HttpManager _httpManager;
@@ -33,6 +35,10 @@ public class MainWindowViewModel : ViewModelBase
     {
         _logger = LogHelper.GetLogger<MainWindowViewModel>();
         _launcherConfig = new LauncherConfig();
+        
+        // Initialize settings
+        var settingsPath = System.IO.Path.Combine(_launcherConfig.BaseDataPath, "launcher-settings.toml");
+        _launcherSettings = new LauncherSettings(settingsPath);
         
         // Initialize services
         _httpManager = new HttpManager();
@@ -305,11 +311,25 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private void OpenSettings()
+    private async void OpenSettings()
     {
-        // TODO: Show settings dialog
-        _logger.Information("Settings requested");
-        StatusText = "Settings dialog not yet implemented";
+        try
+        {
+            _logger.Information("Opening settings dialog");
+            
+            var settingsViewModel = new SettingsViewModel(_launcherSettings);
+            var settingsDialog = new Views.SettingsDialog(settingsViewModel);
+            
+            // Show the dialog
+            await settingsDialog.ShowAsync();
+            
+            StatusText = "Settings updated";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open settings dialog");
+            StatusText = "Failed to open settings dialog";
+        }
     }
 
     private void Exit()
