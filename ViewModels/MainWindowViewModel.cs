@@ -184,6 +184,7 @@ public class MainWindowViewModel : ViewModelBase
 
         ConsoleViewModel? consoleViewModel = null;
         Views.ConsoleWindow? consoleWindow = null;
+        EventHandler<string>? outputHandler = null;
 
         try
         {
@@ -268,7 +269,7 @@ public class MainWindowViewModel : ViewModelBase
             var sessionStartTime = DateTime.UtcNow;
             
             // Capture game output to console
-            _gameLauncher.OutputReceived += (sender, line) =>
+            outputHandler = (sender, line) =>
             {
                 if (!string.IsNullOrWhiteSpace(line))
                 {
@@ -281,6 +282,8 @@ public class MainWindowViewModel : ViewModelBase
                     consoleViewModel?.AddLogEntry(line, logLevel);
                 }
             };
+            
+            _gameLauncher.OutputReceived += outputHandler;
 
             var exitCode = await _gameLauncher.LaunchAsync(
                 javaRuntime.JavaExecutablePath,
@@ -314,6 +317,12 @@ public class MainWindowViewModel : ViewModelBase
         finally
         {
             IsLaunching = false;
+            
+            // Unsubscribe from output events to prevent memory leaks
+            if (outputHandler != null)
+            {
+                _gameLauncher.OutputReceived -= outputHandler;
+            }
         }
     }
 

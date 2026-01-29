@@ -82,13 +82,11 @@
                     Spacing="10"
                     Margin="0,20,0,0">
             <Button Content="Create" 
-                    Command="{Binding CreateCommand}"
                     Padding="20,8"
                     IsDefault="True"
                     IsEnabled="{Binding !IsCreating}"
                     Click="CreateButton_Click"/>
             <Button Content="Cancel" 
-                    Command="{Binding CancelCommand}"
                     Padding="20,8"
                     IsCancel="True"
                     IsEnabled="{Binding !IsCreating}"
