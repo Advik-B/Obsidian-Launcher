@@ -92,6 +92,8 @@ public class SettingsViewModel : INotifyPropertyChanged
             {
                 _hasUnsavedChanges = value;
                 OnPropertyChanged();
+                // Notify Save command that CanExecute has changed
+                ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
             }
         }
     }
@@ -407,7 +409,7 @@ public class SettingsViewModel : INotifyPropertyChanged
         _settings = settings;
 
         // Initialize collections
-        AvailableThemes = new ObservableCollection<string> { "Dark", "Light", "System" };
+        AvailableThemes = new ObservableCollection<string> { "dark", "light", "system" };  // Match LauncherSettings defaults
         AvailableLanguages = new ObservableCollection<string> { "en-US", "en-GB", "de-DE", "fr-FR", "es-ES", "ja-JP", "zh-CN" };
 
         // Load current values from settings
@@ -425,38 +427,35 @@ public class SettingsViewModel : INotifyPropertyChanged
 
     private void LoadSettings()
     {
-        // General
+        // Use backing fields to avoid triggering property change notifications
         _language = _settings.Language.Value;
         _theme = _settings.Theme.Value;
         _checkForUpdates = _settings.CheckForUpdates.Value;
         _showConsoleOnLaunch = _settings.ShowConsoleOnLaunch.Value;
         _closeAfterLaunch = _settings.CloseAfterLaunch.Value;
 
-        // Java
         _javaPath = _settings.JavaPath.Value;
         _minMemoryMB = _settings.MinMemoryMB.Value;
         _maxMemoryMB = _settings.MaxMemoryMB.Value;
         _javaArgs = _settings.JavaArgs.Value;
 
-        // Game
         _windowWidth = _settings.WindowWidth.Value;
         _windowHeight = _settings.WindowHeight.Value;
         _fullscreen = _settings.Fullscreen.Value;
         _gameDirectory = _settings.GameDirectory.Value;
 
-        // Network
         _useProxy = _settings.UseProxy.Value;
         _proxyHost = _settings.ProxyHost.Value;
         _proxyPort = _settings.ProxyPort.Value;
         _maxConcurrentDownloads = _settings.MaxConcurrentDownloads.Value;
 
-        // Behavior
         _showSnapshots = _settings.ShowSnapshots.Value;
         _showOldAlpha = _settings.ShowOldAlpha.Value;
         _showOldBeta = _settings.ShowOldBeta.Value;
         _defaultInstanceGroup = _settings.DefaultInstanceGroup.Value;
 
-        OnPropertyChanged(string.Empty); // Notify all properties changed
+        // Notify all properties changed at once
+        OnPropertyChanged(string.Empty);
     }
 
     private void SaveSettings()

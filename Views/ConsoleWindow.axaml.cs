@@ -10,7 +10,6 @@ public partial class ConsoleWindow : Window
     public ConsoleWindow()
     {
         InitializeComponent();
-        DataContext = new ConsoleViewModel();
     }
 
     public ConsoleWindow(ConsoleViewModel viewModel) : this()
