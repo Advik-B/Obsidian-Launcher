@@ -1,0 +1,113 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ObsidianLauncher.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="350"
+        x:Class="ObsidianLauncher.Views.CreateInstanceWindow"
+        x:DataType="vm:CreateInstanceViewModel"
+        x:CompileBindings="False"
+        Title="Create New Instance"
+        Width="500" Height="350"
+        MinWidth="450" MinHeight="300"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <Design.DataContext>
+        <vm:CreateInstanceViewModel/>
+    </Design.DataContext>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" 
+                   Text="Create New Minecraft Instance" 
+                   FontSize="18" 
+                   FontWeight="Bold"/>
+
+        <!-- Instance Name -->
+        <StackPanel Grid.Row="2" Spacing="8">
+            <TextBlock Text="Instance Name:" FontWeight="SemiBold"/>
+            <TextBox Text="{Binding InstanceName}" 
+                     Watermark="Enter instance name (e.g., My Minecraft World)"
+                     IsEnabled="{Binding !IsCreating}"/>
+        </StackPanel>
+
+        <!-- Minecraft Version -->
+        <StackPanel Grid.Row="4" Spacing="8">
+            <TextBlock Text="Minecraft Version:" FontWeight="SemiBold"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBox Grid.Column="0"
+                         Text="{Binding SelectedVersionId}" 
+                         Watermark="Select a Minecraft version"
+                         IsReadOnly="True"
+                         IsEnabled="{Binding !IsCreating}"/>
+                
+                <Button Grid.Column="2"
+                        Content="Select Version..." 
+                        Command="{Binding SelectVersionCommand}"
+                        Padding="15,5"
+                        IsEnabled="{Binding !IsCreating}"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- Error Message -->
+        <TextBlock Grid.Row="5"
+                   Text="{Binding ErrorMessage}"
+                   Foreground="Red"
+                   FontSize="12"
+                   Margin="0,10,0,0"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="7" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Spacing="10"
+                    Margin="0,20,0,0">
+            <Button Content="Create" 
+                    Command="{Binding CreateCommand}"
+                    Padding="20,8"
+                    IsDefault="True"
+                    IsEnabled="{Binding !IsCreating}"
+                    Click="CreateButton_Click"/>
+            <Button Content="Cancel" 
+                    Command="{Binding CancelCommand}"
+                    Padding="20,8"
+                    IsCancel="True"
+                    IsEnabled="{Binding !IsCreating}"
+                    Click="CancelButton_Click"/>
+        </StackPanel>
+
+        <!-- Loading Indicator -->
+        <Border Grid.Row="0" Grid.RowSpan="8"
+                Background="#80000000"
+                IsVisible="{Binding IsCreating}">
+            <StackPanel VerticalAlignment="Center" 
+                        HorizontalAlignment="Center"
+                        Spacing="10">
+                <ProgressBar IsIndeterminate="True" Width="200"/>
+                <TextBlock Text="Creating instance..." 
+                           HorizontalAlignment="Center"
+                           Foreground="White"
+                           FontWeight="SemiBold"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

@@ -66,6 +66,9 @@ public class MainWindowViewModel : ViewModelBase
         DeleteInstanceCommand = new RelayCommand(async () => await DeleteInstanceAsync(), () => SelectedInstance != null);
         RefreshInstancesCommand = new RelayCommand(async () => await LoadInstancesAsync());
         OpenSettingsCommand = new RelayCommand(OpenSettings);
+        OpenAccountManagementCommand = new RelayCommand(OpenAccountManagement);
+        OpenLogViewerCommand = new RelayCommand(OpenLogViewer);
+        OpenScreenshotViewerCommand = new RelayCommand(OpenScreenshotViewer);
         ExitCommand = new RelayCommand(Exit);
 
         // Load initial data
@@ -126,6 +129,9 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand DeleteInstanceCommand { get; }
     public ICommand RefreshInstancesCommand { get; }
     public ICommand OpenSettingsCommand { get; }
+    public ICommand OpenAccountManagementCommand { get; }
+    public ICommand OpenLogViewerCommand { get; }
+    public ICommand OpenScreenshotViewerCommand { get; }
     public ICommand ExitCommand { get; }
 
     private async Task LoadInstancesAsync()
@@ -176,6 +182,9 @@ public class MainWindowViewModel : ViewModelBase
         if (SelectedInstance == null || IsLaunching)
             return;
 
+        ConsoleViewModel? consoleViewModel = null;
+        Views.ConsoleWindow? consoleWindow = null;
+
         try
         {
             IsLaunching = true;
@@ -185,17 +194,25 @@ public class MainWindowViewModel : ViewModelBase
 
             _logger.Information("Launching instance: {InstanceName}", SelectedInstance.Name);
 
+            // Create and show console window
+            consoleViewModel = new ConsoleViewModel();
+            consoleWindow = new Views.ConsoleWindow(consoleViewModel);
+            consoleWindow.Show();
+            consoleViewModel.AddLogEntry($"Launching {SelectedInstance.Name}...", "INFO");
+
             // Sync instance (download assets, libraries, etc.)
             var assetProgress = new Progress<AssetDownloadProgress>(report =>
             {
                 ProgressValue = report.TotalFiles > 0 ? (double)report.ProcessedFiles / report.TotalFiles * 100 : 0;
                 ProgressText = $"Assets: {report.ProcessedFiles}/{report.TotalFiles}";
+                consoleViewModel?.AddLogEntry($"Downloading assets: {report.ProcessedFiles}/{report.TotalFiles}", "INFO");
             });
 
             var libraryProgress = new Progress<LibraryProcessingProgress>(report =>
             {
                 ProgressValue = report.TotalLibraries > 0 ? (double)report.ProcessedLibraries / report.TotalLibraries * 100 : 0;
                 ProgressText = $"Libraries: {report.ProcessedLibraries}/{report.TotalLibraries}";
+                consoleViewModel?.AddLogEntry($"Processing libraries: {report.ProcessedLibraries}/{report.TotalLibraries}", "INFO");
             });
 
             var (success, clientJarPath, libraryJarPaths) = await _instanceManager.SyncInstanceAsync(
@@ -208,27 +225,34 @@ public class MainWindowViewModel : ViewModelBase
             {
                 StatusText = "Failed to sync instance";
                 _logger.Error("Failed to sync instance: {InstanceName}", SelectedInstance.Name);
+                consoleViewModel?.AddLogEntry("Failed to sync instance", "ERROR");
                 return;
             }
 
             // Build launch profile
+            consoleViewModel?.AddLogEntry("Building launch profile...", "INFO");
             var launchProfile = await _instanceManager.BuildLaunchProfileAsync(SelectedInstance.Components, default);
             if (launchProfile == null)
             {
                 StatusText = "Failed to build launch profile";
                 _logger.Error("Failed to build launch profile for instance: {InstanceName}", SelectedInstance.Name);
+                consoleViewModel?.AddLogEntry("Failed to build launch profile", "ERROR");
                 return;
             }
 
             // Ensure Java runtime
             ProgressText = "Ensuring Java runtime...";
+            consoleViewModel?.AddLogEntry("Checking Java runtime...", "INFO");
             var javaRuntime = await _javaManager.EnsureJavaForMinecraftVersionAsync(launchProfile);
             if (javaRuntime == null)
             {
                 StatusText = "Failed to get Java runtime";
                 _logger.Error("Failed to get Java runtime for instance: {InstanceName}", SelectedInstance.Name);
+                consoleViewModel?.AddLogEntry("Failed to get Java runtime", "ERROR");
                 return;
             }
+
+            consoleViewModel?.AddLogEntry($"Using Java: {javaRuntime.JavaExecutablePath}", "INFO");
 
             // Build arguments
             _argumentBuilder.SetOfflinePlayerName($"Player{Random.Shared.Next(100, 999)}");
@@ -238,7 +262,26 @@ public class MainWindowViewModel : ViewModelBase
 
             // Launch game
             ProgressText = "Launching game...";
+            consoleViewModel?.AddLogEntry("Starting Minecraft...", "INFO");
+            consoleViewModel?.AddLogEntry($"Main class: {launchProfile.MainClass}", "DEBUG");
+            
             var sessionStartTime = DateTime.UtcNow;
+            
+            // Capture game output to console
+            _gameLauncher.OutputReceived += (sender, line) =>
+            {
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    // Parse log level from Minecraft log format
+                    var logLevel = "INFO";
+                    if (line.Contains("[ERROR]") || line.Contains("ERROR")) logLevel = "ERROR";
+                    else if (line.Contains("[WARN]") || line.Contains("WARN")) logLevel = "WARN";
+                    else if (line.Contains("[DEBUG]") || line.Contains("DEBUG")) logLevel = "DEBUG";
+                    
+                    consoleViewModel?.AddLogEntry(line, logLevel);
+                }
+            };
+
             var exitCode = await _gameLauncher.LaunchAsync(
                 javaRuntime.JavaExecutablePath,
                 jvmArgs,
@@ -254,6 +297,10 @@ public class MainWindowViewModel : ViewModelBase
             ProgressValue = 0;
             ProgressText = "";
 
+            consoleViewModel?.AddLogEntry(
+                $"Game exited with code {exitCode}. Session duration: {sessionDuration:hh\\:mm\\:ss}",
+                exitCode == 0 ? "INFO" : "WARN");
+
             _logger.Information("Game session completed. Exit code: {ExitCode}, Duration: {Duration}", exitCode, sessionDuration);
         }
         catch (Exception ex)
@@ -262,6 +309,7 @@ public class MainWindowViewModel : ViewModelBase
             StatusText = "Launch failed";
             ProgressValue = 0;
             ProgressText = "";
+            consoleViewModel?.AddLogEntry($"Launch failed: {ex.Message}", "ERROR");
         }
         finally
         {
@@ -271,9 +319,54 @@ public class MainWindowViewModel : ViewModelBase
 
     private async Task CreateInstanceAsync()
     {
-        // TODO: Show create instance dialog
-        _logger.Information("Create instance requested");
-        StatusText = "Create instance dialog not yet implemented";
+        try
+        {
+            _logger.Information("Create instance requested");
+            
+            var createViewModel = new CreateInstanceViewModel();
+            var createWindow = new Views.CreateInstanceWindow(createViewModel);
+            
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                var result = await createWindow.ShowDialog<CreateInstanceViewModel?>(desktop.MainWindow!);
+                
+                if (result != null && result.Result)
+                {
+                    // Create the instance
+                    StatusText = $"Creating instance '{result.InstanceName}'...";
+                    _logger.Information("Creating instance: {InstanceName}, Version: {Version}", 
+                        result.InstanceName, result.SelectedVersionId);
+                    
+                    var components = new System.Collections.Generic.List<Component>
+                    {
+                        new() { Uid = "net.minecraft", Version = result.SelectedVersionId, IsImportant = true }
+                    };
+                    
+                    var newInstance = await _instanceManager.CreateInstanceAsync(
+                        result.InstanceName,
+                        components
+                    );
+                    
+                    if (newInstance != null)
+                    {
+                        Instances.Add(newInstance);
+                        SelectedInstance = newInstance;
+                        StatusText = $"Instance '{result.InstanceName}' created successfully";
+                        _logger.Information("Instance created successfully: {InstanceName}", result.InstanceName);
+                    }
+                    else
+                    {
+                        StatusText = "Failed to create instance";
+                        _logger.Error("Failed to create instance: {InstanceName}", result.InstanceName);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error creating instance");
+            StatusText = "Error creating instance";
+        }
     }
 
     private async Task EditInstanceAsync()
@@ -281,9 +374,29 @@ public class MainWindowViewModel : ViewModelBase
         if (SelectedInstance == null)
             return;
 
-        // TODO: Show edit instance dialog
-        _logger.Information("Edit instance requested: {InstanceName}", SelectedInstance.Name);
-        StatusText = "Edit instance dialog not yet implemented";
+        try
+        {
+            _logger.Information("Edit instance requested: {InstanceName}", SelectedInstance.Name);
+            
+            var settingsWindow = new Views.InstanceSettingsWindow(SelectedInstance);
+            
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                var result = await settingsWindow.ShowDialog<bool>(desktop.MainWindow!);
+                
+                if (result)
+                {
+                    // Reload the instance to reflect changes
+                    await LoadInstancesAsync();
+                    StatusText = $"Instance '{SelectedInstance.Name}' updated";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open instance settings");
+            StatusText = "Failed to open instance settings";
+        }
     }
 
     private async Task DeleteInstanceAsync()
@@ -334,6 +447,76 @@ public class MainWindowViewModel : ViewModelBase
         {
             _logger.Error(ex, "Failed to open settings dialog");
             StatusText = "Failed to open settings dialog";
+        }
+    }
+
+    private async void OpenAccountManagement()
+    {
+        try
+        {
+            _logger.Information("Opening account management");
+
+            var accountWindow = new Views.AccountManagementWindow();
+
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                await accountWindow.ShowDialog(desktop.MainWindow!);
+            }
+
+            StatusText = "Account management closed";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open account management");
+            StatusText = "Failed to open account management";
+        }
+    }
+
+    private async void OpenLogViewer()
+    {
+        try
+        {
+            _logger.Information("Opening log viewer");
+
+            // Default to launcher logs directory
+            var logsPath = System.IO.Path.Combine(_launcherConfig.BaseDataPath, "logs");
+            var logWindow = new Views.LogViewerWindow(logsPath);
+
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                await logWindow.ShowDialog(desktop.MainWindow!);
+            }
+
+            StatusText = "Log viewer closed";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open log viewer");
+            StatusText = "Failed to open log viewer";
+        }
+    }
+
+    private async void OpenScreenshotViewer()
+    {
+        try
+        {
+            _logger.Information("Opening screenshot viewer");
+
+            // Show all screenshots from all instances
+            var screenshotsPath = _launcherConfig.InstancesRootDir;
+            var screenshotWindow = new Views.ScreenshotViewerWindow(screenshotsPath);
+
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                await screenshotWindow.ShowDialog(desktop.MainWindow!);
+            }
+
+            StatusText = "Screenshot viewer closed";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open screenshot viewer");
+            StatusText = "Failed to open screenshot viewer";
         }
     }
 
