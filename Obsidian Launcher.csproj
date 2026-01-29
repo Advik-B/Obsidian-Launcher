@@ -25,4 +25,8 @@
         <PackageReference Include="Tomlyn" Version="0.20.0" />
     </ItemGroup>
 
+    <ItemGroup>
+        <AvaloniaResource Include="Images\**" />
+    </ItemGroup>
+
 </Project>
