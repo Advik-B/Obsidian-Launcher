@@ -1,0 +1,105 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:ObsidianLauncher.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+        x:Class="ObsidianLauncher.Views.ConsoleWindow"
+        Title="Console Output"
+        Width="900" Height="600"
+        Icon="/Images/icon.ico"
+        x:DataType="vm:ConsoleViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="10">
+            <!-- Filter TextBox -->
+            <TextBox Text="{Binding Filter}"
+                     Watermark="Filter console output..."
+                     Width="250" />
+
+            <!-- Log Level Filter -->
+            <ComboBox ItemsSource="{Binding LogLevels}"
+                      SelectedItem="{Binding SelectedLogLevel}"
+                      Width="120" />
+
+            <!-- Auto Scroll -->
+            <CheckBox Content="Auto-scroll"
+                      IsChecked="{Binding AutoScroll}" />
+
+            <!-- Clear Button -->
+            <Button Content="Clear"
+                    Command="{Binding ClearCommand}" />
+
+            <!-- Copy Button -->
+            <Button Content="Copy"
+                    Command="{Binding CopyCommand}" />
+
+            <!-- Save Button -->
+            <Button Content="Save to File"
+                    Command="{Binding SaveToFileCommand}" />
+        </StackPanel>
+
+        <!-- Console Output -->
+        <Border Grid.Row="1" BorderBrush="Gray" BorderThickness="1" Margin="10,0,10,10">
+            <ScrollViewer Name="ConsoleScrollViewer" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding FilteredLogEntries}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <!-- ERROR logs in Red -->
+                                <TextBlock Text="{Binding FormattedMessage}"
+                                           FontFamily="Consolas,Courier New,monospace"
+                                           FontSize="12"
+                                           Margin="5,2"
+                                           TextWrapping="Wrap"
+                                           Foreground="Red"
+                                           IsVisible="{Binding Level, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ERROR}" />
+                                
+                                <!-- WARN logs in Orange -->
+                                <TextBlock Text="{Binding FormattedMessage}"
+                                           FontFamily="Consolas,Courier New,monospace"
+                                           FontSize="12"
+                                           Margin="5,2"
+                                           TextWrapping="Wrap"
+                                           Foreground="Orange"
+                                           IsVisible="{Binding Level, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=WARN}" />
+                                
+                                <!-- INFO logs in LightGreen -->
+                                <TextBlock Text="{Binding FormattedMessage}"
+                                           FontFamily="Consolas,Courier New,monospace"
+                                           FontSize="12"
+                                           Margin="5,2"
+                                           TextWrapping="Wrap"
+                                           Foreground="LightGreen"
+                                           IsVisible="{Binding Level, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=INFO}" />
+                                
+                                <!-- DEBUG logs in Gray -->
+                                <TextBlock Text="{Binding FormattedMessage}"
+                                           FontFamily="Consolas,Courier New,monospace"
+                                           FontSize="12"
+                                           Margin="5,2"
+                                           TextWrapping="Wrap"
+                                           Foreground="Gray"
+                                           IsVisible="{Binding Level, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=DEBUG}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="10,5">
+            <TextBlock>
+                <Run Text="Total: " />
+                <Run Text="{Binding LogEntries.Count}" />
+                <Run Text=" | Filtered: " />
+                <Run Text="{Binding FilteredLogEntries.Count}" />
+            </TextBlock>
+        </Border>
+
+    </Grid>
+
+</Window>
