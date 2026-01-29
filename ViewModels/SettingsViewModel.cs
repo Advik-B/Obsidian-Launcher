@@ -410,7 +410,7 @@ public class SettingsViewModel : INotifyPropertyChanged
 
         // Initialize collections
         AvailableThemes = new ObservableCollection<string> { "dark", "light", "system" };  // Match LauncherSettings defaults
-        AvailableLanguages = new ObservableCollection<string> { "en-US", "en-GB", "de-DE", "fr-FR", "es-ES", "ja-JP", "zh-CN" };
+        AvailableLanguages = new ObservableCollection<string> { "en-GB" };  // Only en-GB supported currently
 
         // Load current values from settings
         LoadSettings();
