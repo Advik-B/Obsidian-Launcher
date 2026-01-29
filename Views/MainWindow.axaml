@@ -1,0 +1,174 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ObsidianLauncher.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="650"
+        x:Class="ObsidianLauncher.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Images/icon.ico"
+        Title="Obsidian Launcher"
+        Width="1000" Height="650"
+        MinWidth="800" MinHeight="500">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <DockPanel>
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New Instance..." Command="{Binding CreateInstanceCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Settings..." Command="{Binding OpenSettingsCommand}"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Command="{Binding ExitCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Edit Instance..." Command="{Binding EditInstanceCommand}"/>
+                <MenuItem Header="_Delete Instance" Command="{Binding DeleteInstanceCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Refresh Instances" Command="{Binding RefreshInstancesCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Toolbar" IsChecked="True"/>
+                <MenuItem Header="_Status Bar" IsChecked="True"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About..."/>
+                <MenuItem Header="_Documentation"/>
+                <Separator/>
+                <MenuItem Header="_Check for Updates"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Toolbar -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5" Spacing="5">
+            <Button Content="New Instance" Command="{Binding CreateInstanceCommand}" Padding="10,5"/>
+            <Button Content="Edit Instance" Command="{Binding EditInstanceCommand}" Padding="10,5"/>
+            <Button Content="Delete Instance" Command="{Binding DeleteInstanceCommand}" Padding="10,5"/>
+            <Separator/>
+            <Button Content="Settings" Command="{Binding OpenSettingsCommand}" Padding="10,5"/>
+            <Separator/>
+            <Button Content="Launch" Command="{Binding LaunchInstanceCommand}" Padding="15,5" FontWeight="Bold"/>
+        </StackPanel>
+
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom" BorderBrush="Gray" BorderThickness="0,1,0,0" Padding="5">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding ProgressText}" VerticalAlignment="Center" FontStyle="Italic"/>
+                </StackPanel>
+
+                <ProgressBar Grid.Column="1" 
+                             Width="200" Height="20"
+                             Value="{Binding ProgressValue}"
+                             Maximum="100"
+                             IsIndeterminate="{Binding IsLaunching}"
+                             IsVisible="{Binding IsLaunching}"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid DockPanel.Dock="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Instance List -->
+            <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="0,1,1,0" Padding="5">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" 
+                               Text="Instances" 
+                               FontSize="16" 
+                               FontWeight="Bold" 
+                               Margin="0,0,0,10"/>
+
+                    <ListBox ItemsSource="{Binding Instances}"
+                             SelectedItem="{Binding SelectedInstance}"
+                             Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="10" Margin="2" 
+                                        Background="{DynamicResource SystemControlBackgroundAltMediumBrush}"
+                                        CornerRadius="4">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"/>
+                                        <TextBlock Text="{Binding Notes}" 
+                                                   TextWrapping="Wrap" 
+                                                   FontSize="11" 
+                                                   Opacity="0.7"
+                                                   IsVisible="{Binding Notes, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
+                                            <TextBlock Text="Last Played:" FontSize="10" Opacity="0.6"/>
+                                            <TextBlock Text="{Binding LastPlayedDate, StringFormat='{}{0:g}'}" FontSize="10" Opacity="0.6"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- Instance Actions Panel -->
+            <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="0,1,0,0" Padding="10" Width="200">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Instance Actions" FontWeight="Bold" FontSize="14" Margin="0,0,0,10"/>
+                    
+                    <Button Content="Launch" 
+                            Command="{Binding LaunchInstanceCommand}" 
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Padding="10"/>
+                    
+                    <Button Content="Edit..." 
+                            Command="{Binding EditInstanceCommand}" 
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Padding="10"/>
+                    
+                    <Button Content="Copy..." 
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Padding="10"/>
+                    
+                    <Button Content="Delete" 
+                            Command="{Binding DeleteInstanceCommand}" 
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Padding="10"/>
+                    
+                    <Separator Margin="0,10"/>
+                    
+                    <TextBlock Text="Instance Info" FontWeight="Bold" FontSize="12" Margin="0,0,0,5"/>
+                    
+                    <StackPanel Spacing="5" IsVisible="{Binding SelectedInstance, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <TextBlock Text="{Binding SelectedInstance.Name, StringFormat='Name: {0}'}" 
+                                   TextWrapping="Wrap" FontSize="11"/>
+                        <TextBlock Text="{Binding SelectedInstance.CreationDate, StringFormat='Created: {0:d}'}" 
+                                   FontSize="11"/>
+                        <TextBlock Text="{Binding SelectedInstance.TotalPlaytime, StringFormat='Playtime: {0:hh\\:mm\\:ss}'}" 
+                                   FontSize="11"/>
+                    </StackPanel>
+                    
+                    <TextBlock Text="No instance selected" 
+                               FontSize="11" 
+                               FontStyle="Italic" 
+                               Opacity="0.5"
+                               IsVisible="{Binding SelectedInstance, Converter={x:Static ObjectConverters.IsNull}}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>
