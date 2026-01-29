@@ -33,12 +33,12 @@ public class DownloadTask
     public DateTime? CompletedAt { get; set; }
     public string? ErrorMessage { get; set; }
     public CancellationTokenSource? CancellationSource { get; set; }
-    
+
     /// <summary>
     ///     Expected SHA1 hash for verification (optional).
     /// </summary>
     public string? ExpectedSha1 { get; set; }
-    
+
     /// <summary>
     ///     Whether to verify the download after completion.
     /// </summary>

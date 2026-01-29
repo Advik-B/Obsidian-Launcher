@@ -37,11 +37,11 @@ public class MainWindowViewModel : ViewModelBase
     {
         _logger = LogHelper.GetLogger<MainWindowViewModel>();
         _launcherConfig = new LauncherConfig();
-        
+
         // Initialize settings
         var settingsPath = System.IO.Path.Combine(_launcherConfig.BaseDataPath, "launcher-settings.toml");
         _launcherSettings = new LauncherSettings(settingsPath);
-        
+
         // Initialize services
         _httpManager = new HttpManager();
         _javaManager = new JavaManager(_launcherConfig, _httpManager);
@@ -54,7 +54,7 @@ public class MainWindowViewModel : ViewModelBase
 
         Instances = new ObservableCollection<Instance>();
         Groups = new ObservableCollection<InstanceGroup>();
-        
+
         _statusText = "Ready";
         _progressText = "";
         _progressValue = 0;
@@ -134,13 +134,13 @@ public class MainWindowViewModel : ViewModelBase
         {
             StatusText = "Loading instances...";
             var instances = await _instanceManager.GetAllInstancesAsync();
-            
+
             Instances.Clear();
             foreach (var instance in instances.OrderBy(i => i.SortOrder).ThenBy(i => i.Name))
             {
                 Instances.Add(instance);
             }
-            
+
             StatusText = $"Loaded {Instances.Count} instance(s)";
             _logger.Information("Loaded {Count} instances", Instances.Count);
         }
@@ -156,13 +156,13 @@ public class MainWindowViewModel : ViewModelBase
         try
         {
             var groups = _groupManager.GetAllGroups();
-            
+
             Groups.Clear();
             foreach (var group in groups)
             {
                 Groups.Add(group);
             }
-            
+
             _logger.Information("Loaded {Count} groups", Groups.Count);
         }
         catch (Exception ex)
@@ -318,16 +318,16 @@ public class MainWindowViewModel : ViewModelBase
         try
         {
             _logger.Information("Opening settings dialog");
-            
+
             var settingsViewModel = new SettingsViewModel(_launcherSettings);
             var settingsWindow = new Views.SettingsWindow(settingsViewModel);
-            
+
             // Get the main window to show the dialog as modal
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 await settingsWindow.ShowDialog(desktop.MainWindow!);
             }
-            
+
             StatusText = "Settings updated";
         }
         catch (Exception ex)

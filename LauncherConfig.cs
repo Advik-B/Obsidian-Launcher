@@ -49,7 +49,7 @@ public class LauncherConfig
     public string MojangDownloadsDir { get; }
     public string AdoptiumDownloadsDir { get; }
     public string LogsDir { get; } // Launcher logs
-    
+
     public string DataRootDir { get; } // Root directory for all data
 
     private void EnsureDirectoryExists(string path, string name)

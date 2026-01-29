@@ -36,7 +36,7 @@ public class JavaManager
         ScanForExistingRuntimes();
         _logger.Verbose("JavaManager initialization complete. Found {Count} existing runtimes.", _availableRuntimes.Count);
     }
-    
+
     public async Task<JavaRuntimeInfo?> EnsureJavaForMinecraftVersionAsync(
         LaunchProfile launchProfile,
         CancellationToken cancellationToken = default)
@@ -63,13 +63,13 @@ public class JavaManager
                 existingRuntime.ComponentName, existingRuntime.MajorVersion, existingRuntime.Source, existingRuntime.HomePath);
             return existingRuntime;
         }
-        
+
         // This part remains the same, but it's important to show the full context.
         _logger.Information("No existing suitable Java runtime found for {Component} v{MajorVersion}. Attempting download.", requiredJava.Component, requiredJava.MajorVersion);
 
         string? downloadedArchivePath = null;
         var sourceApi = "unknown";
-        
+
         _logger.Information("Attempting download from Adoptium for Java {MajorVersion}...", requiredJava.MajorVersion);
         downloadedArchivePath = await _javaDownloader.DownloadJavaForSpecificVersionAdoptiumAsync(requiredJava, _config.AdoptiumDownloadsDir, cancellationToken);
         if (!string.IsNullOrEmpty(downloadedArchivePath))
@@ -134,7 +134,7 @@ public class JavaManager
         {
             _logger.Error("Failed to extract Java archive {DownloadedArchivePath} to {ExtractionTargetDir}", downloadedArchivePath, extractionTargetDir);
         }
-        
+
         if (File.Exists(downloadedArchivePath))
             try
             {
@@ -147,7 +147,7 @@ public class JavaManager
             }
         return null;
     }
-    
+
 
     private void InitializeDirectories()
     {

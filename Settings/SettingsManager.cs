@@ -15,7 +15,7 @@ namespace ObsidianLauncher.Settings;
 public class SettingsManager
 {
     private static readonly ILogger _logger = Log.ForContext(typeof(SettingsManager));
-    
+
     private readonly TomlFile _tomlFile;
     private readonly SettingsManager? _parent;
     private readonly Dictionary<string, object> _settings;
@@ -35,8 +35,8 @@ public class SettingsManager
         _section = section ?? string.Empty;
         _parent = parent;
         _settings = new Dictionary<string, object>();
-        
-        _logger.Information("Created settings manager for {ConfigPath} (section: {Section})", 
+
+        _logger.Information("Created settings manager for {ConfigPath} (section: {Section})",
             configFilePath, string.IsNullOrEmpty(_section) ? "<root>" : _section);
     }
 
@@ -51,14 +51,14 @@ public class SettingsManager
     {
         var setting = new Setting<string>(key, defaultValue, description);
         _settings[key] = setting;
-        
+
         // Load value from TOML file or parent
         var value = GetEffectiveValue(key, defaultValue);
         setting.SetValueSilently(value);
-        
+
         // Subscribe to changes to auto-save
         setting.ValueChanged += (sender, e) => SaveSetting(key, e.NewValue);
-        
+
         return setting;
     }
 
@@ -73,12 +73,12 @@ public class SettingsManager
     {
         var setting = new Setting<int>(key, defaultValue, description);
         _settings[key] = setting;
-        
+
         var value = GetEffectiveValue(key, defaultValue);
         setting.SetValueSilently(value);
-        
+
         setting.ValueChanged += (sender, e) => SaveSetting(key, e.NewValue);
-        
+
         return setting;
     }
 
@@ -93,12 +93,12 @@ public class SettingsManager
     {
         var setting = new Setting<bool>(key, defaultValue, description);
         _settings[key] = setting;
-        
+
         var value = GetEffectiveValue(key, defaultValue);
         setting.SetValueSilently(value);
-        
+
         setting.ValueChanged += (sender, e) => SaveSetting(key, e.NewValue);
-        
+
         return setting;
     }
 
@@ -113,12 +113,12 @@ public class SettingsManager
     {
         var setting = new Setting<long>(key, defaultValue, description);
         _settings[key] = setting;
-        
+
         var value = GetEffectiveValue(key, defaultValue);
         setting.SetValueSilently(value);
-        
+
         setting.ValueChanged += (sender, e) => SaveSetting(key, e.NewValue);
-        
+
         return setting;
     }
 

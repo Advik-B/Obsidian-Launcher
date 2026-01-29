@@ -48,32 +48,32 @@ public static class UuidUtils
 
         // UUID v5 uses SHA1 hashing
         using var sha1 = System.Security.Cryptography.SHA1.Create();
-        
+
         // Combine namespace UUID bytes with name bytes
         var namespaceBytes = namespaceUuid.ToByteArray();
         var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
         var combined = new byte[namespaceBytes.Length + nameBytes.Length];
-        
+
         Buffer.BlockCopy(namespaceBytes, 0, combined, 0, namespaceBytes.Length);
         Buffer.BlockCopy(nameBytes, 0, combined, namespaceBytes.Length, nameBytes.Length);
-        
+
         // Hash the combined bytes
         var hash = sha1.ComputeHash(combined);
-        
+
         // Take first 16 bytes
         var guidBytes = new byte[16];
         Array.Copy(hash, guidBytes, 16);
-        
+
         // Set version to 5
         guidBytes[6] = (byte)((guidBytes[6] & 0x0F) | 0x50);
-        
+
         // Set variant to RFC 4122
         guidBytes[8] = (byte)((guidBytes[8] & 0x3F) | 0x80);
-        
+
         var uuid = new Guid(guidBytes).ToString();
-        _logger.Verbose("Generated UUID v5 from namespace {Namespace} and name {Name}: {Uuid}", 
+        _logger.Verbose("Generated UUID v5 from namespace {Namespace} and name {Name}: {Uuid}",
             namespaceUuid, name, uuid);
-        
+
         return uuid;
     }
 
@@ -99,13 +99,13 @@ public static class UuidUtils
 
         // Set version to 3 (MD5)
         hash[6] = (byte)((hash[6] & 0x0F) | 0x30);
-        
+
         // Set variant to RFC 4122
         hash[8] = (byte)((hash[8] & 0x3F) | 0x80);
 
         var uuid = new Guid(hash).ToString();
         _logger.Debug("Generated offline player UUID for {PlayerName}: {Uuid}", playerName, uuid);
-        
+
         return uuid;
     }
 

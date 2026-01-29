@@ -16,7 +16,7 @@ namespace ObsidianLauncher.Utils;
 public class StringTemplate
 {
     private static readonly ILogger _logger = Log.ForContext(typeof(StringTemplate));
-    
+
     private readonly string _template;
     private readonly Dictionary<string, string> _variables;
 

@@ -29,7 +29,7 @@ public class InstanceGroupManager
         _logger = LogHelper.GetLogger<InstanceGroupManager>();
         _groups = new Dictionary<string, InstanceGroup>();
         _groupsFilePath = Path.Combine(_launcherConfig.BaseDataPath, GroupsFileName);
-        
+
         LoadGroups();
     }
 
@@ -67,7 +67,7 @@ public class InstanceGroupManager
 
         _groups[group.Id] = group;
         SaveGroups();
-        
+
         _logger.Information("Created instance group: {GroupName} (ID: {GroupId})", name, group.Id);
         return group;
     }
@@ -85,7 +85,7 @@ public class InstanceGroupManager
 
         updateAction(group);
         SaveGroups();
-        
+
         _logger.Information("Updated instance group: {GroupName} (ID: {GroupId})", group.Name, groupId);
         return true;
     }
@@ -102,7 +102,7 @@ public class InstanceGroupManager
         }
 
         SaveGroups();
-        
+
         _logger.Information("Deleted instance group: {GroupName} (ID: {GroupId})", group.Name, groupId);
         return true;
     }
@@ -162,8 +162,8 @@ public class InstanceGroupManager
     /// </summary>
     public List<string> GetInstancesInGroup(string groupId)
     {
-        return _groups.TryGetValue(groupId, out var group) 
-            ? new List<string>(group.InstanceIds) 
+        return _groups.TryGetValue(groupId, out var group)
+            ? new List<string>(group.InstanceIds)
             : new List<string>();
     }
 
@@ -226,7 +226,7 @@ public class InstanceGroupManager
         {
             var groupsList = _groups.Values.ToList();
             var json = JsonSerializer.Serialize(groupsList, new JsonSerializerOptions { WriteIndented = true });
-            
+
             var directory = Path.GetDirectoryName(_groupsFilePath);
             if (!string.IsNullOrEmpty(directory))
             {

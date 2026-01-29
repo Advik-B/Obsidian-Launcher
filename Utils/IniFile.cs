@@ -27,7 +27,7 @@ public class IniFile
     {
         _filePath = filePath;
         _sections = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-        
+
         if (File.Exists(filePath))
         {
             Load();
@@ -42,7 +42,7 @@ public class IniFile
         try
         {
             _sections.Clear();
-            
+
             if (!File.Exists(_filePath))
             {
                 _logger.Information("INI file does not exist, starting with empty configuration: {FilePath}", _filePath);
@@ -51,7 +51,7 @@ public class IniFile
 
             var lines = File.ReadAllLines(_filePath);
             string currentSection = string.Empty;
-            
+
             // Ensure default section exists
             if (!_sections.ContainsKey(currentSection))
             {
@@ -83,7 +83,7 @@ public class IniFile
                 {
                     var key = trimmedLine.Substring(0, separatorIndex).Trim();
                     var value = trimmedLine.Substring(separatorIndex + 1).Trim();
-                    
+
                     // Remove quotes if present
                     if (value.StartsWith("\"") && value.EndsWith("\"") && value.Length >= 2)
                     {
@@ -110,7 +110,7 @@ public class IniFile
         try
         {
             var sb = new StringBuilder();
-            
+
             // Write default section first (no section header)
             if (_sections.ContainsKey(string.Empty) && _sections[string.Empty].Count > 0)
             {
@@ -158,7 +158,7 @@ public class IniFile
     public string Read(string section, string key, string defaultValue = "")
     {
         section ??= string.Empty;
-        
+
         if (_sections.TryGetValue(section, out var sectionData) && sectionData.TryGetValue(key, out var value))
         {
             return value;
@@ -192,7 +192,7 @@ public class IniFile
         var value = Read(section, key);
         if (bool.TryParse(value, out var result))
             return result;
-        
+
         // Support numeric representation (1 = true, 0 = false)
         if (int.TryParse(value, out var numValue))
             return numValue != 0;
@@ -222,7 +222,7 @@ public class IniFile
     public void Write(string section, string key, string value)
     {
         section ??= string.Empty;
-        
+
         if (!_sections.ContainsKey(section))
         {
             _sections[section] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -273,7 +273,7 @@ public class IniFile
     public bool DeleteKey(string section, string key)
     {
         section ??= string.Empty;
-        
+
         if (_sections.TryGetValue(section, out var sectionData))
         {
             return sectionData.Remove(key);
@@ -333,8 +333,8 @@ public class IniFile
     public string[] GetKeys(string section)
     {
         section ??= string.Empty;
-        return _sections.TryGetValue(section, out var sectionData) 
-            ? sectionData.Keys.ToArray() 
+        return _sections.TryGetValue(section, out var sectionData)
+            ? sectionData.Keys.ToArray()
             : Array.Empty<string>();
     }
 

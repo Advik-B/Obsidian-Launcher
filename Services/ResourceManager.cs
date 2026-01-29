@@ -54,11 +54,11 @@ public class ResourceManager
     public void EnsureResourceFolder(Instance instance, ResourceFolderType folderType)
     {
         var folderPath = GetResourceFolderPath(instance, folderType);
-        
+
         if (!Directory.Exists(folderPath))
         {
             Directory.CreateDirectory(folderPath);
-            _logger.Information("Created {FolderType} folder for instance '{InstanceName}' at {FolderPath}", 
+            _logger.Information("Created {FolderType} folder for instance '{InstanceName}' at {FolderPath}",
                 folderType, instance.Name, folderPath);
         }
     }
@@ -153,7 +153,7 @@ public class ResourceManager
             }
         }
 
-        _logger.Debug("Found {Count} resources in {FolderType} folder for instance '{InstanceName}'", 
+        _logger.Debug("Found {Count} resources in {FolderType} folder for instance '{InstanceName}'",
             resources.Count, folderType, instance.Name);
 
         return resources;
@@ -176,12 +176,12 @@ public class ResourceManager
         try
         {
             var isEnabled = !resource.Path.EndsWith(".disabled");
-            
+
             if (enable && !isEnabled)
             {
                 // Remove .disabled suffix
                 var newPath = resource.Path.Substring(0, resource.Path.Length - 9);
-                
+
                 if (File.Exists(resource.Path))
                     File.Move(resource.Path, newPath);
                 else
@@ -195,7 +195,7 @@ public class ResourceManager
             {
                 // Add .disabled suffix
                 var newPath = resource.Path + ".disabled";
-                
+
                 if (File.Exists(resource.Path))
                     File.Move(resource.Path, newPath);
                 else
@@ -359,7 +359,7 @@ public class ResourceManager
         try
         {
             var metadataPath = Path.Combine(folderPath, MetadataFileName);
-            
+
             if (!File.Exists(metadataPath))
                 return new List<ResourceItem>();
 

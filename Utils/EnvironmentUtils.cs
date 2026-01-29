@@ -47,7 +47,7 @@ public static class EnvironmentUtils
     public static bool GetVariableAsBool(string name, bool defaultValue = false)
     {
         var value = Environment.GetEnvironmentVariable(name);
-        
+
         if (string.IsNullOrEmpty(value))
             return defaultValue;
 
@@ -97,7 +97,7 @@ public static class EnvironmentUtils
     public static Dictionary<string, string> GetAllVariables()
     {
         var variables = new Dictionary<string, string>();
-        
+
         foreach (var entry in Environment.GetEnvironmentVariables().Cast<System.Collections.DictionaryEntry>())
         {
             if (entry.Key != null && entry.Value != null)
@@ -123,7 +123,7 @@ public static class EnvironmentUtils
         {
             // Handle Windows-style %VAR%
             var expanded = Environment.ExpandEnvironmentVariables(path);
-            
+
             // Handle Unix-style $VAR
             if (expanded.Contains('$'))
             {
@@ -153,7 +153,7 @@ public static class EnvironmentUtils
     {
         var pathVar = Environment.GetEnvironmentVariable("PATH") ?? "";
         var separator = System.IO.Path.PathSeparator;
-        
+
         return pathVar.Split(separator, StringSplitOptions.RemoveEmptyEntries)
                       .Select(p => p.Trim())
                       .Where(p => !string.IsNullOrEmpty(p))
@@ -171,7 +171,7 @@ public static class EnvironmentUtils
 
         var pathVar = Environment.GetEnvironmentVariable("PATH") ?? "";
         var separator = System.IO.Path.PathSeparator;
-        
+
         // Check if already in PATH
         var paths = GetPathDirectories();
         if (paths.Contains(directory, StringComparer.OrdinalIgnoreCase))
@@ -183,7 +183,7 @@ public static class EnvironmentUtils
         // Add to PATH
         var newPath = $"{directory}{separator}{pathVar}";
         Environment.SetEnvironmentVariable("PATH", newPath);
-        
+
         _logger.Information("Added directory to PATH: {Directory}", directory);
     }
 

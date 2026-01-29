@@ -22,12 +22,12 @@ public class ArgumentBuilder
     private readonly string _quickPlayRealms = "N/A";
     private readonly string _quickPlaySingleplayer = "N/A";
     private string _authAccessToken = "0";
-    
+
     private string _authPlayerName = "Player";
     private string _authXuid = "0";
     private string _clientId = "0";
     private bool _hasCustomResolution;
-    
+
     private bool _hasQuickPlaysSupport;
     private bool _isDemoUser;
     private bool _isQuickPlayMultiplayer;
@@ -44,7 +44,7 @@ public class ArgumentBuilder
         _logger.Information("ArgumentBuilder initialized for offline mode by default.");
         _logger.Verbose("Default offline auth: PlayerName={PlayerName}, UUID={AuthUuid}, AccessToken={AccessToken}", _authPlayerName, _authUuid, _authAccessToken);
     }
-    
+
     public List<string> BuildJvmArguments(
         LaunchProfile launchProfile,
         string classpath,
@@ -89,7 +89,7 @@ public class ArgumentBuilder
             jvmArgs.Add("-cp");
             jvmArgs.Add($"\"{classpath}\"");
         }
-        
+
         if (launchProfile.Logging?.Client?.File != null && !string.IsNullOrEmpty(launchProfile.Logging.Client.Argument))
         {
             var logConfigFileId = launchProfile.Logging.Client.File.Id;
@@ -113,7 +113,7 @@ public class ArgumentBuilder
         jvmArgs.ForEach(arg => _logger.Verbose("  JVM Arg: {Argument}", arg));
         return jvmArgs;
     }
-    
+
     public List<string> BuildGameArguments(LaunchProfile launchProfile, string instancePath)
     {
         _logger.Information("Building game arguments for version {VersionId} (Instance: {InstancePath})...", launchProfile.Id, instancePath);
@@ -155,13 +155,13 @@ public class ArgumentBuilder
         gameArgs.ForEach(arg => _logger.Verbose("  Game Arg: {Argument}", arg));
         return gameArgs;
     }
-    
+
     private string? ReplacePlaceholders(string? argument, LaunchProfile launchProfile, string? classpath, string? nativesDir, string instancePath)
     {
         if (argument == null) return null;
 
         var assetsIndexName = launchProfile.AssetIndex?.Id ?? launchProfile.Assets ?? "unknown_assets_index";
-        
+
         var gameDirectoryPath = $"\"{Path.GetFullPath(instancePath)}\"";
         var assetsRootPath = $"\"{Path.GetFullPath(_config.AssetsDir)}\"";
         var nativesDirectoryPath = nativesDir != null ? $"\"{Path.GetFullPath(nativesDir)}\"" : "\"${natives_directory}\"";
@@ -198,7 +198,7 @@ public class ArgumentBuilder
 
         return argument;
     }
-    
+
     public void SetOfflinePlayerName(string playerName)
     {
         if (!string.IsNullOrWhiteSpace(playerName))

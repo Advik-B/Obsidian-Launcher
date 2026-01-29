@@ -18,9 +18,9 @@ class Program
             // Initialize logging early
             var config = new LauncherConfig();
             LoggerSetup.Initialize(config);
-            
+
             Log.Information("Starting Obsidian Launcher GUI...");
-            
+
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
         }

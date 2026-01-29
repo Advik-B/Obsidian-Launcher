@@ -35,7 +35,7 @@ public class ObsidianLauncher
             Environment.ExitCode = 1;
             return;
         }
-        
+
         Log.Information("==================================================");
         Log.Information("  Obsidian Launcher {Version}", $"v{LauncherConfig.VERSION}");
         Log.Information("==================================================");
@@ -59,7 +59,7 @@ public class ObsidianLauncher
             var loaderName = "fabric";
             var loaderVersion = "0.15.7";
             string? cliPlayerNameFromArg = null;
-            
+
             // Basic command-line parsing
             if (args.Length > 0) mcVersion = args[0];
             if (args.Length > 1) instanceName = args[1];
@@ -69,7 +69,7 @@ public class ObsidianLauncher
 
             var sessionPlayerName = cliPlayerNameFromArg ?? $"Player{Random.Shared.Next(100, 999)}";
             argumentBuilder.SetOfflinePlayerName(sessionPlayerName);
-            
+
             var components = new List<Component>
             {
                 new() { Uid = "net.minecraft", Version = mcVersion, IsImportant = true }
@@ -90,7 +90,7 @@ public class ObsidianLauncher
                     Log.Information("Configuring instance with {LoaderName} {LoaderVersion}", loaderName, loaderVersion);
                 }
             }
-            
+
             var assetProgress = new Progress<AssetDownloadProgress>(report =>
             {
                 if (report.ProcessedFiles % Math.Max(1, report.TotalFiles / 20) == 0 || report.ProcessedFiles == report.TotalFiles)
@@ -104,7 +104,7 @@ public class ObsidianLauncher
                 else
                     Log.Verbose("[Libs] {Processed}/{Total} - Status: {Status} - Lib: {LibraryName}", report.ProcessedLibraries, report.TotalLibraries, report.Status, report.CurrentLibraryName ?? "");
             });
-            
+
             var (currentInstance, clientJarPath, libraryClasspathEntries) = await instanceManager.GetOrCreateInstanceAsync(
                 instanceName,
                 components,
@@ -123,7 +123,7 @@ public class ObsidianLauncher
 
             // Re-build the final launch profile to pass to JavaManager and ArgumentBuilder
             var launchProfile = await instanceManager.BuildLaunchProfileAsync(currentInstance.Components, _cts.Token);
-            if(launchProfile == null)
+            if (launchProfile == null)
             {
                 Log.Fatal("Failed to build final launch profile for instance '{InstanceName}'. Cannot launch.", currentInstance.Name);
                 return;
@@ -138,19 +138,19 @@ public class ObsidianLauncher
                 return;
             }
             Log.Information("Java Runtime Ensured: {JavaExecutablePath}", javaRuntime.JavaExecutablePath);
-            
+
             var classpathString = argumentBuilder.BuildClasspath(clientJarPath!, libraryClasspathEntries!);
             var jvmArgs = argumentBuilder.BuildJvmArguments(launchProfile, classpathString, currentInstance.NativesPath, javaRuntime, currentInstance.InstancePath);
             var gameArgs = argumentBuilder.BuildGameArguments(launchProfile, currentInstance.InstancePath);
-            
+
             Log.Information("--- Launching instance '{InstanceName}' (Player: {PlayerName}) ---", currentInstance.Name, sessionPlayerName);
             var gameWorkingDirectory = Path.GetFullPath(currentInstance.GameDataPath);
-            
+
             var sessionStartTime = DateTime.UtcNow;
             var exitCode = await gameLauncher.LaunchAsync(javaRuntime.JavaExecutablePath, jvmArgs, launchProfile.MainClass, gameArgs, gameWorkingDirectory, _cts.Token);
             var sessionDuration = DateTime.UtcNow - sessionStartTime;
             await instanceManager.UpdateLastPlayedAsync(currentInstance, sessionDuration);
-            
+
             if (_cts.IsCancellationRequested)
             {
                 Log.Warning("Minecraft launch was explicitly cancelled by the user during execution.");

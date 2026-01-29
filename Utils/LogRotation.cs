@@ -65,10 +65,10 @@ public static class LogRotation
                                              .ToList();
 
                 long totalSize = remainingFiles.Sum(f => f.Length);
-                
+
                 if (totalSize > maxSizeBytes)
                 {
-                    _logger.Information("Total log size {TotalSize} exceeds limit {MaxSize}, deleting oldest files", 
+                    _logger.Information("Total log size {TotalSize} exceeds limit {MaxSize}, deleting oldest files",
                         SystemInfo.FormatByteSize(totalSize), SystemInfo.FormatByteSize(maxSizeBytes));
 
                     // Delete oldest files until under limit
@@ -82,7 +82,7 @@ public static class LogRotation
                             var fileSize = file.Length;
                             file.Delete();
                             totalSize -= fileSize;
-                            _logger.Information("Deleted log file to reduce size: {File} ({Size})", 
+                            _logger.Information("Deleted log file to reduce size: {File} ({Size})",
                                 file.Name, SystemInfo.FormatByteSize(fileSize));
                         }
                         catch (Exception ex)
@@ -129,7 +129,7 @@ public static class LogRotation
                 try
                 {
                     var gzipPath = file.FullName + ".gz";
-                    
+
                     if (File.Exists(gzipPath))
                     {
                         _logger.Debug("Compressed file already exists: {File}", gzipPath);
@@ -143,7 +143,7 @@ public static class LogRotation
                         inputStream.CopyTo(gzipStream);
                     }
 
-                    _logger.Information("Compressed log file: {Original} -> {Compressed}", 
+                    _logger.Information("Compressed log file: {Original} -> {Compressed}",
                         file.Name, Path.GetFileName(gzipPath));
 
                     // Delete original file after successful compression
@@ -197,7 +197,7 @@ public static class LogRotation
                 try
                 {
                     var archivePath = Path.Combine(archiveDirectory, file.Name);
-                    
+
                     if (File.Exists(archivePath))
                     {
                         // Add timestamp to avoid conflicts

@@ -32,7 +32,7 @@ public class InstanceManager
         Directory.CreateDirectory(_launcherConfig.InstancesRootDir);
         _logger.Verbose("InstanceManager initialized. Instances root: {InstancesRootDir}", _launcherConfig.InstancesRootDir);
     }
-    
+
     private string GetInstancePath(string instanceName)
     {
         var sanitizedName = SanitizeName(instanceName);
@@ -50,7 +50,7 @@ public class InstanceManager
         foreach (var c in Path.GetInvalidFileNameChars()) name = name.Replace(c, '_');
         return name.Replace(" ", "_").Trim();
     }
-    
+
     public async Task<(bool Success, string? ClientJarPath, List<string>? LibraryJarPaths)> SyncInstanceAsync(
         Instance instance,
         IProgress<AssetDownloadProgress>? assetProgress = null,
@@ -100,7 +100,7 @@ public class InstanceManager
         _logger.Information("--- Instance '{InstanceName}' synced successfully for Minecraft {VersionId} ---", instance.Name, launchProfile.Id);
         return (true, clientJarPath, libraryJarPaths);
     }
-    
+
     public async Task<LaunchProfile?> BuildLaunchProfileAsync(List<Component> components, CancellationToken cancellationToken)
     {
         var launchProfile = new LaunchProfile();
@@ -137,15 +137,15 @@ public class InstanceManager
 
         return launchProfile;
     }
-    
+
     private async Task<MinecraftVersion?> GetMinecraftVersionDetailsAsync(string versionId, CancellationToken cancellationToken)
     {
         var manifestResponseMsg = await _httpManager.GetAsync("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json", cancellationToken: cancellationToken);
         if (!manifestResponseMsg.IsSuccessStatusCode) return null;
-        
+
         var manifestJsonString = await manifestResponseMsg.Content.ReadAsStringAsync(cancellationToken);
         var versionManifestAll = JsonSerializer.Deserialize<VersionManifest>(manifestJsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        
+
         var selectedVersionMeta = versionManifestAll?.Versions.FirstOrDefault(v => v.Id == versionId);
         if (selectedVersionMeta == null) return null;
 
@@ -177,7 +177,7 @@ public class InstanceManager
         Directory.CreateDirectory(instancePath);
         Directory.CreateDirectory(Path.Combine(instancePath, "natives"));
         Directory.CreateDirectory(Path.Combine(instancePath, "logs"));
-        
+
         var globalResourcepacks = Path.Combine(_launcherConfig.DataRootDir, "resourcepacks");
         var globalShaderpacks = Path.Combine(_launcherConfig.DataRootDir, "shaderpacks");
         Directory.CreateDirectory(globalResourcepacks);
@@ -194,7 +194,7 @@ public class InstanceManager
             Components = components,
             CreationDate = DateTime.UtcNow
         };
-        
+
         var saved = await SaveInstanceAsync(newInstance);
         if (!saved)
         {
@@ -205,7 +205,7 @@ public class InstanceManager
         }
 
         _logger.Information("Initial metadata for instance '{InstanceName}' saved. Proceeding to sync.", newInstance.Name);
-        
+
         var (syncSuccess, _, _) = await SyncInstanceAsync(newInstance, assetProgress, libraryProgress, cancellationToken);
         if (!syncSuccess)
         {
@@ -215,7 +215,7 @@ public class InstanceManager
         _logger.Information("Successfully created and synced new instance: '{InstanceName}' at {InstancePath}", newInstance.Name, newInstance.InstancePath);
         return newInstance;
     }
-    
+
     public async Task<(Instance? Instance, string? ClientJarPath, List<string>? LibraryJarPaths)> GetOrCreateInstanceAsync(
         string name,
         List<Component> components,
@@ -246,21 +246,21 @@ public class InstanceManager
             _logger.Information("Instance '{SanitizedName}' not found. Creating new instance.", sanitizedName);
             instance = await CreateInstanceAsync(name, components, assetProgress, libraryProgress, cancellationToken);
         }
-        
+
         if (instance == null) return (null, null, null);
-        
+
         // Always sync, even if just created (CreateInstanceAsync already does this, but this ensures consistency)
         _logger.Information("Ensuring instance '{InstanceName}' is synced...", instance.Name);
         var (syncSuccess, clientJarPath, libraryJarPaths) = await SyncInstanceAsync(instance, assetProgress, libraryProgress, cancellationToken);
-        
+
         if (!syncSuccess)
         {
             _logger.Error("Sync failed for instance '{InstanceName}'. Launch might fail.", instance.Name);
         }
-        
+
         return (instance, clientJarPath, libraryJarPaths);
     }
-    
+
     // Unchanged methods...
     public async Task<Instance?> LoadInstanceAsync(string name)
     {
@@ -410,14 +410,14 @@ public class InstanceManager
             // Save updated metadata
             await SaveInstanceAsync(newInstance);
 
-            _logger.Information("Successfully copied instance '{SourceName}' to '{NewName}' at {NewPath}", 
+            _logger.Information("Successfully copied instance '{SourceName}' to '{NewName}' at {NewPath}",
                 sourceInstanceName, newInstanceName, newPath);
             return newInstance;
         }
         catch (Exception ex)
         {
             _logger.Error(ex, "Failed to copy instance '{SourceName}' to '{NewName}'", sourceInstanceName, newInstanceName);
-            
+
             // Clean up if copy failed
             if (Directory.Exists(newPath))
             {
@@ -462,9 +462,9 @@ public class InstanceManager
             // Create backup if requested
             if (createBackup)
             {
-                var backupPath = Path.Combine(_launcherConfig.BaseDataPath, "backups", "instances", 
+                var backupPath = Path.Combine(_launcherConfig.BaseDataPath, "backups", "instances",
                     $"{SanitizeName(instanceName)}_{DateTime.UtcNow:yyyyMMdd_HHmmss}");
-                
+
                 Directory.CreateDirectory(Path.GetDirectoryName(backupPath)!);
                 CopyDirectory(instancePath, backupPath);
                 _logger.Information("Created backup of instance '{InstanceName}' at {BackupPath}", instanceName, backupPath);
@@ -515,7 +515,7 @@ public class InstanceManager
 
             if (Directory.Exists(newPath))
             {
-                _logger.Error("Cannot rename instance to '{NewName}': directory already exists at {NewPath}", 
+                _logger.Error("Cannot rename instance to '{NewName}': directory already exists at {NewPath}",
                     instance.Name, newPath);
                 return false;
             }
@@ -528,7 +528,7 @@ public class InstanceManager
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Failed to rename instance directory from '{OldName}' to '{NewName}'", 
+                _logger.Error(ex, "Failed to rename instance directory from '{OldName}' to '{NewName}'",
                     oldName, instance.Name);
                 return false;
             }
@@ -575,7 +575,7 @@ public class InstanceManager
         }
 
         var instancePath = GetInstancePath(instanceName);
-        
+
         try
         {
             // Ensure export directory exists
@@ -656,7 +656,7 @@ public class InstanceManager
 
                 System.IO.Compression.ZipFile.CreateFromDirectory(tempDir, exportPath);
                 _logger.Information("Exported instance '{InstanceName}' to {ExportPath}", instanceName, exportPath);
-                
+
                 return exportPath;
             }
             finally
@@ -706,7 +706,7 @@ public class InstanceManager
         {
             // Extract zip to instance directory
             System.IO.Compression.ZipFile.ExtractToDirectory(zipPath, instancePath);
-            
+
             // Load instance
             var instance = await LoadInstanceAsync(instanceName);
             if (instance == null)
@@ -731,7 +731,7 @@ public class InstanceManager
         catch (Exception ex)
         {
             _logger.Error(ex, "Failed to import instance '{InstanceName}' from {ZipPath}", instanceName, zipPath);
-            
+
             // Clean up if import failed
             if (Directory.Exists(instancePath))
             {

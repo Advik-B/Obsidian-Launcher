@@ -32,7 +32,7 @@ public static class VersionUtils
         {
             // Remove any pre-release tags (e.g., "1.2.3-alpha" -> "1.2.3")
             var cleanVersion = Regex.Replace(versionString, @"-.*$", "");
-            
+
             // Handle versions with less than 4 parts by padding with zeros
             var parts = cleanVersion.Split('.');
             if (parts.Length == 2)

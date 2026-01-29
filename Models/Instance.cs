@@ -22,7 +22,7 @@ public class Instance
 
     public string Id { get; set; } = string.Empty;
     public required string Name { get; set; }
-    
+
     // Replaced MinecraftVersionId with a list of components
     public List<Component> Components { get; set; }
 

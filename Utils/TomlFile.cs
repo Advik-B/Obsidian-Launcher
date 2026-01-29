@@ -28,7 +28,7 @@ public class TomlFile
     {
         _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
         _root = new TomlTable();
-        
+
         if (File.Exists(filePath))
         {
             Load();
@@ -43,7 +43,7 @@ public class TomlFile
         try
         {
             _root.Clear();
-            
+
             if (!File.Exists(_filePath))
             {
                 _logger.Information("TOML file does not exist, starting with empty configuration: {FilePath}", _filePath);
@@ -52,14 +52,14 @@ public class TomlFile
 
             var tomlContent = File.ReadAllText(_filePath);
             var loadedTable = Toml.ToModel(tomlContent);
-            
+
             // Copy all items from loaded table to our root
             foreach (var kvp in loadedTable)
             {
                 _root[kvp.Key] = kvp.Value;
             }
 
-            _logger.Information("Loaded TOML file: {FilePath} with {SectionCount} top-level entries", 
+            _logger.Information("Loaded TOML file: {FilePath} with {SectionCount} top-level entries",
                 _filePath, _root.Count);
         }
         catch (Exception ex)
@@ -103,7 +103,7 @@ public class TomlFile
     public string Read(string section, string key, string defaultValue = "")
     {
         section ??= string.Empty;
-        
+
         try
         {
             if (string.IsNullOrEmpty(section))
@@ -144,11 +144,11 @@ public class TomlFile
     public int ReadInt(string section, string key, int defaultValue = 0)
     {
         section ??= string.Empty;
-        
+
         try
         {
             object? value = null;
-            
+
             if (string.IsNullOrEmpty(section))
             {
                 _root.TryGetValue(key, out value);
@@ -189,11 +189,11 @@ public class TomlFile
     public bool ReadBool(string section, string key, bool defaultValue = false)
     {
         section ??= string.Empty;
-        
+
         try
         {
             object? value = null;
-            
+
             if (string.IsNullOrEmpty(section))
             {
                 _root.TryGetValue(key, out value);
@@ -232,11 +232,11 @@ public class TomlFile
     public long ReadLong(string section, string key, long defaultValue = 0)
     {
         section ??= string.Empty;
-        
+
         try
         {
             object? value = null;
-            
+
             if (string.IsNullOrEmpty(section))
             {
                 _root.TryGetValue(key, out value);
@@ -276,7 +276,7 @@ public class TomlFile
     public void Write(string section, string key, string value)
     {
         section ??= string.Empty;
-        
+
         try
         {
             if (string.IsNullOrEmpty(section))
@@ -291,7 +291,7 @@ public class TomlFile
                 {
                     _root[section] = new TomlTable();
                 }
-                
+
                 var sectionTable = (TomlTable)_root[section];
                 sectionTable[key] = value ?? string.Empty;
             }
@@ -311,7 +311,7 @@ public class TomlFile
     public void Write(string section, string key, int value)
     {
         section ??= string.Empty;
-        
+
         try
         {
             if (string.IsNullOrEmpty(section))
@@ -324,7 +324,7 @@ public class TomlFile
                 {
                     _root[section] = new TomlTable();
                 }
-                
+
                 var sectionTable = (TomlTable)_root[section];
                 sectionTable[key] = (long)value;
             }
@@ -344,7 +344,7 @@ public class TomlFile
     public void Write(string section, string key, bool value)
     {
         section ??= string.Empty;
-        
+
         try
         {
             if (string.IsNullOrEmpty(section))
@@ -357,7 +357,7 @@ public class TomlFile
                 {
                     _root[section] = new TomlTable();
                 }
-                
+
                 var sectionTable = (TomlTable)_root[section];
                 sectionTable[key] = value;
             }
@@ -377,7 +377,7 @@ public class TomlFile
     public void Write(string section, string key, long value)
     {
         section ??= string.Empty;
-        
+
         try
         {
             if (string.IsNullOrEmpty(section))
@@ -390,7 +390,7 @@ public class TomlFile
                 {
                     _root[section] = new TomlTable();
                 }
-                
+
                 var sectionTable = (TomlTable)_root[section];
                 sectionTable[key] = value;
             }
@@ -410,7 +410,7 @@ public class TomlFile
     public bool DeleteKey(string section, string key)
     {
         section ??= string.Empty;
-        
+
         try
         {
             if (string.IsNullOrEmpty(section))
@@ -441,7 +441,7 @@ public class TomlFile
     public bool DeleteSection(string section)
     {
         section ??= string.Empty;
-        
+
         if (string.IsNullOrEmpty(section))
         {
             _logger.Warning("Cannot delete root section");
@@ -459,10 +459,10 @@ public class TomlFile
     public bool SectionExists(string section)
     {
         section ??= string.Empty;
-        
+
         if (string.IsNullOrEmpty(section))
             return true; // Root always exists
-        
+
         return _root.ContainsKey(section) && _root[section] is TomlTable;
     }
 
@@ -475,15 +475,15 @@ public class TomlFile
     public bool KeyExists(string section, string key)
     {
         section ??= string.Empty;
-        
+
         if (string.IsNullOrEmpty(section))
         {
             return _root.ContainsKey(key);
         }
         else
         {
-            return _root.TryGetValue(section, out var sectionObj) && 
-                   sectionObj is TomlTable sectionTable && 
+            return _root.TryGetValue(section, out var sectionObj) &&
+                   sectionObj is TomlTable sectionTable &&
                    sectionTable.ContainsKey(key);
         }
     }
@@ -507,7 +507,7 @@ public class TomlFile
     public string[] GetKeys(string section)
     {
         section ??= string.Empty;
-        
+
         if (string.IsNullOrEmpty(section))
         {
             return _root.Keys.ToArray();

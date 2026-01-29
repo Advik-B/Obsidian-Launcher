@@ -32,7 +32,7 @@ public class LaunchProfile
     public void MergeFrom(MinecraftVersion version)
     {
         _logger.Information("Merging component version '{ComponentId}' into launch profile...", version.Id);
-        
+
         // Overwrite simple properties if they are present in the new version file
         Id = version.Id; // The ID of the final component is usually what we want
         if (!string.IsNullOrEmpty(version.MainClass))
@@ -54,7 +54,7 @@ public class LaunchProfile
         {
             Assets = version.Assets;
         }
-        
+
         if (version.Downloads != null)
         {
             foreach (var download in version.Downloads)

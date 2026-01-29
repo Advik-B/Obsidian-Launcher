@@ -27,7 +27,7 @@ public class LibraryManager
         _assetManager = new AssetManager(config, httpManager); // Instantiate or inject
         _logger.Verbose("LibraryManager initialized.");
     }
-    
+
     public async Task<List<string>?> EnsureLibrariesAsync(
         LaunchProfile launchProfile,
         string nativesDir,
@@ -156,7 +156,7 @@ public class LibraryManager
 
         return classpathEntries;
     }
-    
+
     private void ReportLibraryProgress(IProgress<LibraryProcessingProgress>? progress, string libraryName, int processed, int total, string status)
     {
         progress?.Report(new LibraryProcessingProgress
@@ -167,7 +167,7 @@ public class LibraryManager
             Status = status
         });
     }
-    
+
     // Unchanged methods...
     private bool IsLibraryApplicable(Library library)
     {
@@ -194,7 +194,7 @@ public class LibraryManager
 
         return allowed;
     }
-    
+
     private bool CheckOsRule(OperatingSystemInfo osRule)
     {
         if (osRule == null) return true;
@@ -215,7 +215,7 @@ public class LibraryManager
 
         return nameMatch && archMatch;
     }
-    
+
     private string GetCurrentOsNameForNatives()
     {
         return OsUtils.GetCurrentOS() switch
@@ -226,7 +226,7 @@ public class LibraryManager
             _ => "unknown"
         };
     }
-    
+
     private bool ExtractNativeJar(string nativeJarPath, string nativesDir, LibraryExtractRule extractRule)
     {
         try
@@ -259,7 +259,7 @@ public class LibraryManager
             return false;
         }
     }
-    
+
     private async Task<bool> DownloadAndVerifyFileAsync(string url, string localPath, string expectedSha1, string fileDescription, CancellationToken cancellationToken, ulong? expectedSize = null)
     {
         return await _assetManager.DownloadAndVerifyFileAsync(url, localPath, expectedSha1, fileDescription, cancellationToken, expectedSize);

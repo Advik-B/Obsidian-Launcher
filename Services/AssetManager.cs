@@ -46,7 +46,7 @@ public class AssetManager
         var currentAssetIndexMetadata = launchProfile.AssetIndex;
         var assetIndexId =
             launchProfile.AssetIndex?.Id ??
-            launchProfile.Assets; 
+            launchProfile.Assets;
 
         if (currentAssetIndexMetadata == null)
         {
@@ -110,7 +110,7 @@ public class AssetManager
                 currentAssetIndexMetadata.Id, assetIndexDetails.IsVirtual, assetIndexDetails.MapToResources);
 
         var downloadTasks = new List<Task<bool>>();
-        var maxConcurrentDownloads = Environment.ProcessorCount; 
+        var maxConcurrentDownloads = Environment.ProcessorCount;
 
         foreach (var assetEntry in assetIndexDetails.Objects)
         {
@@ -121,7 +121,7 @@ public class AssetManager
             var assetFilename = assetHash;
             var assetObjectPath = Path.Combine(assetObjectsDir, subDir, assetFilename);
             var assetDownloadUrl = $"{MinecraftResourcesUrlBase}{subDir}/{assetHash}";
-            
+
             while (downloadTasks.Count(t => !t.IsCompleted) >= maxConcurrentDownloads)
             {
                 await Task.WhenAny(downloadTasks.Where(t => !t.IsCompleted));
@@ -283,7 +283,7 @@ public class AssetManager
                 _logger.Error(ex, "Failed to delete file {FilePath} after error ({Reason})", filePath, reason);
             }
     }
-    
+
     public async Task<string?> EnsureClientJarAsync(LaunchProfile launchProfile, CancellationToken cancellationToken)
     {
         _logger.Information("Ensuring Client JAR for Minecraft {VersionId}", launchProfile.Id);

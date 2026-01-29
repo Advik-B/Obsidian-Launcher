@@ -21,12 +21,12 @@ public static class PathUtils
     public static string GetHomeDirectory()
     {
         var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        
+
         if (string.IsNullOrEmpty(homePath))
         {
             // Fallback for older systems or special environments
-            homePath = Environment.GetEnvironmentVariable("HOME") 
-                      ?? Environment.GetEnvironmentVariable("USERPROFILE") 
+            homePath = Environment.GetEnvironmentVariable("HOME")
+                      ?? Environment.GetEnvironmentVariable("USERPROFILE")
                       ?? "/tmp";
         }
 
@@ -52,7 +52,7 @@ public static class PathUtils
         }
         else // Linux and others
         {
-            appDataPath = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME") 
+            appDataPath = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME")
                          ?? Path.Combine(GetHomeDirectory(), ".config");
         }
 
@@ -78,7 +78,7 @@ public static class PathUtils
         }
         else // Linux
         {
-            localDataPath = Environment.GetEnvironmentVariable("XDG_DATA_HOME") 
+            localDataPath = Environment.GetEnvironmentVariable("XDG_DATA_HOME")
                            ?? Path.Combine(GetHomeDirectory(), ".local", "share");
         }
 
@@ -104,7 +104,7 @@ public static class PathUtils
         }
         else // Linux
         {
-            cachePath = Environment.GetEnvironmentVariable("XDG_CACHE_HOME") 
+            cachePath = Environment.GetEnvironmentVariable("XDG_CACHE_HOME")
                        ?? Path.Combine(GetHomeDirectory(), ".cache");
         }
 
@@ -167,7 +167,7 @@ public static class PathUtils
 
         basePath ??= Directory.GetCurrentDirectory();
         var absolutePath = Path.GetFullPath(Path.Combine(basePath, path));
-        
+
         _logger.Verbose("Made path absolute: {Relative} -> {Absolute}", path, absolutePath);
         return absolutePath;
     }
@@ -192,9 +192,9 @@ public static class PathUtils
         // Convert URI separators back to platform separators
         relativePath = relativePath.Replace('/', Path.DirectorySeparatorChar);
 
-        _logger.Verbose("Made path relative: {Absolute} -> {Relative} (base: {Base})", 
+        _logger.Verbose("Made path relative: {Absolute} -> {Relative} (base: {Base})",
             path, relativePath, basePath);
-        
+
         return relativePath;
     }
 

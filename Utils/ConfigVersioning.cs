@@ -87,7 +87,7 @@ public static class ConfigVersioning
         try
         {
             var metadataPath = configPath + ".meta";
-            
+
             if (!File.Exists(metadataPath))
             {
                 _logger.Debug("No metadata file found for: {Path}", configPath);
@@ -117,7 +117,7 @@ public static class ConfigVersioning
         try
         {
             var metadata = ReadMetadata(configPath);
-            
+
             if (metadata == null)
             {
                 // Create new metadata
@@ -183,7 +183,7 @@ public static class ConfigVersioning
     public static bool NeedsMigration(string configPath, int currentVersion)
     {
         var metadata = ReadMetadata(configPath);
-        
+
         if (metadata == null)
         {
             _logger.Information("Config has no metadata, assuming needs migration: {Path}", configPath);
@@ -191,10 +191,10 @@ public static class ConfigVersioning
         }
 
         var needsMigration = metadata.Version < currentVersion;
-        
+
         if (needsMigration)
         {
-            _logger.Information("Config needs migration: {Path} (version {OldVersion} -> {NewVersion})", 
+            _logger.Information("Config needs migration: {Path} (version {OldVersion} -> {NewVersion})",
                 configPath, metadata.Version, currentVersion);
         }
 
@@ -264,7 +264,7 @@ public static class ConfigVersioning
 
             // Basic validation: check if file is readable
             var content = File.ReadAllText(configPath);
-            
+
             if (string.IsNullOrWhiteSpace(content))
             {
                 _logger.Warning("Config file is empty: {Path}", configPath);

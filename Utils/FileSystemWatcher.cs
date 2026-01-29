@@ -14,7 +14,7 @@ namespace ObsidianLauncher.Utils;
 public class RecursiveFileWatcher : IDisposable
 {
     private static readonly ILogger _logger = Log.ForContext(typeof(RecursiveFileWatcher));
-    
+
     private readonly FileSystemWatcher _watcher;
     private bool _disposed;
 
@@ -50,15 +50,15 @@ public class RecursiveFileWatcher : IDisposable
         {
             throw new DirectoryNotFoundException($"Directory not found: {path}");
         }
-        
+
         _watcher = new FileSystemWatcher(path)
         {
             Filter = filter,
             IncludeSubdirectories = includeSubdirectories,
-            NotifyFilter = NotifyFilters.FileName | 
-                          NotifyFilters.DirectoryName | 
-                          NotifyFilters.LastWrite | 
-                          NotifyFilters.Size | 
+            NotifyFilter = NotifyFilters.FileName |
+                          NotifyFilters.DirectoryName |
+                          NotifyFilters.LastWrite |
+                          NotifyFilters.Size |
                           NotifyFilters.CreationTime
         };
 
@@ -68,7 +68,7 @@ public class RecursiveFileWatcher : IDisposable
         _watcher.Renamed += OnRenamed;
         _watcher.Error += OnError;
 
-        _logger.Information("Created file watcher for: {Path} (filter: {Filter}, recursive: {Recursive})", 
+        _logger.Information("Created file watcher for: {Path} (filter: {Filter}, recursive: {Recursive})",
             path, filter, includeSubdirectories);
     }
 

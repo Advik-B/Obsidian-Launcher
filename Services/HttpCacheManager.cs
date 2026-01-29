@@ -34,7 +34,7 @@ public class HttpCacheManager
 
         Directory.CreateDirectory(_cacheDirectory);
         LoadCacheIndex();
-        
+
         _logger.Information("HttpCacheManager initialized with cache directory: {CacheDirectory}", _cacheDirectory);
     }
 
@@ -54,7 +54,7 @@ public class HttpCacheManager
     public bool IsCached(string url, out CacheEntry? entry)
     {
         var key = GetCacheKey(url);
-        
+
         if (_cache.TryGetValue(key, out entry))
         {
             if (entry.ExpiresAt > DateTime.UtcNow)
@@ -78,7 +78,7 @@ public class HttpCacheManager
         if (IsCached(url, out var entry) && entry != null)
         {
             var contentPath = Path.Combine(_cacheDirectory, entry.ContentFile);
-            
+
             if (File.Exists(contentPath))
             {
                 _logger.Debug("Cache hit for {Url}", url);
@@ -156,11 +156,11 @@ public class HttpCacheManager
     public void Invalidate(string url)
     {
         var key = GetCacheKey(url);
-        
+
         if (_cache.TryRemove(key, out var entry))
         {
             var contentPath = Path.Combine(_cacheDirectory, entry.ContentFile);
-            
+
             if (File.Exists(contentPath))
             {
                 File.Delete(contentPath);
@@ -177,7 +177,7 @@ public class HttpCacheManager
     public void ClearAll()
     {
         _cache.Clear();
-        
+
         if (Directory.Exists(_cacheDirectory))
         {
             foreach (var file in Directory.GetFiles(_cacheDirectory))
@@ -211,7 +211,7 @@ public class HttpCacheManager
             if (_cache.TryRemove(key, out var entry))
             {
                 var contentPath = Path.Combine(_cacheDirectory, entry.ContentFile);
-                
+
                 if (File.Exists(contentPath))
                 {
                     File.Delete(contentPath);
@@ -232,7 +232,7 @@ public class HttpCacheManager
     private void LoadCacheIndex()
     {
         var indexPath = Path.Combine(_cacheDirectory, "cache_index.json");
-        
+
         if (!File.Exists(indexPath))
             return;
 
@@ -264,7 +264,7 @@ public class HttpCacheManager
     private void SaveCacheIndex()
     {
         var indexPath = Path.Combine(_cacheDirectory, "cache_index.json");
-        
+
         try
         {
             var entries = _cache.Values.ToArray();

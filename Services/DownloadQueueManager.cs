@@ -50,14 +50,14 @@ public class DownloadQueueManager : IDisposable
         _httpManager = httpManager ?? throw new ArgumentNullException(nameof(httpManager));
         _maxConcurrentDownloads = Math.Max(1, maxConcurrentDownloads);
         _logger = LogHelper.GetLogger<DownloadQueueManager>();
-        
+
         _downloadQueue = new ConcurrentQueue<DownloadTask>();
         _activeDownloads = new ConcurrentDictionary<string, DownloadTask>();
         _completedDownloads = new ConcurrentDictionary<string, DownloadTask>();
         _downloadSemaphore = new SemaphoreSlim(_maxConcurrentDownloads, _maxConcurrentDownloads);
         _globalCancellation = new CancellationTokenSource();
 
-        _logger.Information("DownloadQueueManager initialized with max {MaxConcurrent} concurrent downloads", 
+        _logger.Information("DownloadQueueManager initialized with max {MaxConcurrent} concurrent downloads",
             _maxConcurrentDownloads);
     }
 
@@ -79,7 +79,7 @@ public class DownloadQueueManager : IDisposable
     public async Task StopAsync()
     {
         _globalCancellation.Cancel();
-        
+
         if (_queueProcessorTask != null)
         {
             await _queueProcessorTask;
@@ -102,7 +102,7 @@ public class DownloadQueueManager : IDisposable
 
         _downloadQueue.Enqueue(task);
         _logger.Debug("Enqueued download: {Url} -> {FilePath} (Priority: {Priority})", url, filePath, priority);
-        
+
         return task.Id;
     }
 
@@ -133,7 +133,7 @@ public class DownloadQueueManager : IDisposable
     {
         if (_activeDownloads.TryGetValue(taskId, out var activeTask))
             return activeTask;
-        
+
         if (_completedDownloads.TryGetValue(taskId, out var completedTask))
             return completedTask;
 
@@ -263,7 +263,7 @@ public class DownloadQueueManager : IDisposable
                 _logger.Debug("Verifying download: {FilePath}", task.FilePath);
 
                 var actualSha1 = await CryptoUtils.CalculateFileSHA1Async(task.FilePath);
-                
+
                 if (!string.Equals(actualSha1, task.ExpectedSha1, StringComparison.OrdinalIgnoreCase))
                 {
                     throw new Exception($"Hash verification failed. Expected: {task.ExpectedSha1}, Actual: {actualSha1}");
@@ -275,7 +275,7 @@ public class DownloadQueueManager : IDisposable
             // Mark as completed
             task.Status = DownloadStatus.Completed;
             task.CompletedAt = DateTime.UtcNow;
-            
+
             _logger.Information("Download completed: {Url} -> {FilePath}", task.Url, task.FilePath);
             DownloadCompleted?.Invoke(this, task);
         }
@@ -290,7 +290,7 @@ public class DownloadQueueManager : IDisposable
             task.Status = DownloadStatus.Failed;
             task.ErrorMessage = ex.Message;
             task.CompletedAt = DateTime.UtcNow;
-            
+
             _logger.Error(ex, "Download failed: {Url} -> {FilePath}", task.Url, task.FilePath);
 
             // Retry logic
@@ -301,7 +301,7 @@ public class DownloadQueueManager : IDisposable
                 task.StartedAt = null;
                 task.CompletedAt = null;
                 _downloadQueue.Enqueue(task);
-                _logger.Information("Retrying download (attempt {RetryCount}/{MaxRetries}): {Url}", 
+                _logger.Information("Retrying download (attempt {RetryCount}/{MaxRetries}): {Url}",
                     task.RetryCount, task.MaxRetries, task.Url);
             }
             else
