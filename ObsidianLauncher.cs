@@ -46,7 +46,7 @@ public class ObsidianLauncher
         using var httpManager = new HttpManager();
         var javaManager = new JavaManager(launcherConfig, httpManager);
         var assetManager = new AssetManager(launcherConfig, httpManager);
-        var libraryManager = new LibraryManager(launcherConfig, httpManager);
+        var libraryManager = new LibraryManager(launcherConfig, httpManager, assetManager);
         var instanceManager = new InstanceManager(launcherConfig, assetManager, libraryManager, httpManager);
         var argumentBuilder = new ArgumentBuilder(launcherConfig);
         var gameLauncher = new GameLauncher(launcherConfig);

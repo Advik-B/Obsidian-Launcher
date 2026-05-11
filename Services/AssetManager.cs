@@ -109,48 +109,46 @@ public class AssetManager
                 "Asset index {AssetIndexId} is marked as virtual ({IsVirtual}) or map_to_resources ({MapToResources}). Using modern hash-based storage.",
                 currentAssetIndexMetadata.Id, assetIndexDetails.IsVirtual, assetIndexDetails.MapToResources);
 
-        var downloadTasks = new List<Task<bool>>();
-        var maxConcurrentDownloads = Environment.ProcessorCount; 
+        var semaphore = new SemaphoreSlim(Environment.ProcessorCount, Environment.ProcessorCount);
+        var downloadTasks = new List<Task>();
 
         foreach (var assetEntry in assetIndexDetails.Objects)
         {
             var assetInfo = assetEntry.Value;
-
             var assetHash = assetInfo.Hash;
             var subDir = assetHash.Substring(0, 2);
-            var assetFilename = assetHash;
-            var assetObjectPath = Path.Combine(assetObjectsDir, subDir, assetFilename);
+            var assetObjectPath = Path.Combine(assetObjectsDir, subDir, assetHash);
             var assetDownloadUrl = $"{MinecraftResourcesUrlBase}{subDir}/{assetHash}";
-            
-            while (downloadTasks.Count(t => !t.IsCompleted) >= maxConcurrentDownloads)
-            {
-                await Task.WhenAny(downloadTasks.Where(t => !t.IsCompleted));
-                cancellationToken.ThrowIfCancellationRequested();
-            }
 
-            var downloadTask = Task.Run(async () =>
+            await semaphore.WaitAsync(cancellationToken);
+            downloadTasks.Add(Task.Run(async () =>
             {
-                var success = await DownloadAndVerifyFileAsync(
-                    assetDownloadUrl,
-                    assetObjectPath,
-                    assetHash,
-                    $"Asset {assetHash}",
-                    cancellationToken,
-                    assetInfo.Size);
-
-                Interlocked.Increment(ref processedAssets);
-                if (success) Interlocked.Increment(ref successfullyProcessedAssets);
-                progress?.Report(new AssetDownloadProgress
+                try
                 {
-                    CurrentFile = Path.GetFileName(assetObjectPath),
-                    TotalFiles = totalAssets,
-                    ProcessedFiles = Interlocked.CompareExchange(ref processedAssets, 0, 0),
-                    CurrentFileBytesDownloaded = success ? (long)assetInfo.Size : 0,
-                    CurrentFileTotalBytes = (long)assetInfo.Size
-                });
-                return success;
-            }, cancellationToken);
-            downloadTasks.Add(downloadTask);
+                    var success = await DownloadAndVerifyFileAsync(
+                        assetDownloadUrl,
+                        assetObjectPath,
+                        assetHash,
+                        $"Asset {assetHash}",
+                        cancellationToken,
+                        assetInfo.Size);
+
+                    Interlocked.Increment(ref processedAssets);
+                    if (success) Interlocked.Increment(ref successfullyProcessedAssets);
+                    progress?.Report(new AssetDownloadProgress
+                    {
+                        CurrentFile = Path.GetFileName(assetObjectPath),
+                        TotalFiles = totalAssets,
+                        ProcessedFiles = Interlocked.CompareExchange(ref processedAssets, 0, 0),
+                        CurrentFileBytesDownloaded = success ? (long)assetInfo.Size : 0,
+                        CurrentFileTotalBytes = (long)assetInfo.Size
+                    });
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }, cancellationToken));
         }
 
         await Task.WhenAll(downloadTasks).ConfigureAwait(false);

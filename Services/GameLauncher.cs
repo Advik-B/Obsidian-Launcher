@@ -1,19 +1,13 @@
-﻿// Services/GameLauncher.cs
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ObsidianLauncher.Enums;
 using ObsidianLauncher.Utils;
 using Serilog;
-// For Process and ProcessStartInfo
-// For StringBuilder
-// For Process and ProcessStartInfo
-// For StringBuilder
-// Assuming LauncherConfig is in ObsidianLauncher namespace
 
 namespace ObsidianLauncher.Services;
 
@@ -145,8 +139,7 @@ public class GameLauncher
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            CreateNoWindow = Path.GetFileName(javaExecutablePath)
-                .Equals("javaw.exe", StringComparison.OrdinalIgnoreCase)
+            CreateNoWindow = OsUtils.GetCurrentOS() == OperatingSystemType.Windows
         };
 
         using var process = new Process { StartInfo = processStartInfo };
@@ -242,45 +235,3 @@ public class GameLauncher
     }
 }
 
-/// <summary>
-///     Extension method to properly quote arguments for command line usage.
-/// </summary>
-// Services/GameLauncher.cs (or wherever StringBuilderExtensions is)
-public static class StringBuilderExtensions
-{
-    public static StringBuilder AppendArgument(this StringBuilder sb, string argument)
-    {
-        // If the argument is null or purely whitespace, and it's not the first thing
-        // we are appending (meaning sb is not empty), we might still want a space
-        // to separate from a previous valid argument, followed by empty quotes.
-        // However, if it's the first argument and it's null/empty, we should append nothing.
-
-        if (string.IsNullOrWhiteSpace(argument))
-        {
-            if (sb.Length > 0) // If there's already content, add a space then empty quotes
-                sb.Append(' ');
-            sb.Append("\"\""); // Represent empty argument as quoted empty string
-            return sb;
-        }
-
-        // If sb is not empty, means we are appending another argument, so add a space first.
-        if (sb.Length > 0) sb.Append(' ');
-
-        // Quoting logic for non-empty arguments
-        if (argument.Contains(' ') || argument.Contains('"'))
-        {
-            // Basic escaping: double up existing quotes
-            var escapedArgument = argument.Replace("\"", "\\\""); // For " inside "
-            // A more robust solution for Windows might involve more complex escaping
-            // or relying on how .NET's ProcessStartInfo handles array of args if that was an option.
-            // For now, this is a common approach.
-            sb.Append('"').Append(escapedArgument).Append('"');
-        }
-        else
-        {
-            sb.Append(argument);
-        }
-
-        return sb;
-    }
-}

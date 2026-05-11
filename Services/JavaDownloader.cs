@@ -6,10 +6,6 @@ using System.Threading.Tasks;
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Utils;
 using Serilog;
-// For FirstOrDefault and other LINQ operations
-// Assuming your models are here (MinecraftVersion, JavaVersionInfo)
-// For OsUtils, CryptoUtils
-// For OperatingSystemType, ArchitectureType
 
 namespace ObsidianLauncher.Services;
 
@@ -59,10 +55,6 @@ public class JavaDownloader
     /// <summary>
     ///     Downloads the Java runtime specified in the Minecraft version manifest from Mojang.
     /// </summary>
-    /// <param name="mcVersion">The Minecraft version details.</param>
-    /// <param name="baseDownloadDir">The directory where the Java archive will be downloaded.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The path to the downloaded Java archive, or null if an error occurred.</returns>
     public async Task<string> DownloadJavaForMinecraftVersionMojangAsync(
         MinecraftVersion mcVersion,
         string baseDownloadDir,
@@ -76,7 +68,19 @@ public class JavaDownloader
             return null;
         }
 
-        var requiredJava = mcVersion.JavaVersion;
+        return await DownloadJavaForJavaVersionMojangAsync(mcVersion.JavaVersion, baseDownloadDir, cancellationToken);
+    }
+
+    /// <summary>
+    ///     Downloads the Java runtime for the given <see cref="JavaVersionInfo"/> from the Mojang manifest.
+    /// </summary>
+    public async Task<string> DownloadJavaForJavaVersionMojangAsync(
+        JavaVersionInfo requiredJava,
+        string baseDownloadDir,
+        CancellationToken cancellationToken = default)
+    {
+        if (requiredJava == null) throw new ArgumentNullException(nameof(requiredJava));
+
         _logger.Information("Mojang Manifest - Required Java: Component '{Component}', Major Version '{MajorVersion}'",
             requiredJava.Component, requiredJava.MajorVersion);
 
