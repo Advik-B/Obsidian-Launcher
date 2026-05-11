@@ -17,10 +17,10 @@ public class ArgumentBuilder
     private readonly string _launcherName = "ObsidianLauncher.NET";
     private readonly string _launcherVersion = LauncherConfig.VERSION;
     private readonly ILogger _logger;
-    private readonly string _quickPlayMultiplayer = "N/A";
-    private readonly string _quickPlayPath = "N/A";
-    private readonly string _quickPlayRealms = "N/A";
-    private readonly string _quickPlaySingleplayer = "N/A";
+    private string _quickPlayMultiplayer = "N/A";
+    private string _quickPlayPath = "N/A";
+    private string _quickPlayRealms = "N/A";
+    private string _quickPlaySingleplayer = "N/A";
     private string _authAccessToken = "0";
     
     private string _authPlayerName = "Player";
@@ -237,6 +237,19 @@ public class ArgumentBuilder
         else _logger.Warning("Attempted to set unknown feature flag for arguments: {FeatureName}", featureName);
     }
 
+    public void SetQuickPlayMultiplayer(string serverAddress)
+    {
+        _quickPlayMultiplayer = serverAddress;
+        _hasQuickPlaysSupport = true;
+        _isQuickPlayMultiplayer = true;
+    }
+
+    public void SetQuickPlaySingleplayer(string worldName)
+    {
+        _quickPlaySingleplayer = worldName;
+        _hasQuickPlaysSupport = true;
+        _isQuickPlaySingleplayer = true;
+    }
 
     public string BuildClasspath(string clientJarPath, List<string> libraryJarPaths)
     {
