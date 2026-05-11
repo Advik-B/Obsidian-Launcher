@@ -1,6 +1,8 @@
 // ViewModels/InstanceSettingsViewModel.cs
 
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -35,6 +37,14 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
     private int _windowHeight;
     private bool _fullscreen;
     private bool _useCustomGameSettings;
+
+    // Launch pipeline
+    private string _preLaunchCommand = "";
+    private string _postLaunchCommand = "";
+    private string _wrapperCommand = "";
+    private string _quickPlayServer = "";
+    private string _quickPlayWorld = "";
+    private EnvVarEntry? _selectedEnvVar;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -240,10 +250,59 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
         }
     }
 
+    // Launch pipeline properties
+    public string PreLaunchCommand
+    {
+        get => _preLaunchCommand;
+        set { if (_preLaunchCommand != value) { _preLaunchCommand = value; HasUnsavedChanges = true; OnPropertyChanged(); } }
+    }
+
+    public string PostLaunchCommand
+    {
+        get => _postLaunchCommand;
+        set { if (_postLaunchCommand != value) { _postLaunchCommand = value; HasUnsavedChanges = true; OnPropertyChanged(); } }
+    }
+
+    public string WrapperCommand
+    {
+        get => _wrapperCommand;
+        set { if (_wrapperCommand != value) { _wrapperCommand = value; HasUnsavedChanges = true; OnPropertyChanged(); } }
+    }
+
+    public string QuickPlayServer
+    {
+        get => _quickPlayServer;
+        set { if (_quickPlayServer != value) { _quickPlayServer = value; HasUnsavedChanges = true; OnPropertyChanged(); } }
+    }
+
+    public string QuickPlayWorld
+    {
+        get => _quickPlayWorld;
+        set { if (_quickPlayWorld != value) { _quickPlayWorld = value; HasUnsavedChanges = true; OnPropertyChanged(); } }
+    }
+
+    public ObservableCollection<EnvVarEntry> EnvironmentVariables { get; } = new();
+
+    public EnvVarEntry? SelectedEnvVar
+    {
+        get => _selectedEnvVar;
+        set
+        {
+            if (_selectedEnvVar != value)
+            {
+                _selectedEnvVar = value;
+                OnPropertyChanged();
+                ((RelayCommand)RemoveEnvVarCommand).RaiseCanExecuteChanged();
+            }
+        }
+    }
+
     // Commands
     public ICommand BrowseJavaPathCommand { get; }
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
+    public ICommand AddEnvVarCommand { get; }
+    public ICommand RemoveEnvVarCommand { get; }
 
     public InstanceSettingsViewModel(Instance instance)
     {
@@ -253,6 +312,8 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
         BrowseJavaPathCommand = new RelayCommand(BrowseJavaPath);
         SaveCommand = new RelayCommand(SaveSettings, () => HasUnsavedChanges);
         CancelCommand = new RelayCommand(() => { }); // Dialog handles close
+        AddEnvVarCommand = new RelayCommand(() => { EnvironmentVariables.Add(new EnvVarEntry()); HasUnsavedChanges = true; });
+        RemoveEnvVarCommand = new RelayCommand(() => { if (SelectedEnvVar != null) { EnvironmentVariables.Remove(SelectedEnvVar); SelectedEnvVar = null; HasUnsavedChanges = true; } }, () => SelectedEnvVar != null);
 
         // Load current values
         LoadSettings();
@@ -280,6 +341,16 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
         _windowHeight = 720;
         _fullscreen = false;
 
+        // Load launch pipeline
+        _preLaunchCommand = _instance.PreLaunchCommand ?? "";
+        _postLaunchCommand = _instance.PostLaunchCommand ?? "";
+        _wrapperCommand = _instance.WrapperCommand ?? "";
+        _quickPlayServer = _instance.QuickPlayServer ?? "";
+        _quickPlayWorld = _instance.QuickPlayWorld ?? "";
+        EnvironmentVariables.Clear();
+        foreach (var kv in _instance.EnvironmentVariables)
+            EnvironmentVariables.Add(new EnvVarEntry { Key = kv.Key, Value = kv.Value });
+
         OnPropertyChanged(string.Empty); // Notify all properties changed
     }
 
@@ -296,6 +367,17 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
         // TODO: Save custom Java settings to instance config file
         // TODO: Save custom game settings to instance config file
 
+        // Save launch pipeline
+        _instance.PreLaunchCommand = string.IsNullOrWhiteSpace(PreLaunchCommand) ? null : PreLaunchCommand;
+        _instance.PostLaunchCommand = string.IsNullOrWhiteSpace(PostLaunchCommand) ? null : PostLaunchCommand;
+        _instance.WrapperCommand = string.IsNullOrWhiteSpace(WrapperCommand) ? null : WrapperCommand;
+        _instance.QuickPlayServer = string.IsNullOrWhiteSpace(QuickPlayServer) ? null : QuickPlayServer;
+        _instance.QuickPlayWorld = string.IsNullOrWhiteSpace(QuickPlayWorld) ? null : QuickPlayWorld;
+        _instance.EnvironmentVariables.Clear();
+        foreach (var entry in EnvironmentVariables)
+            if (!string.IsNullOrWhiteSpace(entry.Key))
+                _instance.EnvironmentVariables[entry.Key] = entry.Value ?? "";
+
         HasUnsavedChanges = false;
         Log.Information("Instance settings saved");
     }
@@ -310,4 +392,24 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+}
+
+public class EnvVarEntry : INotifyPropertyChanged
+{
+    private string _key = "";
+    private string _value = "";
+
+    public string Key
+    {
+        get => _key;
+        set { _key = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Key))); }
+    }
+
+    public string Value
+    {
+        get => _value;
+        set { _value = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value))); }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }
