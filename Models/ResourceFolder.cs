@@ -85,4 +85,8 @@ public class ResourceItem
     ///     Last modified date.
     /// </summary>
     public DateTime LastModified { get; set; } = DateTime.UtcNow;
+
+    public string? LevelName { get; set; }
+    public string? GameMode { get; set; }
+    public DateTime? LastPlayed { get; set; }
 }
