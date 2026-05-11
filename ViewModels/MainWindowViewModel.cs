@@ -46,7 +46,7 @@ public class MainWindowViewModel : ViewModelBase
         _httpManager = new HttpManager();
         _javaManager = new JavaManager(_launcherConfig, _httpManager);
         _assetManager = new AssetManager(_launcherConfig, _httpManager);
-        _libraryManager = new LibraryManager(_launcherConfig, _httpManager);
+        _libraryManager = new LibraryManager(_launcherConfig, _httpManager, _assetManager);
         _instanceManager = new InstanceManager(_launcherConfig, _assetManager, _libraryManager, _httpManager);
         _groupManager = new InstanceGroupManager(_launcherConfig);
         _argumentBuilder = new ArgumentBuilder(_launcherConfig);

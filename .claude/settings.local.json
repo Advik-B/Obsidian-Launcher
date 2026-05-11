@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"S:\\\\Github\\\\Obsidian-Launcher\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "Bash(Head -100)",
+      "Bash(dotnet build *)",
+      "Bash(Select-String -Pattern \"error\")"
+    ]
+  }
+}

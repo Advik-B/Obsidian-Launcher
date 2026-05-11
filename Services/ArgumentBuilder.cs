@@ -22,12 +22,12 @@ public class ArgumentBuilder
     private readonly string _quickPlayRealms = "N/A";
     private readonly string _quickPlaySingleplayer = "N/A";
     private string _authAccessToken = "0";
-
+    
     private string _authPlayerName = "Player";
     private string _authXuid = "0";
     private string _clientId = "0";
     private bool _hasCustomResolution;
-
+    
     private bool _hasQuickPlaysSupport;
     private bool _isDemoUser;
     private bool _isQuickPlayMultiplayer;
@@ -44,7 +44,7 @@ public class ArgumentBuilder
         _logger.Information("ArgumentBuilder initialized for offline mode by default.");
         _logger.Verbose("Default offline auth: PlayerName={PlayerName}, UUID={AuthUuid}, AccessToken={AccessToken}", _authPlayerName, _authUuid, _authAccessToken);
     }
-
+    
     public List<string> BuildJvmArguments(
         LaunchProfile launchProfile,
         string classpath,
@@ -61,8 +61,7 @@ public class ArgumentBuilder
             {
                 if (argWrapper.IsPlainString)
                 {
-                    var arg = ReplacePlaceholders(argWrapper.PlainStringValue, launchProfile, classpath, nativesDir, instancePath);
-                    if (arg != null) jvmArgs.Add(arg);
+                    jvmArgs.Add(ReplacePlaceholders(argWrapper.PlainStringValue, launchProfile, classpath, nativesDir, instancePath));
                 }
                 else if (argWrapper.IsConditional)
                 {
@@ -70,14 +69,9 @@ public class ArgumentBuilder
                     if (AreRulesSatisfied(conditionalArg.Rules, javaRuntime))
                     {
                         if (conditionalArg.IsSingleValue())
-                        {
-                            var arg = ReplacePlaceholders(conditionalArg.GetSingleValue(), launchProfile, classpath, nativesDir, instancePath);
-                            if (arg != null) jvmArgs.Add(arg);
-                        }
+                            jvmArgs.Add(ReplacePlaceholders(conditionalArg.GetSingleValue(), launchProfile, classpath, nativesDir, instancePath));
                         else if (conditionalArg.IsListValue())
-                            jvmArgs.AddRange(conditionalArg.GetListValue()
-                                .Select(val => ReplacePlaceholders(val, launchProfile, classpath, nativesDir, instancePath))
-                                .Where(s => s != null)!);
+                            jvmArgs.AddRange(conditionalArg.GetListValue().Select(val => ReplacePlaceholders(val, launchProfile, classpath, nativesDir, instancePath)));
                     }
                 }
             }
@@ -89,7 +83,7 @@ public class ArgumentBuilder
             jvmArgs.Add("-cp");
             jvmArgs.Add($"\"{classpath}\"");
         }
-
+        
         if (launchProfile.Logging?.Client?.File != null && !string.IsNullOrEmpty(launchProfile.Logging.Client.Argument))
         {
             var logConfigFileId = launchProfile.Logging.Client.File.Id;
@@ -98,7 +92,7 @@ public class ArgumentBuilder
 
             if (File.Exists(logConfigFilePath))
             {
-                var loggingArg = ReplacePlaceholders(launchProfile.Logging.Client.Argument, launchProfile, classpath, nativesDir, instancePath)!
+                var loggingArg = ReplacePlaceholders(launchProfile.Logging.Client.Argument, launchProfile, classpath, nativesDir, instancePath)
                     .Replace("${path}", $"\"{Path.GetFullPath(logConfigFilePath)}\"");
                 jvmArgs.Add(loggingArg);
                 _logger.Information("Added client logging argument: {LoggingArg}", loggingArg);
@@ -113,7 +107,7 @@ public class ArgumentBuilder
         jvmArgs.ForEach(arg => _logger.Verbose("  JVM Arg: {Argument}", arg));
         return jvmArgs;
     }
-
+    
     public List<string> BuildGameArguments(LaunchProfile launchProfile, string instancePath)
     {
         _logger.Information("Building game arguments for version {VersionId} (Instance: {InstancePath})...", launchProfile.Id, instancePath);
@@ -125,8 +119,7 @@ public class ArgumentBuilder
             {
                 if (argWrapper.IsPlainString)
                 {
-                    var arg = ReplacePlaceholders(argWrapper.PlainStringValue, launchProfile, null, null, instancePath);
-                    if (arg != null) gameArgs.Add(arg);
+                    gameArgs.Add(ReplacePlaceholders(argWrapper.PlainStringValue, launchProfile, null, null, instancePath));
                 }
                 else if (argWrapper.IsConditional)
                 {
@@ -134,14 +127,9 @@ public class ArgumentBuilder
                     if (AreRulesSatisfied(conditionalArg.Rules, null))
                     {
                         if (conditionalArg.IsSingleValue())
-                        {
-                            var arg = ReplacePlaceholders(conditionalArg.GetSingleValue(), launchProfile, null, null, instancePath);
-                            if (arg != null) gameArgs.Add(arg);
-                        }
+                            gameArgs.Add(ReplacePlaceholders(conditionalArg.GetSingleValue(), launchProfile, null, null, instancePath));
                         else if (conditionalArg.IsListValue())
-                            gameArgs.AddRange(conditionalArg.GetListValue()
-                                .Select(val => ReplacePlaceholders(val, launchProfile, null, null, instancePath))
-                                .Where(s => s != null)!);
+                            gameArgs.AddRange(conditionalArg.GetListValue().Select(val => ReplacePlaceholders(val, launchProfile, null, null, instancePath)));
                     }
                 }
             }
@@ -155,13 +143,13 @@ public class ArgumentBuilder
         gameArgs.ForEach(arg => _logger.Verbose("  Game Arg: {Argument}", arg));
         return gameArgs;
     }
-
-    private string? ReplacePlaceholders(string? argument, LaunchProfile launchProfile, string? classpath, string? nativesDir, string instancePath)
+    
+    private string ReplacePlaceholders(string argument, LaunchProfile launchProfile, string classpath, string nativesDir, string instancePath)
     {
         if (argument == null) return null;
 
         var assetsIndexName = launchProfile.AssetIndex?.Id ?? launchProfile.Assets ?? "unknown_assets_index";
-
+        
         var gameDirectoryPath = $"\"{Path.GetFullPath(instancePath)}\"";
         var assetsRootPath = $"\"{Path.GetFullPath(_config.AssetsDir)}\"";
         var nativesDirectoryPath = nativesDir != null ? $"\"{Path.GetFullPath(nativesDir)}\"" : "\"${natives_directory}\"";
@@ -198,7 +186,7 @@ public class ArgumentBuilder
 
         return argument;
     }
-
+    
     public void SetOfflinePlayerName(string playerName)
     {
         if (!string.IsNullOrWhiteSpace(playerName))
@@ -220,6 +208,11 @@ public class ArgumentBuilder
 
     public void SetCustomResolution(int width, int height)
     {
+        if (width <= 0 || height <= 0)
+        {
+            _logger.Warning("Ignoring invalid custom resolution {Width}x{Height}: dimensions must be positive.", width, height);
+            return;
+        }
         _resolutionWidth = width.ToString();
         _resolutionHeight = height.ToString();
         _hasCustomResolution = true;
@@ -264,186 +257,6 @@ public class ArgumentBuilder
         _logger.Information("Classpath constructed with {Count} entries.", allEntries.Distinct().Count());
         LogPathString("Classpath Preview", classpathString, 500);
         return classpathString;
-    }
-
-    public List<string> BuildJvmArguments(
-        MinecraftVersion mcVersion,
-        string classpath,
-        string nativesDir, // This will be instance specific
-        JavaRuntimeInfo javaRuntime,
-        string instancePath) // New parameter
-    {
-        _logger.Information("Building JVM arguments for version {VersionId} (Instance: {InstancePath})...",
-            mcVersion.Id, instancePath);
-        var jvmArgs = new List<string>();
-
-        if (mcVersion.Arguments?.Jvm != null)
-        {
-            foreach (var argWrapper in mcVersion.Arguments.Jvm)
-                if (argWrapper.IsPlainString)
-                {
-                    var arg = ReplacePlaceholders(argWrapper.PlainStringValue, mcVersion, classpath, nativesDir,
-                        instancePath);
-                    if (arg != null) jvmArgs.Add(arg);
-                }
-                else if (argWrapper.IsConditional)
-                {
-                    var conditionalArg = argWrapper.ConditionalValue;
-                    if (AreRulesSatisfied(conditionalArg.Rules, javaRuntime))
-                    {
-                        if (conditionalArg.IsSingleValue())
-                        {
-                            var arg = ReplacePlaceholders(conditionalArg.GetSingleValue(), mcVersion, classpath,
-                                nativesDir, instancePath);
-                            if (arg != null) jvmArgs.Add(arg);
-                        }
-                        else if (conditionalArg.IsListValue())
-                            jvmArgs.AddRange(conditionalArg.GetListValue()
-                                .Select(val =>
-                                    ReplacePlaceholders(val, mcVersion, classpath, nativesDir, instancePath))
-                                .Where(s => s != null)!);
-                    }
-                }
-        }
-        else
-        {
-            _logger.Information(
-                "No modern JVM arguments structure found for {VersionId}. Applying default/legacy JVM arguments.",
-                mcVersion.Id);
-            jvmArgs.Add($"-Djava.library.path=\"{Path.GetFullPath(nativesDir)}\"");
-            jvmArgs.Add("-cp");
-            jvmArgs.Add($"\"{classpath}\"");
-        }
-
-        if (mcVersion.Logging?.Client?.File != null && !string.IsNullOrEmpty(mcVersion.Logging.Client.Argument))
-        {
-            var logConfigFileId = mcVersion.Logging.Client.File.Id;
-            var logConfigDir = Path.Combine(_config.AssetsDir, "log_configs");
-            var logConfigFilePath = Path.Combine(logConfigDir, logConfigFileId);
-
-            if (File.Exists(logConfigFilePath))
-            {
-                // Pass instancePath to ReplacePlaceholders, though this specific placeholder doesn't use it.
-                var loggingArg = ReplacePlaceholders(mcVersion.Logging.Client.Argument, mcVersion, classpath,
-                        nativesDir, instancePath)!
-                    .Replace("${path}", $"\"{Path.GetFullPath(logConfigFilePath)}\"");
-                jvmArgs.Add(loggingArg);
-                _logger.Information("Added client logging argument: {LoggingArg}", loggingArg);
-            }
-            else
-            {
-                _logger.Warning(
-                    "Logging configuration file {LogConfigFileId} not found at {LogConfigFilePath}. Logging argument will not be added.",
-                    logConfigFileId, logConfigFilePath);
-            }
-        }
-
-        _logger.Information("JVM arguments built. Count: {Count}", jvmArgs.Count);
-        jvmArgs.ForEach(arg => _logger.Verbose("  JVM Arg: {Argument}", arg));
-        return jvmArgs;
-    }
-
-    public List<string> BuildGameArguments(MinecraftVersion mcVersion, string instancePath) // New parameter
-    {
-        _logger.Information("Building game arguments for version {VersionId} (Instance: {InstancePath})...",
-            mcVersion.Id, instancePath);
-        var gameArgs = new List<string>();
-
-        if (mcVersion.Arguments?.Game != null)
-        {
-            foreach (var argWrapper in mcVersion.Arguments.Game)
-                if (argWrapper.IsPlainString)
-                {
-                    var arg = ReplacePlaceholders(argWrapper.PlainStringValue, mcVersion, null, null, instancePath);
-                    if (arg != null) gameArgs.Add(arg);
-                }
-                else if (argWrapper.IsConditional)
-                {
-                    var conditionalArg = argWrapper.ConditionalValue;
-                    if (AreRulesSatisfied(conditionalArg.Rules, null))
-                    {
-                        if (conditionalArg.IsSingleValue())
-                        {
-                            var arg = ReplacePlaceholders(conditionalArg.GetSingleValue(), mcVersion, null, null,
-                                instancePath);
-                            if (arg != null) gameArgs.Add(arg);
-                        }
-                        else if (conditionalArg.IsListValue())
-                            gameArgs.AddRange(conditionalArg.GetListValue()
-                                .Select(val => ReplacePlaceholders(val, mcVersion, null, null, instancePath))
-                                .Where(s => s != null)!);
-                    }
-                }
-        }
-        else if (!string.IsNullOrEmpty(mcVersion.MinecraftArguments))
-        {
-            _logger.Information("Using legacy minecraftArguments string for {VersionId}.", mcVersion.Id);
-            var legacyArgsRaw =
-                mcVersion.MinecraftArguments.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            gameArgs.AddRange(
-                legacyArgsRaw.Select(arg => ReplacePlaceholders(arg, mcVersion, null, null, instancePath))
-                    .Where(s => s != null)!);
-        }
-        else
-        {
-            _logger.Warning(
-                "No game arguments found for version {VersionId} (neither modern 'arguments.game' nor legacy 'minecraftArguments').",
-                mcVersion.Id);
-        }
-
-        _logger.Information("Game arguments built. Count: {Count}", gameArgs.Count);
-        gameArgs.ForEach(arg => _logger.Verbose("  Game Arg: {Argument}", arg));
-        return gameArgs;
-    }
-
-    private string? ReplacePlaceholders(string? argument, MinecraftVersion mcVersion, string? classpath, string? nativesDir,
-        string instancePath)
-    {
-        if (argument == null) return null;
-
-        var assetsIndexName = mcVersion.AssetIndex?.Id ?? mcVersion.Assets ?? "unknown_assets_index";
-
-        // Use instancePath for game_directory
-        var gameDirectoryPath = $"\"{Path.GetFullPath(instancePath)}\"";
-        var assetsRootPath = $"\"{Path.GetFullPath(_config.AssetsDir)}\""; // Assets are global
-        var nativesDirectoryPath =
-            nativesDir != null
-                ? $"\"{Path.GetFullPath(nativesDir)}\""
-                : "\"${natives_directory}\""; // Natives are per-instance
-        var effectiveClasspath = classpath != null ? $"\"{classpath}\"" : "\"${classpath}\"";
-
-        argument = argument.Replace("${auth_player_name}", _authPlayerName);
-        argument = argument.Replace("${auth_uuid}", _authUuid);
-        argument = argument.Replace("${auth_access_token}", _authAccessToken);
-        argument = argument.Replace("${clientid}", _clientId);
-        argument = argument.Replace("${auth_xuid}", _authXuid ?? "0");
-        argument = argument.Replace("${user_type}", _userType);
-
-        argument = argument.Replace("${version_name}", mcVersion.Id ?? "unknown_version");
-        argument = argument.Replace("${version_type}", mcVersion.Type ?? "unknown_type");
-
-        argument = argument.Replace("${game_directory}", gameDirectoryPath);
-        argument = argument.Replace("${game_dir}", gameDirectoryPath);
-        argument = argument.Replace("${assets_root}", assetsRootPath);
-        argument = argument.Replace("${assets_index_name}", assetsIndexName);
-
-        if (classpath != null)
-            argument = argument.Replace("${classpath}", effectiveClasspath);
-        if (nativesDir != null)
-            argument = argument.Replace("${natives_directory}", nativesDirectoryPath);
-
-        argument = argument.Replace("${launcher_name}", _launcherName);
-        argument = argument.Replace("${launcher_version}", _launcherVersion);
-
-        argument = argument.Replace("${resolution_width}", _resolutionWidth);
-        argument = argument.Replace("${resolution_height}", _resolutionHeight);
-
-        argument = argument.Replace("${quickPlayPath}", _quickPlayPath);
-        argument = argument.Replace("${quickPlaySingleplayer}", _quickPlaySingleplayer);
-        argument = argument.Replace("${quickPlayMultiplayer}", _quickPlayMultiplayer);
-        argument = argument.Replace("${quickPlayRealms}", _quickPlayRealms);
-
-        return argument;
     }
 
     private bool AreRulesSatisfied(List<ArgumentRuleCondition> rules, JavaRuntimeInfo javaRuntimeForJvmRules)

@@ -19,12 +19,12 @@ public class LibraryManager
     private readonly ILogger _logger;
     private readonly AssetManager _assetManager;
 
-    public LibraryManager(LauncherConfig config, HttpManager httpManager)
+    public LibraryManager(LauncherConfig config, HttpManager httpManager, AssetManager assetManager)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _httpManager = httpManager ?? throw new ArgumentNullException(nameof(httpManager));
+        _assetManager = assetManager ?? throw new ArgumentNullException(nameof(assetManager));
         _logger = LogHelper.GetLogger<LibraryManager>();
-        _assetManager = new AssetManager(config, httpManager); // Instantiate or inject
         _logger.Verbose("LibraryManager initialized.");
     }
 
