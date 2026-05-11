@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,6 +45,8 @@ public class GameLauncher
         string mainClass,
         List<string> gameArguments,
         string workingDirectory,
+        Dictionary<string, string>? environmentVariables = null,
+        string? wrapperCommand = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(javaExecutablePath) || !File.Exists(javaExecutablePath))
@@ -133,16 +136,39 @@ public class GameLauncher
         _logger.Verbose("  Full JVM, MainClass & Game Arguments (Complete): {Arguments}", finalArguments);
 
 
+        string processFileName;
+        string processArguments;
+        if (!string.IsNullOrWhiteSpace(wrapperCommand))
+        {
+            processFileName = wrapperCommand;
+            processArguments = $"{javaExecutablePath} {finalArguments}";
+            _logger.Information("  Wrapper command: {WrapperCommand}", wrapperCommand);
+        }
+        else
+        {
+            processFileName = javaExecutablePath;
+            processArguments = finalArguments;
+        }
+
         var processStartInfo = new ProcessStartInfo
         {
-            FileName = javaExecutablePath,
-            Arguments = finalArguments,
+            FileName = processFileName,
+            Arguments = processArguments,
             WorkingDirectory = workingDirectory,
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             CreateNoWindow = OsUtils.GetCurrentOS() == OperatingSystemType.Windows
         };
+
+        if (environmentVariables != null)
+        {
+            foreach (var (key, value) in environmentVariables)
+            {
+                processStartInfo.EnvironmentVariables[key] = value;
+                _logger.Verbose("  Env var: {Key}={Value}", key, value);
+            }
+        }
 
         using var process = new Process { StartInfo = processStartInfo };
         process.EnableRaisingEvents = true;
