@@ -43,6 +43,7 @@ public class LauncherSettings
     public Setting<bool> ShowOldBeta { get; }
     public Setting<string> LastSelectedInstance { get; }
     public Setting<string> DefaultInstanceGroup { get; }
+    public Setting<bool> FirstRunCompleted { get; }
 
     /// <summary>
     ///     Creates launcher settings from the specified configuration file.
@@ -83,6 +84,7 @@ public class LauncherSettings
         ShowOldBeta = _settingsManager.RegisterBool("ShowOldBeta", false, "Show old beta versions");
         LastSelectedInstance = _settingsManager.RegisterString("LastSelectedInstance", "", "Last selected instance ID");
         DefaultInstanceGroup = _settingsManager.RegisterString("DefaultInstanceGroup", "Default", "Default instance group");
+        FirstRunCompleted = _settingsManager.RegisterBool("FirstRunCompleted", false, "Setup wizard has been completed");
     }
 
     /// <summary>
