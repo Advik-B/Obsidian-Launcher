@@ -153,6 +153,63 @@
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
+
+            <!-- Launch Tab -->
+            <TabItem Header="Launch">
+                <ScrollViewer>
+                    <StackPanel Margin="10" Spacing="15">
+                        <TextBlock Text="Launch Pipeline" FontWeight="SemiBold" FontSize="14"/>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Pre-launch command:"/>
+                            <TextBox Text="{Binding PreLaunchCommand}" Watermark="Command to run before game starts"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Post-exit command:"/>
+                            <TextBox Text="{Binding PostLaunchCommand}" Watermark="Command to run after game exits"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Wrapper command:"/>
+                            <TextBox Text="{Binding WrapperCommand}" Watermark="e.g. mangohud, gamescope"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Quick Play" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Quick play server (host:port):"/>
+                            <TextBox Text="{Binding QuickPlayServer}" Watermark="e.g. play.example.com:25565"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Quick play world (singleplayer):"/>
+                            <TextBox Text="{Binding QuickPlayWorld}" Watermark="World folder name"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Environment Variables" FontWeight="SemiBold" FontSize="14" Margin="0,8,0,0"/>
+
+                        <DataGrid ItemsSource="{Binding EnvironmentVariables}"
+                                  SelectedItem="{Binding SelectedEnvVar}"
+                                  AutoGenerateColumns="False"
+                                  Height="160"
+                                  CanUserAddRows="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Key" Binding="{Binding Key}" Width="*"/>
+                                <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Add" Command="{Binding AddEnvVarCommand}" Padding="12,4"/>
+                            <Button Content="Remove"
+                                    Command="{Binding RemoveEnvVarCommand}"
+                                    IsEnabled="{Binding SelectedEnvVar, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    Padding="12,4"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
         </TabControl>
 
         <!-- Footer Buttons -->
