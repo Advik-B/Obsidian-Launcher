@@ -141,8 +141,14 @@ public class VersionSelectorViewModel : INotifyPropertyChanged
     public ICommand CancelCommand { get; }
     public ICommand RefreshCommand { get; }
 
-    public VersionSelectorViewModel()
+    public VersionSelectorViewModel() : this(showSnapshots: true, showOldAlpha: false, showOldBeta: false) { }
+
+    public VersionSelectorViewModel(bool showSnapshots, bool showOldAlpha, bool showOldBeta)
     {
+        _showSnapshots = showSnapshots;
+        _showOldAlpha = showOldAlpha;
+        _showOldBeta = showOldBeta;
+
         AllVersions = new ObservableCollection<MinecraftVersion>();
         FilteredVersions = new ObservableCollection<MinecraftVersion>();
 
