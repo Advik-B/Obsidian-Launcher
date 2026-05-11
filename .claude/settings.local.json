@@ -6,7 +6,10 @@
       "Bash(Sort-Object FullName)",
       "Bash(Head -100)",
       "Bash(dotnet build *)",
-      "Bash(Select-String -Pattern \"error\")"
+      "Bash(Select-String -Pattern \"error\")",
+      "Bash(gh pr *)",
+      "Bash(gh auth *)",
+      "Bash(git checkout *)"
     ]
   }
 }
