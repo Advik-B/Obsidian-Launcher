@@ -1,0 +1,40 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ObsidianLauncher.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="440"
+        x:Class="ObsidianLauncher.Views.CrashReportWindow"
+        x:DataType="vm:CrashReportViewModel"
+        x:CompileBindings="False"
+        Title="{Binding Title}"
+        Width="600" Height="440"
+        MinWidth="480" MinHeight="340"
+        WindowStartupLocation="CenterOwner">
+
+    <DockPanel Margin="14">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
+            <Button Content="Close" Command="{Binding CloseCommand}" IsCancel="True" Padding="14,6"/>
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,10">
+            <TextBlock Text="The game crashed!" FontSize="18" FontWeight="Bold" Foreground="#E05050"/>
+            <TextBlock Text="{Binding ExitCodeText}" FontSize="12" Opacity="0.6"/>
+            <Border Background="#30E05050" CornerRadius="6" Padding="10,8">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="{Binding CategoryText}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding Suggestion}" FontSize="12" Opacity="0.8" TextWrapping="Wrap"
+                               IsVisible="{Binding HasSuggestion}"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,6">
+            <TextBlock Text="Relevant log lines:" FontSize="12" FontWeight="SemiBold"/>
+        </StackPanel>
+        <ScrollViewer>
+            <TextBox Text="{Binding LogExcerpt}" IsReadOnly="True" FontFamily="Monospace" FontSize="11"
+                     TextWrapping="Wrap" AcceptsReturn="True" Background="Transparent"/>
+        </ScrollViewer>
+    </DockPanel>
+</Window>
