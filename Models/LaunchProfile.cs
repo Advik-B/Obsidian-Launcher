@@ -14,16 +14,16 @@ public class LaunchProfile
 {
     private readonly ILogger _logger = LogHelper.GetLogger<LaunchProfile>();
 
-    public string Id { get; set; }
-    public string MainClass { get; set; }
+    public string Id { get; set; } = string.Empty;
+    public string MainClass { get; set; } = string.Empty;
     public VersionArguments Arguments { get; set; } = new();
-    public AssetIndex AssetIndex { get; set; }
-    public string Assets { get; set; }
+    public AssetIndex AssetIndex { get; set; } = null!;
+    public string Assets { get; set; } = string.Empty;
     public Dictionary<string, DownloadDetails> Downloads { get; set; } = new();
-    public JavaVersionInfo JavaVersion { get; set; }
-    public VersionLogging Logging { get; set; }
+    public JavaVersionInfo JavaVersion { get; set; } = null!;
+    public VersionLogging Logging { get; set; } = null!;
     public List<Library> Libraries { get; set; } = new();
-    public string Type { get; set; }
+    public string Type { get; set; } = string.Empty;
 
     /// <summary>
     /// Merges data from a MinecraftVersion object into this launch profile.
@@ -32,7 +32,7 @@ public class LaunchProfile
     public void MergeFrom(MinecraftVersion version)
     {
         _logger.Information("Merging component version '{ComponentId}' into launch profile...", version.Id);
-        
+
         // Overwrite simple properties if they are present in the new version file
         Id = version.Id; // The ID of the final component is usually what we want
         if (!string.IsNullOrEmpty(version.MainClass))
@@ -54,7 +54,7 @@ public class LaunchProfile
         {
             Assets = version.Assets;
         }
-        
+
         if (version.Downloads != null)
         {
             foreach (var download in version.Downloads)

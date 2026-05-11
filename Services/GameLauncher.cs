@@ -16,6 +16,8 @@ public class GameLauncher
     private readonly LauncherConfig _config;
     private readonly ILogger _logger;
 
+    public event EventHandler<string>? OutputReceived;
+
     public GameLauncher(LauncherConfig config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
@@ -149,12 +151,20 @@ public class GameLauncher
         // or simply log directly. For console output, direct logging is fine.
         process.OutputDataReceived += (sender, e) =>
         {
-            if (e.Data != null) _logger.Information("[Minecraft STDOUT] {Data}", e.Data);
+            if (e.Data != null)
+            {
+                _logger.Information("[Minecraft STDOUT] {Data}", e.Data);
+                OutputReceived?.Invoke(this, e.Data);
+            }
         };
 
         process.ErrorDataReceived += (sender, e) =>
         {
-            if (e.Data != null) _logger.Error("[Minecraft STDERR] {Data}", e.Data);
+            if (e.Data != null)
+            {
+                _logger.Error("[Minecraft STDERR] {Data}", e.Data);
+                OutputReceived?.Invoke(this, e.Data);
+            }
         };
 
         try

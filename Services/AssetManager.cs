@@ -32,7 +32,7 @@ public class AssetManager
     /// </summary>
     public async Task<bool> EnsureAssetsAsync(
         LaunchProfile launchProfile,
-        IProgress<AssetDownloadProgress> progress = null,
+        IProgress<AssetDownloadProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         if (launchProfile.AssetIndex == null && string.IsNullOrEmpty(launchProfile.Assets))
@@ -46,7 +46,7 @@ public class AssetManager
         var currentAssetIndexMetadata = launchProfile.AssetIndex;
         var assetIndexId =
             launchProfile.AssetIndex?.Id ??
-            launchProfile.Assets; 
+            launchProfile.Assets;
 
         if (currentAssetIndexMetadata == null)
         {
@@ -75,7 +75,7 @@ public class AssetManager
             return false;
         }
 
-        AssetIndexDetails assetIndexDetails;
+        AssetIndexDetails? assetIndexDetails;
         try
         {
             var indexJsonContent = await File.ReadAllTextAsync(assetIndexFilePath, cancellationToken);
@@ -281,8 +281,8 @@ public class AssetManager
                 _logger.Error(ex, "Failed to delete file {FilePath} after error ({Reason})", filePath, reason);
             }
     }
-    
-    public async Task<string> EnsureClientJarAsync(LaunchProfile launchProfile, CancellationToken cancellationToken)
+
+    public async Task<string?> EnsureClientJarAsync(LaunchProfile launchProfile, CancellationToken cancellationToken)
     {
         _logger.Information("Ensuring Client JAR for Minecraft {VersionId}", launchProfile.Id);
 
