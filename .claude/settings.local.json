@@ -6,7 +6,12 @@
       "Bash(Sort-Object FullName)",
       "Bash(Head -100)",
       "Bash(dotnet build *)",
-      "Bash(Select-String -Pattern \"error\")"
+      "Bash(Select-String -Pattern \"error\")",
+      "Bash(dotnet list *)",
+      "Bash(dotnet nuget *)",
+      "Bash(dotnet package *)",
+      "Bash(curl -s \"https://api.nuget.org/v3-flatcontainer/tmds.dbus.protocol/index.json\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(d['versions'][-20:]\\)\\)\")"
     ]
   }
 }

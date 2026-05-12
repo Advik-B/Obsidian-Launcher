@@ -12,17 +12,17 @@ public class DownloadDetails
     ///     The SHA1 checksum of the downloadable file.
     /// </summary>
     [JsonPropertyName("sha1")]
-    public string Sha1 { get; set; }
+    public required string Sha1 { get; set; }
 
     /// <summary>
     ///     The size of the downloadable file in bytes.
     /// </summary>
     [JsonPropertyName("size")]
-    public uint Size { get; set; } // C++ used unsigned int, so uint is appropriate
+    public uint Size { get; set; }
 
     /// <summary>
     ///     The URL from which the file can be downloaded.
     /// </summary>
     [JsonPropertyName("url")]
-    public string Url { get; set; }
+    public required string Url { get; set; }
 }

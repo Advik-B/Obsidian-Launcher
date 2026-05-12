@@ -128,7 +128,7 @@ public class SettingsManager
     /// <typeparam name="T">The setting value type.</typeparam>
     /// <param name="key">Setting key name.</param>
     /// <returns>The setting, or null if not found.</returns>
-    public Setting<T> Get<T>(string key)
+    public Setting<T>? Get<T>(string key)
     {
         if (_settings.TryGetValue(key, out var setting) && setting is Setting<T> typedSetting)
         {

@@ -32,7 +32,7 @@ public class JavaManager
         _logger.Verbose("JavaManager initialization complete. Found {Count} existing runtimes.", _availableRuntimes.Count);
     }
     
-    public async Task<JavaRuntimeInfo> EnsureJavaForMinecraftVersionAsync(
+    public async Task<JavaRuntimeInfo?> EnsureJavaForMinecraftVersionAsync(
         LaunchProfile launchProfile,
         CancellationToken cancellationToken = default)
     {
@@ -62,7 +62,7 @@ public class JavaManager
         // This part remains the same, but it's important to show the full context.
         _logger.Information("No existing suitable Java runtime found for {Component} v{MajorVersion}. Attempting download.", requiredJava.Component, requiredJava.MajorVersion);
 
-        string downloadedArchivePath = null;
+        string? downloadedArchivePath = null;
         var sourceApi = "unknown";
         
         _logger.Information("Attempting download from Adoptium for Java {MajorVersion}...", requiredJava.MajorVersion);
@@ -99,7 +99,7 @@ public class JavaManager
 
             if (!string.IsNullOrEmpty(javaExePath))
             {
-                var effectiveJavaHome = Path.GetDirectoryName(Path.GetDirectoryName(javaExePath));
+                var effectiveJavaHome = Path.GetDirectoryName(Path.GetDirectoryName(javaExePath))!;
                 var newRuntime = new JavaRuntimeInfo
                 {
                     HomePath = effectiveJavaHome,
@@ -248,7 +248,7 @@ public class JavaManager
     /// </summary>
     /// <param name="extractedJavaBaseDir">The base directory where the Java archive was extracted.</param>
     /// <returns>The full path to the Java executable, or null if not found.</returns>
-    public string FindJavaExecutable(string extractedJavaBaseDir)
+    public string? FindJavaExecutable(string extractedJavaBaseDir)
     {
         _logger.Verbose("Attempting to find Java executable in/under: {ExtractionBaseDir}", extractedJavaBaseDir);
 
@@ -425,7 +425,7 @@ public class JavaManager
 
                 if (majorVersion > 0 && component != "unknown_component" && !string.IsNullOrEmpty(component))
                 {
-                    var effectiveJavaHome = Path.GetDirectoryName(Path.GetDirectoryName(javaExePath)); // Up from /bin
+                    var effectiveJavaHome = Path.GetDirectoryName(Path.GetDirectoryName(javaExePath))!; // Up from /bin
                     var runtimeInfo = new JavaRuntimeInfo
                     {
                         HomePath = effectiveJavaHome,

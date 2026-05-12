@@ -27,8 +27,8 @@ public class VersionArgument
         ConditionalValue = conditionalValue;
     }
 
-    public string PlainStringValue { get; }
-    public ConditionalArgumentValue ConditionalValue { get; }
+    public string? PlainStringValue { get; }
+    public ConditionalArgumentValue? ConditionalValue { get; }
 
     public bool IsPlainString => PlainStringValue != null;
     public bool IsConditional => ConditionalValue != null;
@@ -49,16 +49,12 @@ public class VersionArgumentConverter : JsonConverter<VersionArgument>
 {
     public override VersionArgument Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType == JsonTokenType.String) return VersionArgument.Create(reader.GetString());
+        if (reader.TokenType == JsonTokenType.String) return VersionArgument.Create(reader.GetString()!);
 
         if (reader.TokenType == JsonTokenType.StartObject)
         {
-            // Deserialize the object as ConditionalArgumentValue
-            // We need to be careful here not to consume the reader in a way that breaks the outer deserializer
-            // if options are passed that affect how objects are read.
-            // A simpler way is to use JsonSerializer.Deserialize on the current element if possible.
             var conditionalValue = JsonSerializer.Deserialize<ConditionalArgumentValue>(ref reader, options);
-            return VersionArgument.Create(conditionalValue);
+            return VersionArgument.Create(conditionalValue!);
         }
 
         throw new JsonException("Expected string or object for VersionArgument");

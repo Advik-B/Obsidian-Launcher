@@ -227,7 +227,7 @@ public class LibraryManager
         };
     }
 
-    private bool ExtractNativeJar(string nativeJarPath, string nativesDir, LibraryExtractRule extractRule)
+    private bool ExtractNativeJar(string nativeJarPath, string nativesDir, LibraryExtractRule? extractRule)
     {
         try
         {

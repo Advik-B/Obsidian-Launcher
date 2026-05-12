@@ -14,14 +14,14 @@ public class Component
     /// Examples: "net.minecraft", "net.fabricmc.fabric-loader", "net.minecraftforge".
     /// </summary>
     [JsonPropertyName("uid")]
-    public string Uid { get; set; }
+    public required string Uid { get; set; }
 
     /// <summary>
     /// The specific version of the component.
     /// Examples: "1.20.4", "0.15.7", "49.0.23".
     /// </summary>
     [JsonPropertyName("version")]
-    public string Version { get; set; }
+    public required string Version { get; set; }
 
     /// <summary>
     /// If true, the component is active and will be included in the launch.
