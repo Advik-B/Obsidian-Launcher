@@ -151,7 +151,14 @@ public class AssetManager
             }, cancellationToken));
         }
 
-        await Task.WhenAll(downloadTasks).ConfigureAwait(false);
+        try
+        {
+            await Task.WhenAll(downloadTasks).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "One or more asset download tasks failed for index {AssetIndexId}.", assetIndexId);
+        }
 
         var allSucceeded = successfullyProcessedAssets == totalAssets;
         if (allSucceeded)

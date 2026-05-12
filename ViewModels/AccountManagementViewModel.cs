@@ -5,28 +5,24 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using ObsidianLauncher.Models;
+using ObsidianLauncher.Services;
 using Serilog;
 
 namespace ObsidianLauncher.ViewModels;
 
-/// <summary>
-///     ViewModel for the Account Management dialog.
-/// </summary>
 public class AccountManagementViewModel : INotifyPropertyChanged
 {
-    private string? _selectedAccount;
+    private readonly AccountService? _accountService;
+    private AccountInfo? _selectedAccount;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    public event EventHandler? MicrosoftAccountRequested;
+    public event EventHandler<Action<string?>>? OfflineUsernameRequested;
 
-    /// <summary>
-    ///     List of all accounts.
-    /// </summary>
-    public ObservableCollection<string> Accounts { get; }
+    public ObservableCollection<AccountInfo> Accounts { get; }
 
-    /// <summary>
-    ///     Selected account.
-    /// </summary>
-    public string? SelectedAccount
+    public AccountInfo? SelectedAccount
     {
         get => _selectedAccount;
         set
@@ -41,74 +37,81 @@ public class AccountManagementViewModel : INotifyPropertyChanged
         }
     }
 
-    // Commands
     public ICommand AddOfflineAccountCommand { get; }
     public ICommand AddMicrosoftAccountCommand { get; }
     public ICommand RemoveAccountCommand { get; }
     public ICommand SetActiveAccountCommand { get; }
     public ICommand CloseCommand { get; }
 
+    // Designer constructor
     public AccountManagementViewModel()
     {
-        Accounts = new ObservableCollection<string>();
-
-        // Initialize commands
+        Accounts = new ObservableCollection<AccountInfo>();
         AddOfflineAccountCommand = new RelayCommand(AddOfflineAccount);
         AddMicrosoftAccountCommand = new RelayCommand(AddMicrosoftAccount);
         RemoveAccountCommand = new RelayCommand(RemoveAccount, () => SelectedAccount != null);
         SetActiveAccountCommand = new RelayCommand(SetActiveAccount, () => SelectedAccount != null);
-        CloseCommand = new RelayCommand(() => { }); // Dialog handles close
-
-        // TODO: Load accounts from persistent storage
-        LoadAccounts();
+        CloseCommand = new RelayCommand(() => { });
     }
 
-    private void LoadAccounts()
+    public AccountManagementViewModel(AccountService accountService) : this()
     {
-        // TODO: Load accounts from file/settings
-        // For now, just add a placeholder
-        Log.Information("Loading accounts...");
+        _accountService = accountService;
+        _ = LoadAccountsAsync();
+    }
+
+    private async System.Threading.Tasks.Task LoadAccountsAsync()
+    {
+        if (_accountService == null) return;
+        var accounts = await _accountService.LoadAccountsAsync();
+        Accounts.Clear();
+        foreach (var a in accounts)
+            Accounts.Add(a);
+        Log.Information("Loaded {Count} accounts", Accounts.Count);
     }
 
     private void AddOfflineAccount()
     {
-        Log.Information("Add Offline Account triggered");
-        // TODO: Show dialog to enter offline username
-        // For now, add a test account
-        var username = "OfflinePlayer_" + (Accounts.Count + 1);
-        Accounts.Add(username);
-        Log.Information("Added offline account: {Username}", username);
+        OfflineUsernameRequested?.Invoke(this, async username =>
+        {
+            if (string.IsNullOrWhiteSpace(username)) return;
+
+            AccountInfo account;
+            if (_accountService != null)
+                account = await _accountService.AddOfflineAccountAsync(username);
+            else
+                account = new AccountInfo { Username = username, Type = AccountType.Offline };
+
+            Accounts.Add(account);
+            Log.Information("Added offline account: {Username}", username);
+        });
     }
 
     private void AddMicrosoftAccount()
     {
-        Log.Information("Add Microsoft Account triggered");
-        // Trigger event to show not implemented dialog
         MicrosoftAccountRequested?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>
-    ///     Event raised when user tries to add a Microsoft account.
-    /// </summary>
-    public event EventHandler? MicrosoftAccountRequested;
-
-    private void RemoveAccount()
+    private async void RemoveAccount()
     {
-        if (SelectedAccount != null)
-        {
-            Log.Information("Removing account: {Account}", SelectedAccount);
-            Accounts.Remove(SelectedAccount);
-            SelectedAccount = null;
-        }
+        if (SelectedAccount == null) return;
+        var account = SelectedAccount;
+        Accounts.Remove(account);
+        SelectedAccount = null;
+        if (_accountService != null)
+            await _accountService.RemoveAccountAsync(account.Id);
+        Log.Information("Removed account: {Username}", account.Username);
     }
 
-    private void SetActiveAccount()
+    private async void SetActiveAccount()
     {
-        if (SelectedAccount != null)
-        {
-            Log.Information("Setting active account: {Account}", SelectedAccount);
-            // TODO: Save active account to settings
-        }
+        if (SelectedAccount == null) return;
+        var id = SelectedAccount.Id;
+        foreach (var a in Accounts)
+            a.IsActive = a.Id == id;
+        if (_accountService != null)
+            await _accountService.SetActiveAccountAsync(id);
+        Log.Information("Set active account: {Username}", SelectedAccount.Username);
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)

@@ -47,8 +47,8 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" Margin="5">
-                                    <!-- TODO: Add account type icon (offline/microsoft) -->
-                                    <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Username}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding TypeDisplay}" VerticalAlignment="Center" Foreground="Gray" Margin="8,0,0,0"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>

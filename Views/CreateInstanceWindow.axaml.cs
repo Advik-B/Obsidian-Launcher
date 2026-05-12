@@ -16,23 +16,17 @@ public partial class CreateInstanceWindow : Window
     {
         InitializeComponent();
         DataContext = viewModel;
+        viewModel.CreationCompleted += (_, _) => Close(viewModel);
     }
 
     private void CreateButton_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is CreateInstanceViewModel vm)
-        {
-            vm.Result = true;
-        }
-        Close(DataContext);
+            vm.CreateCommand.Execute(null);
     }
 
     private void CancelButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is CreateInstanceViewModel vm)
-        {
-            vm.Result = false;
-        }
         Close(null);
     }
 }

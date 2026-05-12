@@ -26,7 +26,7 @@ public class Instance
     // Replaced MinecraftVersionId with a list of components
     public List<Component> Components { get; set; }
 
-    [JsonIgnore] public required string InstancePath { get; set; }
+    [JsonIgnore] public string InstancePath { get; set; } = string.Empty;
 
     [JsonIgnore] public string NativesPath => Path.Combine(InstancePath, "natives");
 
