@@ -10,10 +10,12 @@ public partial class VersionSelectorWindow : Window
 {
     public string? SelectedVersion { get; private set; }
 
-    public VersionSelectorWindow()
+    public VersionSelectorWindow() : this(showSnapshots: true, showOldAlpha: false, showOldBeta: false) { }
+
+    public VersionSelectorWindow(bool showSnapshots, bool showOldAlpha, bool showOldBeta)
     {
         InitializeComponent();
-        DataContext = new VersionSelectorViewModel();
+        DataContext = new VersionSelectorViewModel(showSnapshots, showOldAlpha, showOldBeta);
     }
 
     private void SelectButton_Click(object? sender, RoutedEventArgs e)

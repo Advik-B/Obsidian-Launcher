@@ -192,8 +192,7 @@
                         <DataGrid ItemsSource="{Binding EnvironmentVariables}"
                                   SelectedItem="{Binding SelectedEnvVar}"
                                   AutoGenerateColumns="False"
-                                  Height="160"
-                                  CanUserAddRows="False">
+                                  Height="160">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Key" Binding="{Binding Key}" Width="*"/>
                                 <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*"/>

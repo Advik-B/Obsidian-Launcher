@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ObsidianLauncher.Models;
+using ObsidianLauncher.Services;
+using ObsidianLauncher.Settings;
 using ObsidianLauncher.Utils;
 using Serilog;
 
@@ -12,6 +14,8 @@ namespace ObsidianLauncher.ViewModels;
 public class CreateInstanceViewModel : ViewModelBase
 {
     private readonly ILogger _logger;
+    private readonly ModLoaderService? _modLoaderService;
+    private readonly LauncherSettings? _launcherSettings;
     private string _instanceName = "";
     private string _selectedVersionId = "";
     private bool _isCreating;
@@ -20,11 +24,16 @@ public class CreateInstanceViewModel : ViewModelBase
     public CreateInstanceViewModel()
     {
         _logger = LogHelper.GetLogger<CreateInstanceViewModel>();
-        
-        // Initialize commands
+
         SelectVersionCommand = new RelayCommand(async () => await SelectVersionAsync());
         CreateCommand = new RelayCommand(async () => await CreateAsync(), CanCreate);
         CancelCommand = new RelayCommand(() => { });
+    }
+
+    public CreateInstanceViewModel(ModLoaderService modLoaderService, LauncherSettings? settings = null) : this()
+    {
+        _modLoaderService = modLoaderService;
+        _launcherSettings = settings;
     }
 
     public string InstanceName
@@ -74,7 +83,10 @@ public class CreateInstanceViewModel : ViewModelBase
     {
         try
         {
-            var window = new Views.VersionSelectorWindow();
+            bool showSnapshots = _launcherSettings?.ShowSnapshots.Value ?? true;
+            bool showOldAlpha = _launcherSettings?.ShowOldAlpha.Value ?? false;
+            bool showOldBeta = _launcherSettings?.ShowOldBeta.Value ?? false;
+            var window = new Views.VersionSelectorWindow(showSnapshots, showOldAlpha, showOldBeta);
             
             // Get parent window for modal dialog
             if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)

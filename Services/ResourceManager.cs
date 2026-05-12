@@ -153,15 +153,11 @@ public class ResourceManager
                 // Enrich with NBT data from level.dat
                 try
                 {
-                    var levelDatPath = Path.Combine(dir, "level.dat");
-                    if (File.Exists(levelDatPath))
-                    {
-                        var nbt = NbtReader.ReadCompressed(levelDatPath);
-                        var (levelName, gameMode, lastPlayed) = NbtReader.ExtractLevelInfo(nbt);
-                        if (levelName != null) resourceItem.LevelName = levelName;
-                        if (gameMode != null) resourceItem.GameMode = gameMode;
-                        if (lastPlayed.HasValue) resourceItem.LastPlayed = lastPlayed;
-                    }
+                    var nbt = NbtReader.ReadCompressed(levelDatPath);
+                    var (levelName, gameMode, lastPlayed) = NbtReader.ExtractLevelInfo(nbt);
+                    if (levelName != null) resourceItem.LevelName = levelName;
+                    if (gameMode != null) resourceItem.GameMode = gameMode;
+                    if (lastPlayed.HasValue) resourceItem.LastPlayed = lastPlayed;
                 }
                 catch { /* NBT parse failure is non-fatal */ }
 
