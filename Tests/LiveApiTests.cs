@@ -256,9 +256,10 @@ public class LiveApiTests : IDisposable
         var response = await _http.GetAsync(
             "https://api.github.com/repos/Advik-B/Obsidian-Launcher/releases/latest");
 
-        // 200 = has a release; 404 = no release yet (both are acceptable)
+        // 200 = has a release; 404 = no release yet; 403 = rate-limited (all acceptable)
         Assert.True(response.StatusCode == System.Net.HttpStatusCode.OK ||
-                    response.StatusCode == System.Net.HttpStatusCode.NotFound,
+                    response.StatusCode == System.Net.HttpStatusCode.NotFound ||
+                    response.StatusCode == System.Net.HttpStatusCode.Forbidden,
             $"Unexpected status: {response.StatusCode}");
 
         if (response.StatusCode == System.Net.HttpStatusCode.OK)
