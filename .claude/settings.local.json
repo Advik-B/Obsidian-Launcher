@@ -16,7 +16,9 @@
       "Bash(gh auth *)",
       "Bash(git checkout *)",
       "WebFetch(domain:piston-meta.mojang.com)",
-      "WebFetch(domain:meta.fabricmc.net)"
+      "WebFetch(domain:meta.fabricmc.net)",
+      "Bash(Get-ChildItem -Path \"S:\\\\Github\\\\Obsidian-Launcher\" -Directory)",
+      "Bash(Select-Object Name)"
     ]
   }
 }
