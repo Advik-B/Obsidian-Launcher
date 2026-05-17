@@ -211,6 +211,12 @@ public class JavaManager
                 TarFile.ExtractToDirectory(gzipStream, extractionDir, overwriteFiles: true);
                 _logger.Information("Successfully extracted TAR.GZ archive '{RuntimeName}' to {ExtractionDir}.",
                     runtimeNameForPath, extractionDir);
+
+                // On Unix, TarFile.ExtractToDirectory does not restore executable bits.
+                // Set the execute bit on all files in bin/ directories.
+                if (!OperatingSystem.IsWindows())
+                    SetExecutableBitsInBinDirs(extractionDir);
+
                 return true;
             }
 
@@ -470,5 +476,55 @@ public class JavaManager
         // Example: jre-legacy_17 or adoptium_jdk-hotspot_17
         var dirName = $"{sourceApi}_{javaVersion.Component}_{javaVersion.MajorVersion}";
         return Path.Combine(_config.JavaRuntimesDir, dirName);
+    }
+
+    /// <summary>
+    /// Sets the executable bit on all files inside bin/ subdirectories recursively.
+    /// Required on Linux/macOS after TAR.GZ extraction since .NET's TarFile does not
+    /// preserve Unix file permissions.
+    /// </summary>
+    private void SetExecutableBitsInBinDirs(string rootDir)
+    {
+        try
+        {
+            foreach (var binDir in Directory.EnumerateDirectories(rootDir, "bin", SearchOption.AllDirectories))
+            {
+                foreach (var file in Directory.EnumerateFiles(binDir))
+                {
+                    try
+                    {
+                        var current = File.GetUnixFileMode(file);
+                        var withExec = current
+                            | UnixFileMode.UserExecute
+                            | UnixFileMode.GroupExecute
+                            | UnixFileMode.OtherExecute;
+                        File.SetUnixFileMode(file, withExec);
+                        _logger.Verbose("Set executable bit on: {File}", file);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning(ex, "Failed to set executable bit on {File}", file);
+                    }
+                }
+            }
+
+            // Also handle lib/jspawnhelper and similar helper binaries
+            foreach (var libDir in Directory.EnumerateDirectories(rootDir, "lib", SearchOption.AllDirectories))
+            {
+                foreach (var file in Directory.EnumerateFiles(libDir, "jspawnhelper", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        var current = File.GetUnixFileMode(file);
+                        File.SetUnixFileMode(file, current | UnixFileMode.UserExecute | UnixFileMode.GroupExecute);
+                    }
+                    catch { /* best-effort */ }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Warning(ex, "Error setting executable bits in {RootDir}", rootDir);
+        }
     }
 }

@@ -8,6 +8,8 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Services;
+using ObsidianLauncher.Services.Import;
+using ObsidianLauncher.Services.Modrinth;
 using ObsidianLauncher.Settings;
 using ObsidianLauncher.Utils;
 using Serilog;
@@ -29,6 +31,9 @@ public class MainWindowViewModel : ViewModelBase
     private readonly GameLauncher _gameLauncher;
     private readonly ModLoaderService _modLoaderService;
     private readonly BackupManager _backupManager;
+    private readonly ModrinthClient _modrinthClient;
+    private readonly ModManager _modManager;
+    private readonly UpdateChecker _updateChecker;
 
     private Instance? _selectedInstance;
     private string _statusText;
@@ -54,8 +59,11 @@ public class MainWindowViewModel : ViewModelBase
         _groupManager = new InstanceGroupManager(_launcherConfig);
         _argumentBuilder = new ArgumentBuilder(_launcherConfig);
         _gameLauncher = new GameLauncher(_launcherConfig);
-        _modLoaderService = new ModLoaderService(_httpManager);
+        _modLoaderService = new ModLoaderService(_httpManager, _launcherConfig);
         _backupManager = new BackupManager(_launcherConfig);
+        _modrinthClient = new ModrinthClient(_httpManager);
+        _modManager = new ModManager(_modrinthClient);
+        _updateChecker = new UpdateChecker(_httpManager);
 
         Instances = new ObservableCollection<Instance>();
         Groups = new ObservableCollection<InstanceGroup>();
@@ -76,12 +84,16 @@ public class MainWindowViewModel : ViewModelBase
         OpenScreenshotViewerCommand = new RelayCommand(OpenScreenshotViewer);
         ExitCommand = new RelayCommand(Exit);
         ImportMultiMcCommand = new RelayCommand(async () => await ImportMultiMcAsync());
+        ImportModrinthCommand = new RelayCommand(async () => await ImportModrinthAsync());
+        ImportCurseForgeCommand = new RelayCommand(async () => await ImportCurseForgeAsync());
         CreateBackupCommand = new RelayCommand(async () => await CreateBackupAsync(), () => SelectedInstance != null);
         OpenJavaManagerCommand = new RelayCommand(OpenJavaManager);
+        CheckForUpdatesCommand = new RelayCommand(async () => await CheckForUpdatesAsync());
 
         // Load initial data
         _ = LoadInstancesAsync();
         _ = LoadGroupsAsync();
+        _ = CheckForUpdatesAsync();
     }
 
     public ObservableCollection<Instance> Instances { get; }
@@ -143,8 +155,11 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand OpenScreenshotViewerCommand { get; }
     public ICommand ExitCommand { get; }
     public ICommand ImportMultiMcCommand { get; }
+    public ICommand ImportModrinthCommand { get; }
+    public ICommand ImportCurseForgeCommand { get; }
     public ICommand CreateBackupCommand { get; }
     public ICommand OpenJavaManagerCommand { get; }
+    public ICommand CheckForUpdatesCommand { get; }
 
     private async Task LoadInstancesAsync()
     {
@@ -394,14 +409,11 @@ public class MainWindowViewModel : ViewModelBase
                 {
                     // Create the instance
                     StatusText = $"Creating instance '{result.InstanceName}'...";
-                    _logger.Information("Creating instance: {InstanceName}, Version: {Version}", 
-                        result.InstanceName, result.SelectedVersionId);
-                    
-                    var components = new System.Collections.Generic.List<Component>
-                    {
-                        new() { Uid = "net.minecraft", Version = result.SelectedVersionId, IsImportant = true }
-                    };
-                    
+                    _logger.Information("Creating instance: {InstanceName}, Version: {Version}, Loader: {Loader}",
+                        result.InstanceName, result.SelectedVersionId, result.SelectedModLoader);
+
+                    var components = result.BuildComponents();
+
                     var newInstance = await _instanceManager.CreateInstanceAsync(
                         result.InstanceName,
                         components
@@ -729,6 +741,151 @@ public class MainWindowViewModel : ViewModelBase
         {
             _logger.Error(ex, "Backup failed");
             StatusText = "Backup failed";
+        }
+    }
+
+    private async Task ImportModrinthAsync()
+    {
+        try
+        {
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            var files = await desktop.MainWindow!.StorageProvider.OpenFilePickerAsync(
+                new Avalonia.Platform.Storage.FilePickerOpenOptions
+                {
+                    Title = "Select Modrinth Modpack (.mrpack)",
+                    AllowMultiple = false,
+                    FileTypeFilter = new[]
+                    {
+                        new Avalonia.Platform.Storage.FilePickerFileType("Modrinth Modpack") { Patterns = new[] { "*.mrpack" } }
+                    }
+                });
+
+            if (files.Count == 0) return;
+            var mrpackPath = files[0].Path.LocalPath;
+            if (string.IsNullOrEmpty(mrpackPath)) return;
+
+            StatusText = "Importing Modrinth modpack...";
+            var importer = new ModrinthImporter(_instanceManager, _httpManager);
+            var progress = new Progress<(string Status, double Progress)>(r =>
+            {
+                StatusText = r.Status;
+                ProgressValue = r.Progress;
+            });
+
+            var instance = await importer.ImportAsync(mrpackPath, progress);
+            ProgressValue = 0;
+            if (instance != null)
+            {
+                StatusText = $"Imported '{instance.Name}' successfully";
+                await LoadInstancesAsync();
+            }
+            else
+            {
+                StatusText = "Modrinth import failed — check log for details";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Modrinth import failed");
+            StatusText = "Import failed";
+        }
+    }
+
+    private async Task ImportCurseForgeAsync()
+    {
+        try
+        {
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            var files = await desktop.MainWindow!.StorageProvider.OpenFilePickerAsync(
+                new Avalonia.Platform.Storage.FilePickerOpenOptions
+                {
+                    Title = "Select CurseForge Modpack (.zip)",
+                    AllowMultiple = false,
+                    FileTypeFilter = new[]
+                    {
+                        new Avalonia.Platform.Storage.FilePickerFileType("CurseForge Modpack") { Patterns = new[] { "*.zip" } }
+                    }
+                });
+
+            if (files.Count == 0) return;
+            var zipPath = files[0].Path.LocalPath;
+            if (string.IsNullOrEmpty(zipPath)) return;
+
+            StatusText = "Importing CurseForge modpack...";
+            var importer = new CurseForgeImporter(_instanceManager, _httpManager);
+            var progress = new Progress<(string Status, double Progress)>(r =>
+            {
+                StatusText = r.Status;
+                ProgressValue = r.Progress;
+            });
+
+            var instance = await importer.ImportAsync(zipPath, progress);
+            ProgressValue = 0;
+            if (instance != null)
+            {
+                StatusText = $"Imported '{instance.Name}' successfully";
+                await LoadInstancesAsync();
+            }
+            else
+            {
+                StatusText = "CurseForge import failed — check log for details";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "CurseForge import failed");
+            StatusText = "Import failed";
+        }
+    }
+
+    private async Task CheckForUpdatesAsync()
+    {
+        try
+        {
+            var update = await _updateChecker.CheckForUpdateAsync();
+            if (update != null)
+            {
+                _logger.Information("Update available: {Version}", update.LatestVersion);
+                StatusText = $"Update available: v{update.LatestVersion}!";
+
+                // Show dialog notification on UI thread
+                Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+                {
+                    if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                    {
+                        var msgBox = new Avalonia.Controls.Window
+                        {
+                            Title = "Update Available",
+                            Width = 420,
+                            Height = 200,
+                            WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
+                            CanResize = false,
+                            Content = new Avalonia.Controls.StackPanel
+                            {
+                                Margin = new Avalonia.Thickness(20),
+                                Spacing = 12,
+                                Children =
+                                {
+                                    new Avalonia.Controls.TextBlock { Text = $"Obsidian Launcher v{update.LatestVersion} is available!", FontWeight = Avalonia.Media.FontWeight.Bold, FontSize = 16 },
+                                    new Avalonia.Controls.TextBlock { Text = $"You are running v{update.CurrentVersion}.", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                                    new Avalonia.Controls.TextBlock { Text = update.ReleaseNotes.Length > 200 ? update.ReleaseNotes.Substring(0, 200) + "..." : update.ReleaseNotes, TextWrapping = Avalonia.Media.TextWrapping.Wrap, FontSize = 12 },
+                                    new Avalonia.Controls.Button { Content = "Close", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right }
+                                }
+                            }
+                        };
+                        await msgBox.ShowDialog(desktop.MainWindow!);
+                    }
+                });
+            }
+            else
+            {
+                StatusText = "You are running the latest version.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Warning(ex, "Update check failed");
+            StatusText = "Update check failed";
         }
     }
 

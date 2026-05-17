@@ -112,7 +112,7 @@ public class MultiMcImporter
                 "net.fabricmc.fabric-loader"  => "net.fabricmc.fabric-loader",
                 "org.quiltmc.quilt-loader"    => "org.quiltmc.quilt-loader",
                 "net.minecraftforge"          => "net.minecraftforge",
-                "net.neoforged.neoforge"      => "net.neoforged",
+                "net.neoforged.neoforge"      => "net.neoforged.neoforge",
                 _                             => null
             };
 

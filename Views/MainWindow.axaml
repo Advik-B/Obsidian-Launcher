@@ -23,6 +23,12 @@
             <MenuItem Header="_File">
                 <MenuItem Header="_New Instance..." Command="{Binding CreateInstanceCommand}"/>
                 <Separator/>
+                <MenuItem Header="_Import">
+                    <MenuItem Header="_MultiMC / Prism Export (.zip)..." Command="{Binding ImportMultiMcCommand}"/>
+                    <MenuItem Header="_Modrinth Modpack (.mrpack)..." Command="{Binding ImportModrinthCommand}"/>
+                    <MenuItem Header="_CurseForge Modpack (.zip)..." Command="{Binding ImportCurseForgeCommand}"/>
+                </MenuItem>
+                <Separator/>
                 <MenuItem Header="_Settings..." Command="{Binding OpenSettingsCommand}"/>
                 <MenuItem Header="_Account Management..." Command="{Binding OpenAccountManagementCommand}"/>
                 <Separator/>
@@ -45,7 +51,7 @@
                 <MenuItem Header="_About..."/>
                 <MenuItem Header="_Documentation"/>
                 <Separator/>
-                <MenuItem Header="_Check for Updates"/>
+                <MenuItem Header="_Check for Updates" Command="{Binding CheckForUpdatesCommand}"/>
             </MenuItem>
         </Menu>
 
