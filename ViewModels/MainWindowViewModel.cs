@@ -86,9 +86,11 @@ public class MainWindowViewModel : ViewModelBase
         ImportMultiMcCommand = new RelayCommand(async () => await ImportMultiMcAsync());
         ImportModrinthCommand = new RelayCommand(async () => await ImportModrinthAsync());
         ImportCurseForgeCommand = new RelayCommand(async () => await ImportCurseForgeAsync());
+        ImportFtbCommand = new RelayCommand(async () => await ImportFtbAsync());
         CreateBackupCommand = new RelayCommand(async () => await CreateBackupAsync(), () => SelectedInstance != null);
         OpenJavaManagerCommand = new RelayCommand(OpenJavaManager);
         CheckForUpdatesCommand = new RelayCommand(async () => await CheckForUpdatesAsync());
+        OpenModBrowserCommand = new RelayCommand(async () => await OpenModBrowserAsync(), () => SelectedInstance != null);
 
         // Load initial data
         _ = LoadInstancesAsync();
@@ -110,6 +112,7 @@ public class MainWindowViewModel : ViewModelBase
                 ((RelayCommand)EditInstanceCommand).RaiseCanExecuteChanged();
                 ((RelayCommand)DeleteInstanceCommand).RaiseCanExecuteChanged();
                 ((RelayCommand)CreateBackupCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)OpenModBrowserCommand).RaiseCanExecuteChanged();
             }
         }
     }
@@ -157,9 +160,11 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand ImportMultiMcCommand { get; }
     public ICommand ImportModrinthCommand { get; }
     public ICommand ImportCurseForgeCommand { get; }
+    public ICommand ImportFtbCommand { get; }
     public ICommand CreateBackupCommand { get; }
     public ICommand OpenJavaManagerCommand { get; }
     public ICommand CheckForUpdatesCommand { get; }
+    public ICommand OpenModBrowserCommand { get; }
 
     private async Task LoadInstancesAsync()
     {
@@ -838,6 +843,106 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
+    private async Task ImportFtbAsync()
+    {
+        try
+        {
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+
+            // Show a simple dialog to get the FTB pack ID and version ID
+            string? packIdStr = null;
+            string? versionIdStr = null;
+
+            var packIdBox = new Avalonia.Controls.TextBox { Watermark = "Pack ID (e.g. 81)", Width = 200 };
+            var versionIdBox = new Avalonia.Controls.TextBox { Watermark = "Version ID (leave empty for latest)", Width = 200 };
+            var confirmBtn = new Avalonia.Controls.Button { Content = "Import", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
+            var cancelBtn = new Avalonia.Controls.Button { Content = "Cancel", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
+
+            var inputDialog = new Avalonia.Controls.Window
+            {
+                Title = "Import FTB Modpack",
+                Width = 340,
+                Height = 220,
+                WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
+                CanResize = false,
+                Content = new Avalonia.Controls.StackPanel
+                {
+                    Margin = new Avalonia.Thickness(20),
+                    Spacing = 12,
+                    Children =
+                    {
+                        new Avalonia.Controls.TextBlock { Text = "Enter FTB Pack ID and Version ID:", FontWeight = Avalonia.Media.FontWeight.SemiBold },
+                        packIdBox,
+                        versionIdBox,
+                        new Avalonia.Controls.StackPanel
+                        {
+                            Orientation = Avalonia.Layout.Orientation.Horizontal,
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                            Spacing = 8,
+                            Children = { cancelBtn, confirmBtn }
+                        }
+                    }
+                }
+            };
+
+            confirmBtn.Click += (_, _) => { packIdStr = packIdBox.Text; versionIdStr = versionIdBox.Text; inputDialog.Close(true); };
+            cancelBtn.Click += (_, _) => inputDialog.Close(false);
+
+            var ok = await inputDialog.ShowDialog<bool>(desktop.MainWindow!);
+            if (!ok || string.IsNullOrWhiteSpace(packIdStr)) return;
+
+            if (!long.TryParse(packIdStr.Trim(), out var packId))
+            {
+                StatusText = "Invalid FTB pack ID";
+                return;
+            }
+
+            var importer = new Services.Import.FtbImporter(_instanceManager, _httpManager);
+
+            long versionId = 0;
+            if (!string.IsNullOrWhiteSpace(versionIdStr) && long.TryParse(versionIdStr.Trim(), out var parsedVersionId))
+            {
+                versionId = parsedVersionId;
+            }
+            else
+            {
+                // Fetch pack info to get latest version
+                StatusText = "Fetching FTB pack info...";
+                var packInfo = await importer.GetPackInfoAsync(packId);
+                if (packInfo?.Versions == null || packInfo.Versions.Count == 0)
+                {
+                    StatusText = "Could not fetch FTB pack info";
+                    return;
+                }
+                versionId = packInfo.Versions[0].Id;
+            }
+
+            StatusText = $"Importing FTB pack {packId}...";
+            var progress = new Progress<(string Status, double Progress)>(r =>
+            {
+                StatusText = r.Status;
+                ProgressValue = r.Progress * 100;
+            });
+
+            var instance = await importer.ImportAsync(packId, versionId, progress);
+            ProgressValue = 0;
+            if (instance != null)
+            {
+                StatusText = $"Imported '{instance.Name}' successfully";
+                await LoadInstancesAsync();
+            }
+            else
+            {
+                StatusText = "FTB import failed — check log for details";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "FTB import failed");
+            StatusText = "Import failed";
+        }
+    }
+
     private async Task CheckForUpdatesAsync()
     {
         try
@@ -886,6 +991,22 @@ public class MainWindowViewModel : ViewModelBase
         {
             _logger.Warning(ex, "Update check failed");
             StatusText = "Update check failed";
+        }
+    }
+
+    private async Task OpenModBrowserAsync()
+    {
+        if (SelectedInstance == null) return;
+        try
+        {
+            var win = new Views.ModBrowserWindow(_modManager, SelectedInstance);
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                await win.ShowDialog(desktop.MainWindow!);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open mod browser");
+            StatusText = "Failed to open mod browser";
         }
     }
 

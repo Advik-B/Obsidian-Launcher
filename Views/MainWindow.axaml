@@ -27,6 +27,7 @@
                     <MenuItem Header="_MultiMC / Prism Export (.zip)..." Command="{Binding ImportMultiMcCommand}"/>
                     <MenuItem Header="_Modrinth Modpack (.mrpack)..." Command="{Binding ImportModrinthCommand}"/>
                     <MenuItem Header="_CurseForge Modpack (.zip)..." Command="{Binding ImportCurseForgeCommand}"/>
+                    <MenuItem Header="_FTB Modpack (by Pack ID)..." Command="{Binding ImportFtbCommand}"/>
                 </MenuItem>
                 <Separator/>
                 <MenuItem Header="_Settings..." Command="{Binding OpenSettingsCommand}"/>
@@ -37,6 +38,8 @@
             <MenuItem Header="_Edit">
                 <MenuItem Header="_Edit Instance..." Command="{Binding EditInstanceCommand}"/>
                 <MenuItem Header="_Delete Instance" Command="{Binding DeleteInstanceCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Browse Mods..." Command="{Binding OpenModBrowserCommand}"/>
                 <Separator/>
                 <MenuItem Header="_Refresh Instances" Command="{Binding RefreshInstancesCommand}"/>
             </MenuItem>
@@ -153,12 +156,18 @@
                             HorizontalContentAlignment="Center"
                             Padding="10"/>
                     
-                    <Button Content="Delete" 
-                            Command="{Binding DeleteInstanceCommand}" 
+                    <Button Content="Delete"
+                            Command="{Binding DeleteInstanceCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
                             Padding="10"/>
-                    
+
+                    <Button Content="Browse Mods..."
+                            Command="{Binding OpenModBrowserCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Padding="10"/>
+
                     <Separator Margin="0,10"/>
                     
                     <TextBlock Text="Instance Info" FontWeight="Bold" FontSize="12" Margin="0,0,0,5"/>
