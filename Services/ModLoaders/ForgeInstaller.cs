@@ -211,7 +211,8 @@ public class ForgeInstaller
         {
             Id = versionInfo.Id ?? fullVersion,
             MainClass = versionInfo.MainClass ?? "net.minecraft.launchwrapper.Launch",
-            InheritsFrom = versionInfo.InheritsFrom
+            InheritsFrom = versionInfo.InheritsFrom,
+            Type = versionInfo.Type ?? "release"
         };
 
         // Convert old-style libraries

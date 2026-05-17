@@ -54,8 +54,8 @@ public class FtbImporter
         return result?.Packs?.Select(p => new FtbPackSummary
         {
             Id = p.Id,
-            Name = p.Name,
-            Synopsis = p.Synopsis,
+            Name = p.Name ?? "",
+            Synopsis = p.Synopsis ?? "",
             Installs = p.Installs
         }).ToList() ?? new List<FtbPackSummary>();
     }

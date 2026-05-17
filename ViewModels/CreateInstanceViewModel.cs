@@ -36,7 +36,7 @@ public class CreateInstanceViewModel : ViewModelBase
     public event EventHandler? CreationCompleted;
 
     // Designer constructor
-    public CreateInstanceViewModel() : this(null, null) { }
+    public CreateInstanceViewModel() : this((HttpManager?)null, null) { }
 
     public CreateInstanceViewModel(HttpManager? httpManager, InstanceManager? instanceManager = null, LauncherSettings? launcherSettings = null)
     {
@@ -51,11 +51,6 @@ public class CreateInstanceViewModel : ViewModelBase
         CancelCommand = new RelayCommand(() => { });
 
         ModLoaderVersions = new ObservableCollection<string>();
-    }
-
-    public CreateInstanceViewModel(ModLoaderService modLoaderService, LauncherSettings? settings = null) : this()
-    {
-        _launcherSettings = settings;
     }
 
     public string InstanceName

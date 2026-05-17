@@ -31,4 +31,8 @@
         <AvaloniaResource Include="Images\**" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Remove="Tests\**" />
+    </ItemGroup>
+
 </Project>
