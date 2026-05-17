@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using ObsidianLauncher.Utils;
 
 namespace ObsidianLauncher.Models;
 
@@ -39,9 +40,13 @@ public class MinecraftVersion
     [JsonPropertyName("minimumLauncherVersion")]
     public int? MinimumLauncherVersion { get; set; }
 
-    [JsonPropertyName("releaseTime")] public DateTime ReleaseTime { get; set; }
+    [JsonPropertyName("releaseTime")]
+    [JsonConverter(typeof(FlexibleDateTimeConverter))]
+    public DateTime ReleaseTime { get; set; }
 
-    [JsonPropertyName("time")] public DateTime Time { get; set; }
+    [JsonPropertyName("time")]
+    [JsonConverter(typeof(FlexibleDateTimeConverter))]
+    public DateTime Time { get; set; }
 
     [JsonPropertyName("type")] public required string Type { get; set; }
 
