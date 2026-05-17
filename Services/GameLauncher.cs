@@ -158,7 +158,10 @@ public class GameLauncher
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            CreateNoWindow = OsUtils.GetCurrentOS() == OperatingSystemType.Windows
+            // CreateNoWindow prevents a console window from appearing on Windows.
+            // On Linux/macOS this flag has no effect, but setting it based on the
+            // OS avoids triggering an unimplemented-member exception on some runtimes.
+            CreateNoWindow = OperatingSystem.IsWindows()
         };
 
         if (environmentVariables != null)

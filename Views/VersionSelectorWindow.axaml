@@ -55,7 +55,7 @@
             <!-- Version List -->
             <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Padding="5">
                 <ListBox ItemsSource="{Binding FilteredVersions}"
-                         SelectedItem="{Binding SelectedVersion}"
+                         SelectedItem="{Binding SelectedVersionEntry}"
                          BorderThickness="0">
                     <ListBox.ItemTemplate>
                         <DataTemplate>

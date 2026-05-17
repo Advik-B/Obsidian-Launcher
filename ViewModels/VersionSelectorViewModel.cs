@@ -1,142 +1,98 @@
-// ViewModels/VersionSelectorViewModel.cs
-
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Windows.Input;
+using ObsidianLauncher.Services;
 using Serilog;
 
 namespace ObsidianLauncher.ViewModels;
 
 /// <summary>
-///     ViewModel for the Minecraft Version Selection dialog.
+/// ViewModel for the Minecraft version selection dialog.
+/// Fetches real version data from the Mojang manifest API.
 /// </summary>
 public class VersionSelectorViewModel : INotifyPropertyChanged
 {
-    private string? _selectedVersion;
-    private bool _showSnapshots = true;
-    private bool _showOldAlpha = false;
-    private bool _showOldBeta = false;
-    private bool _showReleasesOnly = false;
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+
+    private MinecraftVersionEntry? _selectedVersionEntry;
+    private bool _showSnapshots;
+    private bool _showOldAlpha;
+    private bool _showOldBeta;
+    private bool _showReleasesOnly;
+    private bool _isLoading;
     private string _searchText = "";
+    private string _statusText = "Loading versions...";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    /// <summary>
-    ///     All available Minecraft versions.
-    /// </summary>
-    public ObservableCollection<MinecraftVersion> AllVersions { get; }
+    public ObservableCollection<MinecraftVersionEntry> AllVersions { get; } = new();
+    public ObservableCollection<MinecraftVersionEntry> FilteredVersions { get; } = new();
 
-    /// <summary>
-    ///     Filtered versions based on search and filter settings.
-    /// </summary>
-    public ObservableCollection<MinecraftVersion> FilteredVersions { get; }
-
-    /// <summary>
-    ///     Selected Minecraft version ID.
-    /// </summary>
-    public string? SelectedVersion
+    /// <summary>Selected item in the ListBox (a MinecraftVersionEntry object).</summary>
+    public MinecraftVersionEntry? SelectedVersionEntry
     {
-        get => _selectedVersion;
+        get => _selectedVersionEntry;
         set
         {
-            if (_selectedVersion != value)
+            if (_selectedVersionEntry != value)
             {
-                _selectedVersion = value;
+                _selectedVersionEntry = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(SelectedVersion));
                 ((RelayCommand)SelectCommand).RaiseCanExecuteChanged();
             }
         }
     }
 
-    /// <summary>
-    ///     Show snapshot versions.
-    /// </summary>
+    /// <summary>Selected version ID (string), derived from SelectedVersionEntry.</summary>
+    public string? SelectedVersion => _selectedVersionEntry?.Id;
+
     public bool ShowSnapshots
     {
         get => _showSnapshots;
-        set
-        {
-            if (_showSnapshots != value)
-            {
-                _showSnapshots = value;
-                OnPropertyChanged();
-                ApplyFilter();
-            }
-        }
+        set { if (_showSnapshots != value) { _showSnapshots = value; OnPropertyChanged(); ApplyFilter(); } }
     }
 
-    /// <summary>
-    ///     Show old alpha versions.
-    /// </summary>
     public bool ShowOldAlpha
     {
         get => _showOldAlpha;
-        set
-        {
-            if (_showOldAlpha != value)
-            {
-                _showOldAlpha = value;
-                OnPropertyChanged();
-                ApplyFilter();
-            }
-        }
+        set { if (_showOldAlpha != value) { _showOldAlpha = value; OnPropertyChanged(); ApplyFilter(); } }
     }
 
-    /// <summary>
-    ///     Show old beta versions.
-    /// </summary>
     public bool ShowOldBeta
     {
         get => _showOldBeta;
-        set
-        {
-            if (_showOldBeta != value)
-            {
-                _showOldBeta = value;
-                OnPropertyChanged();
-                ApplyFilter();
-            }
-        }
+        set { if (_showOldBeta != value) { _showOldBeta = value; OnPropertyChanged(); ApplyFilter(); } }
     }
 
-    /// <summary>
-    ///     Show release versions only.
-    /// </summary>
     public bool ShowReleasesOnly
     {
         get => _showReleasesOnly;
-        set
-        {
-            if (_showReleasesOnly != value)
-            {
-                _showReleasesOnly = value;
-                OnPropertyChanged();
-                ApplyFilter();
-            }
-        }
+        set { if (_showReleasesOnly != value) { _showReleasesOnly = value; OnPropertyChanged(); ApplyFilter(); } }
     }
 
-    /// <summary>
-    ///     Search/filter text.
-    /// </summary>
+    public bool IsLoading
+    {
+        get => _isLoading;
+        set { if (_isLoading != value) { _isLoading = value; OnPropertyChanged(); } }
+    }
+
     public string SearchText
     {
         get => _searchText;
-        set
-        {
-            if (_searchText != value)
-            {
-                _searchText = value;
-                OnPropertyChanged();
-                ApplyFilter();
-            }
-        }
+        set { if (_searchText != value) { _searchText = value; OnPropertyChanged(); ApplyFilter(); } }
     }
 
-    // Commands
+    public string StatusText
+    {
+        get => _statusText;
+        set { if (_statusText != value) { _statusText = value; OnPropertyChanged(); } }
+    }
+
     public ICommand SelectCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand RefreshCommand { get; }
@@ -149,32 +105,66 @@ public class VersionSelectorViewModel : INotifyPropertyChanged
         _showOldAlpha = showOldAlpha;
         _showOldBeta = showOldBeta;
 
-        AllVersions = new ObservableCollection<MinecraftVersion>();
-        FilteredVersions = new ObservableCollection<MinecraftVersion>();
+        SelectCommand = new RelayCommand(() => { }, () => SelectedVersionEntry != null);
+        CancelCommand = new RelayCommand(() => { });
+        RefreshCommand = new RelayCommand(async () => await LoadVersionsAsync());
 
-        // Initialize commands
-        SelectCommand = new RelayCommand(() => { }, () => SelectedVersion != null); // Dialog handles close with result
-        CancelCommand = new RelayCommand(() => { }); // Dialog handles close
-        RefreshCommand = new RelayCommand(RefreshVersions);
-
-        // Load versions
-        LoadVersions();
+        _ = LoadVersionsAsync();
     }
 
-    private void LoadVersions()
+    private async System.Threading.Tasks.Task LoadVersionsAsync()
     {
-        // TODO: Load from Minecraft version manifest
-        // For now, add some sample versions
-        AllVersions.Add(new MinecraftVersion { Id = "1.20.4", Type = "release", ReleaseTime = DateTime.Now });
-        AllVersions.Add(new MinecraftVersion { Id = "1.20.3", Type = "release", ReleaseTime = DateTime.Now.AddDays(-30) });
-        AllVersions.Add(new MinecraftVersion { Id = "24w06a", Type = "snapshot", ReleaseTime = DateTime.Now.AddDays(-7) });
-        AllVersions.Add(new MinecraftVersion { Id = "1.19.4", Type = "release", ReleaseTime = DateTime.Now.AddMonths(-6) });
-        AllVersions.Add(new MinecraftVersion { Id = "1.18.2", Type = "release", ReleaseTime = DateTime.Now.AddMonths(-12) });
-        AllVersions.Add(new MinecraftVersion { Id = "b1.7.3", Type = "old_beta", ReleaseTime = DateTime.Now.AddYears(-10) });
-        AllVersions.Add(new MinecraftVersion { Id = "a1.2.6", Type = "old_alpha", ReleaseTime = DateTime.Now.AddYears(-12) });
+        IsLoading = true;
+        StatusText = "Fetching version list...";
 
-        Log.Information("Loaded {Count} Minecraft versions", AllVersions.Count);
-        ApplyFilter();
+        try
+        {
+            using var http = new HttpManager();
+            var response = await http.GetAsync("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                StatusText = $"Failed to fetch versions: {response.StatusCode}";
+                Log.Warning("VersionSelector: manifest fetch failed: {Status}", response.StatusCode);
+                return;
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            var manifest = JsonSerializer.Deserialize<MojangVersionManifest>(json, JsonOptions);
+
+            if (manifest?.Versions == null)
+            {
+                StatusText = "Failed to parse version manifest";
+                return;
+            }
+
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                AllVersions.Clear();
+                foreach (var v in manifest.Versions)
+                {
+                    AllVersions.Add(new MinecraftVersionEntry
+                    {
+                        Id = v.Id,
+                        Type = v.Type,
+                        ReleaseTime = v.ReleaseTime
+                    });
+                }
+
+                ApplyFilter();
+                StatusText = $"{manifest.Versions.Count} versions available";
+                Log.Information("VersionSelector: loaded {Count} versions", manifest.Versions.Count);
+            });
+        }
+        catch (Exception ex)
+        {
+            StatusText = "Error loading versions";
+            Log.Error(ex, "VersionSelector: exception loading versions");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private void ApplyFilter()
@@ -183,56 +173,47 @@ public class VersionSelectorViewModel : INotifyPropertyChanged
 
         var filtered = AllVersions.AsEnumerable();
 
-        // Apply type filters
         if (ShowReleasesOnly)
         {
             filtered = filtered.Where(v => v.Type == "release");
         }
         else
         {
-            if (!ShowSnapshots)
-                filtered = filtered.Where(v => v.Type != "snapshot");
-
-            if (!ShowOldAlpha)
-                filtered = filtered.Where(v => v.Type != "old_alpha");
-
-            if (!ShowOldBeta)
-                filtered = filtered.Where(v => v.Type != "old_beta");
+            if (!ShowSnapshots) filtered = filtered.Where(v => v.Type != "snapshot");
+            if (!ShowOldAlpha) filtered = filtered.Where(v => v.Type != "old_alpha");
+            if (!ShowOldBeta) filtered = filtered.Where(v => v.Type != "old_beta");
         }
 
-        // Apply search filter
         if (!string.IsNullOrWhiteSpace(SearchText))
         {
             var search = SearchText.ToLowerInvariant();
             filtered = filtered.Where(v => v.Id.ToLowerInvariant().Contains(search));
         }
 
-        foreach (var version in filtered.OrderByDescending(v => v.ReleaseTime))
-        {
+        foreach (var version in filtered)
             FilteredVersions.Add(version);
-        }
-
-        Log.Information("Filtered to {Count} versions", FilteredVersions.Count);
-    }
-
-    private void RefreshVersions()
-    {
-        Log.Information("Refreshing version list...");
-        // TODO: Re-download version manifest
-        AllVersions.Clear();
-        LoadVersions();
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    private class MojangVersionManifest
     {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        public System.Collections.Generic.List<MojangVersionEntry>? Versions { get; set; }
+    }
+
+    private class MojangVersionEntry
+    {
+        public string Id { get; set; } = "";
+        public string Type { get; set; } = "release";
+        public DateTime ReleaseTime { get; set; }
     }
 }
 
 /// <summary>
-///     Represents a Minecraft version.
+/// Represents a single Minecraft version entry shown in the version selector.
 /// </summary>
-public class MinecraftVersion
+public class MinecraftVersionEntry
 {
     public string Id { get; set; } = "";
     public string Type { get; set; } = "release";

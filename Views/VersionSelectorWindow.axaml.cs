@@ -20,9 +20,9 @@ public partial class VersionSelectorWindow : Window
 
     private void SelectButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is VersionSelectorViewModel vm && vm.SelectedVersion != null)
+        if (DataContext is VersionSelectorViewModel vm && vm.SelectedVersionEntry != null)
         {
-            SelectedVersion = vm.SelectedVersion;
+            SelectedVersion = vm.SelectedVersionEntry.Id;
             Close(SelectedVersion);
         }
     }

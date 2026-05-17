@@ -28,7 +28,7 @@ public class InstanceManager
         _libraryManager = libraryManager ?? throw new ArgumentNullException(nameof(libraryManager));
         _httpManager = httpManager ?? throw new ArgumentNullException(nameof(httpManager));
         _logger = LogHelper.GetLogger<InstanceManager>();
-        _modLoaderService = new ModLoaderService(_httpManager); // Initialize new service
+        _modLoaderService = new ModLoaderService(_httpManager, _launcherConfig); // Initialize new service
         Directory.CreateDirectory(_launcherConfig.InstancesRootDir);
         _logger.Verbose("InstanceManager initialized. Instances root: {InstancesRootDir}", _launcherConfig.InstancesRootDir);
     }
@@ -106,17 +106,19 @@ public class InstanceManager
         var launchProfile = new LaunchProfile();
         _logger.Information("Building launch profile from {ComponentCount} components.", components.Count);
 
+        // Track which MC versions we've already loaded to avoid duplicate fetches
+        var loadedVersionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         foreach (var component in components.Where(c => c.IsEnabled))
         {
             MinecraftVersion? componentVersion = null;
             if (component.Uid == "net.minecraft")
             {
-                // Fetch base Minecraft version from Mojang
                 componentVersion = await GetMinecraftVersionDetailsAsync(component.Version, cancellationToken);
+                if (componentVersion != null) loadedVersionIds.Add(component.Version);
             }
             else
             {
-                // Fetch mod loader version
                 componentVersion = await _modLoaderService.GetModLoaderVersionAsync(component, cancellationToken);
             }
 
@@ -124,6 +126,24 @@ public class InstanceManager
             {
                 _logger.Error("Failed to fetch details for component {Uid} {Version}. Aborting profile build.", component.Uid, component.Version);
                 return null;
+            }
+
+            // Handle InheritsFrom: mod loader profiles (Fabric, Forge, etc.) typically inherit from
+            // the base Minecraft version. Load the parent version first if not already loaded.
+            if (!string.IsNullOrEmpty(componentVersion.InheritsFrom) &&
+                !loadedVersionIds.Contains(componentVersion.InheritsFrom))
+            {
+                _logger.Information("Component {Uid} inherits from {ParentVersion}. Loading parent first.",
+                    component.Uid, componentVersion.InheritsFrom);
+                var parentVersion = await GetMinecraftVersionDetailsAsync(componentVersion.InheritsFrom, cancellationToken);
+                if (parentVersion == null)
+                {
+                    _logger.Error("Failed to load parent version {ParentVersion} for component {Uid}.",
+                        componentVersion.InheritsFrom, component.Uid);
+                    return null;
+                }
+                loadedVersionIds.Add(componentVersion.InheritsFrom);
+                launchProfile.MergeFrom(parentVersion);
             }
 
             launchProfile.MergeFrom(componentVersion);
