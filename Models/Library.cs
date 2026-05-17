@@ -47,4 +47,12 @@ public class Library
     /// </summary>
     [JsonPropertyName("extract")]
     public LibraryExtractRule? Extract { get; set; }
+
+    /// <summary>
+    ///     Base URL for downloading this library from a custom Maven repository.
+    ///     Used by Forge (legacy format) and other mod loaders that reference non-standard repos.
+    ///     When set and Downloads.Artifact is null, the path is derived from the Maven name.
+    /// </summary>
+    [JsonPropertyName("url")]
+    public string? Url { get; set; }
 }

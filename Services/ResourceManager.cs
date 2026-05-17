@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -148,6 +149,17 @@ public class ResourceManager
                     resourceItem.SizeBytes = GetDirectorySize(dir);
                     resourceItem.LastModified = dirInfo.LastWriteTimeUtc;
                 }
+
+                // Enrich with NBT data from level.dat
+                try
+                {
+                    var nbt = NbtReader.ReadCompressed(levelDatPath);
+                    var (levelName, gameMode, lastPlayed) = NbtReader.ExtractLevelInfo(nbt);
+                    if (levelName != null) resourceItem.LevelName = levelName;
+                    if (gameMode != null) resourceItem.GameMode = gameMode;
+                    if (lastPlayed.HasValue) resourceItem.LastPlayed = lastPlayed;
+                }
+                catch { /* NBT parse failure is non-fatal */ }
 
                 resources.Add(resourceItem);
             }
@@ -428,6 +440,61 @@ public class ResourceManager
             var dirName = Path.GetFileName(subDir);
             var destSubDir = Path.Combine(destDir, dirName);
             CopyDirectory(subDir, destSubDir);
+        }
+    }
+
+    public async Task<bool> CopyWorldAsync(Instance source, Instance destination, string worldName)
+    {
+        var srcPath = Path.Combine(GetResourceFolderPath(source, ResourceFolderType.Worlds), worldName);
+        var destPath = Path.Combine(GetResourceFolderPath(destination, ResourceFolderType.Worlds), worldName);
+
+        if (!Directory.Exists(srcPath))
+        {
+            _logger.Warning("Source world not found: {SrcPath}", srcPath);
+            return false;
+        }
+
+        if (Directory.Exists(destPath))
+        {
+            _logger.Warning("World already exists in destination: {DestPath}", destPath);
+            return false;
+        }
+
+        try
+        {
+            CopyDirectory(srcPath, destPath);
+            _logger.Information("Copied world '{WorldName}' from '{Source}' to '{Destination}'",
+                worldName, source.Name, destination.Name);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to copy world '{WorldName}'", worldName);
+            return false;
+        }
+    }
+
+    public async Task<bool> ExportWorldAsync(Instance instance, string worldName, string destZipPath)
+    {
+        var worldPath = Path.Combine(GetResourceFolderPath(instance, ResourceFolderType.Worlds), worldName);
+
+        if (!Directory.Exists(worldPath))
+        {
+            _logger.Warning("World not found: {WorldPath}", worldPath);
+            return false;
+        }
+
+        try
+        {
+            if (File.Exists(destZipPath)) File.Delete(destZipPath);
+            ZipFile.CreateFromDirectory(worldPath, destZipPath);
+            _logger.Information("Exported world '{WorldName}' to {DestZipPath}", worldName, destZipPath);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to export world '{WorldName}'", worldName);
+            return false;
         }
     }
 }

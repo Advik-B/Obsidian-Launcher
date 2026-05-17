@@ -148,7 +148,7 @@ public class ObsidianLauncher
             var gameWorkingDirectory = Path.GetFullPath(currentInstance.GameDataPath);
 
             var sessionStartTime = DateTime.UtcNow;
-            var exitCode = await gameLauncher.LaunchAsync(javaRuntime.JavaExecutablePath, jvmArgs, launchProfile.MainClass, gameArgs, gameWorkingDirectory, _cts.Token);
+            var exitCode = await gameLauncher.LaunchAsync(javaRuntime.JavaExecutablePath, jvmArgs, launchProfile.MainClass, gameArgs, gameWorkingDirectory, cancellationToken: _cts.Token);
             var sessionDuration = DateTime.UtcNow - sessionStartTime;
             await instanceManager.UpdateLastPlayedAsync(currentInstance, sessionDuration);
 

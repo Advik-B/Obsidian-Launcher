@@ -78,4 +78,14 @@ public class Instance
     ///     Sort order for custom ordering (lower numbers appear first).
     /// </summary>
     public int SortOrder { get; set; }
+
+    // Launch pipeline enhancements
+    public string? PreLaunchCommand { get; set; }
+    public string? PostLaunchCommand { get; set; }
+    public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
+    public string? WrapperCommand { get; set; }
+
+    // Quick play
+    public string? QuickPlayServer { get; set; }
+    public string? QuickPlayWorld { get; set; }
 }

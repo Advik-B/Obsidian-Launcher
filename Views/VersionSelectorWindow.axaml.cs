@@ -9,23 +9,29 @@ namespace ObsidianLauncher.Views;
 
 public partial class VersionSelectorWindow : Window
 {
-    // Designer / no-network constructor
-    public VersionSelectorWindow()
+    public string? SelectedVersion { get; private set; }
+
+    public VersionSelectorWindow() : this(showSnapshots: true, showOldAlpha: false, showOldBeta: false) { }
+
+    public VersionSelectorWindow(bool showSnapshots, bool showOldAlpha, bool showOldBeta)
     {
         InitializeComponent();
-        DataContext = new VersionSelectorViewModel();
+        DataContext = new VersionSelectorViewModel(showSnapshots, showOldAlpha, showOldBeta);
     }
 
-    public VersionSelectorWindow(HttpManager httpManager)
+    public VersionSelectorWindow(HttpManager httpManager, bool showSnapshots = true, bool showOldAlpha = false, bool showOldBeta = false)
     {
         InitializeComponent();
-        DataContext = new VersionSelectorViewModel(httpManager);
+        DataContext = new VersionSelectorViewModel(httpManager, showSnapshots, showOldAlpha, showOldBeta);
     }
 
     private void SelectButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is VersionSelectorViewModel vm && vm.SelectedVersion != null)
-            Close(vm.SelectedVersion.Id);
+        if (DataContext is VersionSelectorViewModel vm && vm.SelectedVersionEntry != null)
+        {
+            SelectedVersion = vm.SelectedVersionEntry.Id;
+            Close(SelectedVersion);
+        }
     }
 
     private void CancelButton_Click(object? sender, RoutedEventArgs e)

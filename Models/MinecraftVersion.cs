@@ -49,4 +49,11 @@ public class MinecraftVersion
     [JsonPropertyName("arguments")] public VersionArguments? Arguments { get; set; }
 
     [JsonPropertyName("logging")] public VersionLogging? Logging { get; set; }
+
+    /// <summary>
+    ///     Used by mod loader version JSONs (Forge, Fabric, Quilt) to indicate which base Minecraft
+    ///     version this profile extends. The launcher must load the parent version first.
+    /// </summary>
+    [JsonPropertyName("inheritsFrom")]
+    public string? InheritsFrom { get; set; }
 }

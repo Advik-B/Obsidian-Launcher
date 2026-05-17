@@ -83,6 +83,26 @@ public class LibraryManager
                     _logger.Error("Failed to ensure main artifact for library {LibraryName}. Path: {Path}", library.Name, artifactLocalPath);
                 }
             }
+            else if (!string.IsNullOrEmpty(library.Url) && !string.IsNullOrEmpty(library.Name))
+            {
+                // Legacy Forge/mod-loader style: URL base + Maven path derived from name
+                var mavenPath = MavenNameToPath(library.Name);
+                var artifactLocalPath = Path.Combine(_config.LibrariesDir, mavenPath.Replace('/', Path.DirectorySeparatorChar));
+                var downloadUrl = library.Url.TrimEnd('/') + "/" + mavenPath;
+
+                ReportLibraryProgress(progress, library.Name, processedLibraries, totalLibraries, $"Ensuring legacy artifact: {Path.GetFileName(artifactLocalPath)}");
+                mainArtifactOk = await _assetManager.DownloadAndVerifyFileAsync(downloadUrl, artifactLocalPath, string.Empty, $"Legacy library {library.Name}", cancellationToken);
+
+                if (mainArtifactOk)
+                {
+                    classpathEntries.Add(Path.GetFullPath(artifactLocalPath));
+                    _logger.Verbose("Legacy artifact for {LibraryName} is ready at {Path}", library.Name, artifactLocalPath);
+                }
+                else
+                {
+                    _logger.Error("Failed to ensure legacy artifact for library {LibraryName}. URL: {Url}", library.Name, downloadUrl);
+                }
+            }
             else if (library.Downloads?.Classifiers == null || !library.Downloads.Classifiers.Any())
             {
                 _logger.Verbose("Library {LibraryName} has no specified artifact or classifiers in downloads. Assuming it's a conditional/platform-specific parent or already provided.", library.Name);
@@ -263,5 +283,23 @@ public class LibraryManager
     private async Task<bool> DownloadAndVerifyFileAsync(string url, string localPath, string expectedSha1, string fileDescription, CancellationToken cancellationToken, ulong? expectedSize = null)
     {
         return await _assetManager.DownloadAndVerifyFileAsync(url, localPath, expectedSha1, fileDescription, cancellationToken, expectedSize);
+    }
+
+    /// <summary>
+    /// Converts a Maven artifact name (groupId:artifactId:version[:classifier]) to a relative path.
+    /// e.g. "net.minecraftforge:forge:1.20.1-47.2.0:universal" → "net/minecraftforge/forge/1.20.1-47.2.0/forge-1.20.1-47.2.0-universal.jar"
+    /// </summary>
+    public static string MavenNameToPath(string name)
+    {
+        var parts = name.Split(':');
+        if (parts.Length < 3) return name;
+
+        var group = parts[0].Replace('.', '/');
+        var artifact = parts[1];
+        var version = parts[2];
+        var classifier = parts.Length >= 4 ? "-" + parts[3] : "";
+        var ext = parts.Length >= 5 ? parts[4] : "jar";
+
+        return $"{group}/{artifact}/{version}/{artifact}-{version}{classifier}.{ext}";
     }
 }
