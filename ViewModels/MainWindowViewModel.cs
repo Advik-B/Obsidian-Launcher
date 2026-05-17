@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -243,43 +244,25 @@ public class MainWindowViewModel : ViewModelBase
             consoleWindow.Show();
             consoleViewModel.AddLogEntry($"Launching {SelectedInstance.Name}...", "INFO");
 
-            // Sync instance (download assets, libraries, etc.)
-            var assetProgress = new Progress<AssetDownloadProgress>(report =>
-            {
-                ProgressValue = report.TotalFiles > 0 ? (double)report.ProcessedFiles / report.TotalFiles * 100 : 0;
-                ProgressText = $"Assets: {report.ProcessedFiles}/{report.TotalFiles}";
-                consoleViewModel?.AddLogEntry($"Downloading assets: {report.ProcessedFiles}/{report.TotalFiles}", "INFO");
-            });
+            // Resolve launch artifacts (profile + file paths) without downloading.
+            // All downloads happen at instance creation time via SyncInstanceAsync.
+            consoleViewModel?.AddLogEntry("Resolving launch artifacts...", "INFO");
+            var (launchProfile, clientJarPath, libraryJarPaths) =
+                await _instanceManager.ResolveLaunchArtifactsAsync(SelectedInstance);
 
-            var libraryProgress = new Progress<LibraryProcessingProgress>(report =>
-            {
-                ProgressValue = report.TotalLibraries > 0 ? (double)report.ProcessedLibraries / report.TotalLibraries * 100 : 0;
-                ProgressText = $"Libraries: {report.ProcessedLibraries}/{report.TotalLibraries}";
-                consoleViewModel?.AddLogEntry($"Processing libraries: {report.ProcessedLibraries}/{report.TotalLibraries}", "INFO");
-            });
-
-            var (success, clientJarPath, libraryJarPaths) = await _instanceManager.SyncInstanceAsync(
-                SelectedInstance,
-                assetProgress,
-                libraryProgress
-            );
-
-            if (!success)
-            {
-                StatusText = "Failed to sync instance";
-                _logger.Error("Failed to sync instance: {InstanceName}", SelectedInstance.Name);
-                consoleViewModel?.AddLogEntry("Failed to sync instance", "ERROR");
-                return;
-            }
-
-            // Build launch profile
-            consoleViewModel?.AddLogEntry("Building launch profile...", "INFO");
-            var launchProfile = await _instanceManager.BuildLaunchProfileAsync(SelectedInstance.Components, default);
             if (launchProfile == null)
             {
                 StatusText = "Failed to build launch profile";
                 _logger.Error("Failed to build launch profile for instance: {InstanceName}", SelectedInstance.Name);
                 consoleViewModel?.AddLogEntry("Failed to build launch profile", "ERROR");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(clientJarPath) || !File.Exists(clientJarPath))
+            {
+                StatusText = "Instance files missing — please repair or re-create the instance";
+                _logger.Error("Client JAR not found at '{ClientJarPath}' for '{InstanceName}'.", clientJarPath, SelectedInstance.Name);
+                consoleViewModel?.AddLogEntry("Instance files missing. Repair or re-create the instance.", "ERROR");
                 return;
             }
 

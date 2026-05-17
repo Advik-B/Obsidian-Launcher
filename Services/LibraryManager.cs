@@ -302,4 +302,31 @@ public class LibraryManager
 
         return $"{group}/{artifact}/{version}/{artifact}-{version}{classifier}.{ext}";
     }
+
+    public List<string> ResolveLibraryClasspath(LaunchProfile launchProfile)
+    {
+        var classpathEntries = new List<string>();
+        if (launchProfile.Libraries == null) return classpathEntries;
+
+        foreach (var library in launchProfile.Libraries)
+        {
+            if (!IsLibraryApplicable(library)) continue;
+
+            if (library.Downloads?.Artifact != null)
+            {
+                classpathEntries.Add(Path.GetFullPath(Path.Combine(
+                    _config.LibrariesDir,
+                    library.Downloads.Artifact.Path.Replace('/', Path.DirectorySeparatorChar))));
+            }
+            else if (!string.IsNullOrEmpty(library.Url) && !string.IsNullOrEmpty(library.Name))
+            {
+                var mavenPath = MavenNameToPath(library.Name);
+                classpathEntries.Add(Path.GetFullPath(Path.Combine(
+                    _config.LibrariesDir,
+                    mavenPath.Replace('/', Path.DirectorySeparatorChar))));
+            }
+        }
+
+        return classpathEntries;
+    }
 }

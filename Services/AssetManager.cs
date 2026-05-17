@@ -330,4 +330,7 @@ public class AssetManager
             clientJarPath);
         return Path.GetFullPath(clientJarPath);
     }
+
+    public string GetClientJarPath(string versionId) =>
+        Path.GetFullPath(Path.Combine(_config.VersionsDir, versionId, $"{versionId}.jar"));
 }

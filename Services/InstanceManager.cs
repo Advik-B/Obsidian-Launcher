@@ -158,6 +158,26 @@ public class InstanceManager
         return launchProfile;
     }
 
+    public async Task<(LaunchProfile? Profile, string? ClientJarPath, List<string>? LibraryJarPaths)>
+        ResolveLaunchArtifactsAsync(Instance instance, CancellationToken cancellationToken = default)
+    {
+        _logger.Information("[Resolve] Building launch profile for '{InstanceName}'...", instance.Name);
+        var launchProfile = await BuildLaunchProfileAsync(instance.Components, cancellationToken);
+        if (launchProfile == null)
+        {
+            _logger.Error("[Resolve] Failed to build launch profile for '{InstanceName}'.", instance.Name);
+            return (null, null, null);
+        }
+
+        var clientJarPath = _assetManager.GetClientJarPath(launchProfile.Id);
+        var libraryJarPaths = _libraryManager.ResolveLibraryClasspath(launchProfile);
+
+        _logger.Information("[Resolve] Resolved {Count} library classpath entries for '{InstanceName}'.",
+            libraryJarPaths.Count, instance.Name);
+
+        return (launchProfile, clientJarPath, libraryJarPaths);
+    }
+
     private async Task<MinecraftVersion?> GetMinecraftVersionDetailsAsync(string versionId, CancellationToken cancellationToken)
     {
         var manifestResponseMsg = await _httpManager.GetAsync("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json", cancellationToken: cancellationToken);
