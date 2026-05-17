@@ -78,7 +78,7 @@ public class JavaDownloader
     /// <summary>
     ///     Downloads the Java runtime for the given <see cref="JavaVersionInfo"/> from the Mojang manifest.
     /// </summary>
-    public async Task<string> DownloadJavaForJavaVersionMojangAsync(
+    public async Task<string?> DownloadJavaForJavaVersionMojangAsync(
         JavaVersionInfo requiredJava,
         string baseDownloadDir,
         CancellationToken cancellationToken = default)

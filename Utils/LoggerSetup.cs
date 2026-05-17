@@ -32,7 +32,8 @@ public static class LoggerSetup
                 .WriteTo.Console(
                     consoleLevel,
                     LogTemplate
-                );
+                )
+                .WriteTo.Sink(InMemoryLogSink.Instance, Serilog.Events.LogEventLevel.Information);
 
             if (!string.IsNullOrEmpty(config.LogsDir)) // Only add file sink if LogsDir is configured
                 loggerConfiguration.WriteTo.File(

@@ -20,6 +20,8 @@ public class ConsoleViewModel : INotifyPropertyChanged
     private bool _autoScroll = true;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    public event EventHandler<string>? CopyRequested;
+    public event EventHandler<string>? SaveRequested;
 
     /// <summary>
     ///     All console output lines.
@@ -119,10 +121,11 @@ public class ConsoleViewModel : INotifyPropertyChanged
 
         LogEntries.Add(entry);
 
-        // Limit the number of log entries to prevent memory issues
+        // Trim oldest entries in batch to avoid O(n) RemoveAt(0) on every entry
         if (LogEntries.Count > 10000)
         {
-            LogEntries.RemoveAt(0);
+            for (var i = 0; i < 1000; i++)
+                LogEntries.RemoveAt(0);
         }
     }
 
@@ -160,16 +163,14 @@ public class ConsoleViewModel : INotifyPropertyChanged
 
     private void CopyToClipboard()
     {
-        // TODO: Implement clipboard copy when needed
-        // For now, just log the action
-        Serilog.Log.Information("Copy to clipboard requested");
+        var content = string.Join('\n', FilteredLogEntries.Select(e => e.FormattedMessage));
+        CopyRequested?.Invoke(this, content);
     }
 
     private void SaveToFile()
     {
-        // TODO: Implement save to file when needed
-        // For now, just log the action
-        Serilog.Log.Information("Save to file requested");
+        var content = string.Join('\n', FilteredLogEntries.Select(e => e.FormattedMessage));
+        SaveRequested?.Invoke(this, content);
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)

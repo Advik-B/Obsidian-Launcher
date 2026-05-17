@@ -65,13 +65,13 @@ public class ArgumentBuilder
                 }
                 else if (argWrapper.IsConditional)
                 {
-                    var conditionalArg = argWrapper.ConditionalValue;
+                    var conditionalArg = argWrapper.ConditionalValue!;
                     if (AreRulesSatisfied(conditionalArg.Rules, javaRuntime))
                     {
                         if (conditionalArg.IsSingleValue())
                             jvmArgs.Add(ReplacePlaceholders(conditionalArg.GetSingleValue(), launchProfile, classpath, nativesDir, instancePath));
                         else if (conditionalArg.IsListValue())
-                            jvmArgs.AddRange(conditionalArg.GetListValue().Select(val => ReplacePlaceholders(val, launchProfile, classpath, nativesDir, instancePath)));
+                            jvmArgs.AddRange(conditionalArg.GetListValue()!.Select(val => ReplacePlaceholders(val, launchProfile, classpath, nativesDir, instancePath)));
                     }
                 }
             }
@@ -123,13 +123,13 @@ public class ArgumentBuilder
                 }
                 else if (argWrapper.IsConditional)
                 {
-                    var conditionalArg = argWrapper.ConditionalValue;
+                    var conditionalArg = argWrapper.ConditionalValue!;
                     if (AreRulesSatisfied(conditionalArg.Rules, null))
                     {
                         if (conditionalArg.IsSingleValue())
                             gameArgs.Add(ReplacePlaceholders(conditionalArg.GetSingleValue(), launchProfile, null, null, instancePath));
                         else if (conditionalArg.IsListValue())
-                            gameArgs.AddRange(conditionalArg.GetListValue().Select(val => ReplacePlaceholders(val, launchProfile, null, null, instancePath)));
+                            gameArgs.AddRange(conditionalArg.GetListValue()!.Select(val => ReplacePlaceholders(val, launchProfile, null, null, instancePath)));
                     }
                 }
             }
@@ -144,9 +144,9 @@ public class ArgumentBuilder
         return gameArgs;
     }
     
-    private string ReplacePlaceholders(string argument, LaunchProfile launchProfile, string classpath, string nativesDir, string instancePath)
+    private string ReplacePlaceholders(string? argument, LaunchProfile launchProfile, string? classpath, string? nativesDir, string instancePath)
     {
-        if (argument == null) return null;
+        if (argument == null) return string.Empty;
 
         var assetsIndexName = launchProfile.AssetIndex?.Id ?? launchProfile.Assets ?? "unknown_assets_index";
         
@@ -272,7 +272,7 @@ public class ArgumentBuilder
         return classpathString;
     }
 
-    private bool AreRulesSatisfied(List<ArgumentRuleCondition> rules, JavaRuntimeInfo javaRuntimeForJvmRules)
+    private bool AreRulesSatisfied(List<ArgumentRuleCondition> rules, JavaRuntimeInfo? javaRuntimeForJvmRules)
     {
         if (rules == null || !rules.Any()) return true;
 
@@ -326,7 +326,7 @@ public class ArgumentBuilder
     }
 
 
-    private bool CheckOsRule(OperatingSystemInfo osRule, JavaRuntimeInfo javaRuntimeForJvmRules)
+    private bool CheckOsRule(OperatingSystemInfo? osRule, JavaRuntimeInfo? javaRuntimeForJvmRules)
     {
         if (osRule == null) return true;
 

@@ -16,6 +16,13 @@ using Serilog;
 
 namespace ObsidianLauncher.ViewModels;
 
+public class ConfirmDeleteEventArgs : EventArgs
+{
+    public string InstanceName { get; }
+    public System.Threading.Tasks.TaskCompletionSource<bool> Result { get; } = new();
+    public ConfirmDeleteEventArgs(string name) { InstanceName = name; }
+}
+
 public class MainWindowViewModel : ViewModelBase
 {
     private readonly ILogger _logger;
@@ -97,6 +104,8 @@ public class MainWindowViewModel : ViewModelBase
         _ = LoadGroupsAsync();
         _ = CheckForUpdatesAsync();
     }
+
+    public event EventHandler<ConfirmDeleteEventArgs>? ConfirmDeleteRequested;
 
     public ObservableCollection<Instance> Instances { get; }
     public ObservableCollection<InstanceGroup> Groups { get; }
@@ -403,39 +412,19 @@ public class MainWindowViewModel : ViewModelBase
         {
             _logger.Information("Create instance requested");
             
-            var createViewModel = new CreateInstanceViewModel(_modLoaderService, _launcherSettings);
+            var createViewModel = new CreateInstanceViewModel(_httpManager, _instanceManager, _launcherSettings);
             var createWindow = new Views.CreateInstanceWindow(createViewModel);
-            
+
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 var result = await createWindow.ShowDialog<CreateInstanceViewModel?>(desktop.MainWindow!);
-                
-                if (result != null && result.Result)
+
+                if (result?.CreatedInstance != null)
                 {
-                    // Create the instance
-                    StatusText = $"Creating instance '{result.InstanceName}'...";
-                    _logger.Information("Creating instance: {InstanceName}, Version: {Version}, Loader: {Loader}",
-                        result.InstanceName, result.SelectedVersionId, result.SelectedModLoader);
-
-                    var components = result.BuildComponents();
-
-                    var newInstance = await _instanceManager.CreateInstanceAsync(
-                        result.InstanceName,
-                        components
-                    );
-                    
-                    if (newInstance != null)
-                    {
-                        Instances.Add(newInstance);
-                        SelectedInstance = newInstance;
-                        StatusText = $"Instance '{result.InstanceName}' created successfully";
-                        _logger.Information("Instance created successfully: {InstanceName}", result.InstanceName);
-                    }
-                    else
-                    {
-                        StatusText = "Failed to create instance";
-                        _logger.Error("Failed to create instance: {InstanceName}", result.InstanceName);
-                    }
+                    Instances.Add(result.CreatedInstance);
+                    SelectedInstance = result.CreatedInstance;
+                    StatusText = $"Instance '{result.CreatedInstance.Name}' created successfully";
+                    _logger.Information("Instance created successfully: {InstanceName}", result.CreatedInstance.Name);
                 }
             }
         }
@@ -455,7 +444,7 @@ public class MainWindowViewModel : ViewModelBase
         {
             _logger.Information("Edit instance requested: {InstanceName}", SelectedInstance.Name);
             
-            var settingsWindow = new Views.InstanceSettingsWindow(SelectedInstance);
+            var settingsWindow = new Views.InstanceSettingsWindow(SelectedInstance, _launcherSettings);
             
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
@@ -463,9 +452,9 @@ public class MainWindowViewModel : ViewModelBase
                 
                 if (result)
                 {
-                    // Reload the instance to reflect changes
+                    var instanceName = SelectedInstance.Name;
                     await LoadInstancesAsync();
-                    StatusText = $"Instance '{SelectedInstance.Name}' updated";
+                    StatusText = $"Instance '{instanceName}' updated";
                 }
             }
         }
@@ -481,7 +470,11 @@ public class MainWindowViewModel : ViewModelBase
         if (SelectedInstance == null)
             return;
 
-        // TODO: Show confirmation dialog
+        var args = new ConfirmDeleteEventArgs(SelectedInstance.Name);
+        ConfirmDeleteRequested?.Invoke(this, args);
+        var confirmed = await args.Result.Task;
+        if (!confirmed) return;
+
         try
         {
             var success = await _instanceManager.DeleteInstanceAsync(SelectedInstance.Name, createBackup: true);
@@ -533,7 +526,7 @@ public class MainWindowViewModel : ViewModelBase
         {
             _logger.Information("Opening account management");
 
-            var accountWindow = new Views.AccountManagementWindow();
+            var accountWindow = new Views.AccountManagementWindow(_launcherConfig);
 
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
@@ -555,9 +548,8 @@ public class MainWindowViewModel : ViewModelBase
         {
             _logger.Information("Opening log viewer");
 
-            // Default to launcher logs directory
             var logsPath = System.IO.Path.Combine(_launcherConfig.BaseDataPath, "logs");
-            var logWindow = new Views.LogViewerWindow(logsPath);
+            var logWindow = new Views.LogViewerWindow(logsPath, InMemoryLogSink.Instance);
 
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {

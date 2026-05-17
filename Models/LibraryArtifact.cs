@@ -11,23 +11,23 @@ public class LibraryArtifact
     ///     The relative path where this artifact should be stored (e.g., "com/example/mylib/1.0/mylib-1.0.jar").
     /// </summary>
     [JsonPropertyName("path")]
-    public string Path { get; set; }
+    public required string Path { get; set; }
 
     /// <summary>
     ///     The SHA1 checksum of the artifact file.
     /// </summary>
     [JsonPropertyName("sha1")]
-    public string Sha1 { get; set; }
+    public required string Sha1 { get; set; }
 
     /// <summary>
     ///     The size of the artifact file in bytes.
     /// </summary>
     [JsonPropertyName("size")]
-    public uint Size { get; set; } // C++ used unsigned int
+    public uint Size { get; set; }
 
     /// <summary>
     ///     The URL from which this artifact can be downloaded.
     /// </summary>
     [JsonPropertyName("url")]
-    public string Url { get; set; }
+    public required string Url { get; set; }
 }

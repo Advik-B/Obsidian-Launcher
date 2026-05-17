@@ -146,18 +146,28 @@
                     Click="CancelButton_Click"/>
         </StackPanel>
 
-        <!-- Loading Indicator -->
+        <!-- Creation Progress Overlay -->
         <Border Grid.Row="0" Grid.RowSpan="10"
-                Background="#80000000"
+                Background="#CC000000"
                 IsVisible="{Binding IsCreating}">
             <StackPanel VerticalAlignment="Center"
                         HorizontalAlignment="Center"
-                        Spacing="10">
-                <ProgressBar IsIndeterminate="True" Width="200"/>
+                        Width="320"
+                        Spacing="12">
                 <TextBlock Text="Creating instance..."
                            HorizontalAlignment="Center"
                            Foreground="White"
+                           FontSize="15"
                            FontWeight="SemiBold"/>
+                <ProgressBar Value="{Binding ProgressValue}"
+                             Maximum="100"
+                             Height="10"
+                             Width="300"/>
+                <TextBlock Text="{Binding ProgressText}"
+                           HorizontalAlignment="Center"
+                           Foreground="#CCCCCC"
+                           FontSize="12"
+                           TextWrapping="Wrap"/>
             </StackPanel>
         </Border>
     </Grid>

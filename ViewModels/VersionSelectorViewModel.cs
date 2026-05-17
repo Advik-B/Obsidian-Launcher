@@ -5,6 +5,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows.Input;
+using Avalonia.Threading;
+using ObsidianLauncher.Models;
 using ObsidianLauncher.Services;
 using Serilog;
 
@@ -18,6 +20,7 @@ public class VersionSelectorViewModel : INotifyPropertyChanged
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
+    private readonly HttpManager? _httpManager;
     private MinecraftVersionEntry? _selectedVersionEntry;
     private bool _showSnapshots;
     private bool _showOldAlpha;
@@ -112,6 +115,12 @@ public class VersionSelectorViewModel : INotifyPropertyChanged
         _ = LoadVersionsAsync();
     }
 
+    public VersionSelectorViewModel(HttpManager httpManager, bool showSnapshots = true, bool showOldAlpha = false, bool showOldBeta = false)
+        : this(showSnapshots, showOldAlpha, showOldBeta)
+    {
+        _httpManager = httpManager;
+    }
+
     private async System.Threading.Tasks.Task LoadVersionsAsync()
     {
         IsLoading = true;
@@ -119,7 +128,8 @@ public class VersionSelectorViewModel : INotifyPropertyChanged
 
         try
         {
-            using var http = new HttpManager();
+            using var fallbackHttp = _httpManager == null ? new HttpManager() : null;
+            var http = _httpManager ?? fallbackHttp!;
             var response = await http.GetAsync("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json");
 
             if (!response.IsSuccessStatusCode)
@@ -130,7 +140,7 @@ public class VersionSelectorViewModel : INotifyPropertyChanged
             }
 
             var json = await response.Content.ReadAsStringAsync();
-            var manifest = JsonSerializer.Deserialize<MojangVersionManifest>(json, JsonOptions);
+            var manifest = JsonSerializer.Deserialize<VersionManifest>(json, JsonOptions);
 
             if (manifest?.Versions == null)
             {
@@ -138,7 +148,7 @@ public class VersionSelectorViewModel : INotifyPropertyChanged
                 return;
             }
 
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            Dispatcher.UIThread.Post(() =>
             {
                 AllVersions.Clear();
                 foreach (var v in manifest.Versions)
@@ -179,9 +189,12 @@ public class VersionSelectorViewModel : INotifyPropertyChanged
         }
         else
         {
-            if (!ShowSnapshots) filtered = filtered.Where(v => v.Type != "snapshot");
-            if (!ShowOldAlpha) filtered = filtered.Where(v => v.Type != "old_alpha");
-            if (!ShowOldBeta) filtered = filtered.Where(v => v.Type != "old_beta");
+            if (!ShowSnapshots)
+                filtered = filtered.Where(v => v.Type != "snapshot");
+            if (!ShowOldAlpha)
+                filtered = filtered.Where(v => v.Type != "old_alpha");
+            if (!ShowOldBeta)
+                filtered = filtered.Where(v => v.Type != "old_beta");
         }
 
         if (!string.IsNullOrWhiteSpace(SearchText))
@@ -190,24 +203,14 @@ public class VersionSelectorViewModel : INotifyPropertyChanged
             filtered = filtered.Where(v => v.Id.ToLowerInvariant().Contains(search));
         }
 
-        foreach (var version in filtered)
+        foreach (var version in filtered.OrderByDescending(v => v.ReleaseTime))
             FilteredVersions.Add(version);
+
+        Log.Debug("Filtered to {Count} versions", FilteredVersions.Count);
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-    private class MojangVersionManifest
-    {
-        public System.Collections.Generic.List<MojangVersionEntry>? Versions { get; set; }
-    }
-
-    private class MojangVersionEntry
-    {
-        public string Id { get; set; } = "";
-        public string Type { get; set; } = "release";
-        public DateTime ReleaseTime { get; set; }
-    }
 }
 
 /// <summary>

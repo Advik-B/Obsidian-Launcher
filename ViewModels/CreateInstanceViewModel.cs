@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using ObsidianLauncher.Enums;
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Services;
@@ -17,8 +20,9 @@ namespace ObsidianLauncher.ViewModels;
 public class CreateInstanceViewModel : ViewModelBase
 {
     private readonly ILogger _logger;
-    private readonly ModLoaderService? _modLoaderService;
     private readonly LauncherSettings? _launcherSettings;
+    private readonly HttpManager? _httpManager;
+    private readonly InstanceManager? _instanceManager;
     private string _instanceName = "";
     private string _selectedVersionId = "";
     private bool _isCreating;
@@ -26,10 +30,20 @@ public class CreateInstanceViewModel : ViewModelBase
     private ModLoaderType _selectedModLoader = ModLoaderType.None;
     private string _modLoaderVersion = "";
     private bool _isLoadingLoaderVersions;
+    private double _progressValue;
+    private string _progressText = "";
 
-    public CreateInstanceViewModel()
+    public event EventHandler? CreationCompleted;
+
+    // Designer constructor
+    public CreateInstanceViewModel() : this(null, null) { }
+
+    public CreateInstanceViewModel(HttpManager? httpManager, InstanceManager? instanceManager = null, LauncherSettings? launcherSettings = null)
     {
         _logger = LogHelper.GetLogger<CreateInstanceViewModel>();
+        _httpManager = httpManager;
+        _instanceManager = instanceManager;
+        _launcherSettings = launcherSettings;
 
         SelectVersionCommand = new RelayCommand(async () => await SelectVersionAsync());
         LoadModLoaderVersionsCommand = new RelayCommand(async () => await LoadModLoaderVersionsAsync(), () => !string.IsNullOrEmpty(SelectedVersionId) && SelectedModLoader != ModLoaderType.None);
@@ -41,7 +55,6 @@ public class CreateInstanceViewModel : ViewModelBase
 
     public CreateInstanceViewModel(ModLoaderService modLoaderService, LauncherSettings? settings = null) : this()
     {
-        _modLoaderService = modLoaderService;
         _launcherSettings = settings;
     }
 
@@ -121,19 +134,32 @@ public class CreateInstanceViewModel : ViewModelBase
         set => SetProperty(ref _errorMessage, value);
     }
 
+    public double ProgressValue
+    {
+        get => _progressValue;
+        set => SetProperty(ref _progressValue, value);
+    }
+
+    public string ProgressText
+    {
+        get => _progressText;
+        set => SetProperty(ref _progressText, value);
+    }
+
+    /// <summary>The created instance — set on successful creation, null on failure.</summary>
+    public Instance? CreatedInstance { get; private set; }
+
     public ICommand SelectVersionCommand { get; }
     public ICommand LoadModLoaderVersionsCommand { get; }
     public ICommand CreateCommand { get; }
     public ICommand CancelCommand { get; }
 
-    public bool Result { get; set; }
-
     /// <summary>
     /// Returns the component list to use when creating the instance.
     /// </summary>
-    public System.Collections.Generic.List<Component> BuildComponents()
+    public List<Component> BuildComponents()
     {
-        var components = new System.Collections.Generic.List<Component>
+        var components = new List<Component>
         {
             new() { Uid = "net.minecraft", Version = SelectedVersionId, IsEnabled = true, IsImportant = true }
         };
@@ -174,9 +200,12 @@ public class CreateInstanceViewModel : ViewModelBase
             bool showSnapshots = _launcherSettings?.ShowSnapshots.Value ?? true;
             bool showOldAlpha = _launcherSettings?.ShowOldAlpha.Value ?? false;
             bool showOldBeta = _launcherSettings?.ShowOldBeta.Value ?? false;
-            var window = new Views.VersionSelectorWindow(showSnapshots, showOldAlpha, showOldBeta);
 
-            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+            var window = _httpManager != null
+                ? new Views.VersionSelectorWindow(_httpManager, showSnapshots, showOldAlpha, showOldBeta)
+                : new Views.VersionSelectorWindow(showSnapshots, showOldAlpha, showOldBeta);
+
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 var result = await window.ShowDialog<string?>(desktop.MainWindow!);
                 if (!string.IsNullOrEmpty(result))
@@ -204,9 +233,8 @@ public class CreateInstanceViewModel : ViewModelBase
 
         try
         {
-            System.Collections.Generic.List<string>? versions = null;
-
-            var httpManager = new HttpManager();
+            List<string>? versions = null;
+            var httpManager = _httpManager ?? new HttpManager();
 
             if (SelectedModLoader == ModLoaderType.Fabric)
             {
@@ -215,8 +243,8 @@ public class CreateInstanceViewModel : ViewModelBase
                 if (resp.IsSuccessStatusCode)
                 {
                     var json = await resp.Content.ReadAsStringAsync();
-                    var entries = System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<FabricLoaderEntry>>(json,
-                        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    var entries = JsonSerializer.Deserialize<List<FabricLoaderEntry>>(json,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     versions = entries?.Select(e => e.Loader?.Version ?? "").Where(v => !string.IsNullOrEmpty(v)).ToList();
                 }
             }
@@ -236,10 +264,7 @@ public class CreateInstanceViewModel : ViewModelBase
             {
                 var config = new LauncherConfig();
                 var installer = new NeoForgeInstaller(httpManager, config);
-                var all = await installer.GetNeoForgeVersionsAsync();
-                // NeoForge versions are like "21.1.X" — filter by MC compatibility
-                // NeoForge 21.x corresponds to MC 1.21.x, 20.4.x → 1.20.4, etc.
-                versions = all;
+                versions = await installer.GetNeoForgeVersionsAsync();
             }
 
             if (versions != null)
@@ -276,7 +301,71 @@ public class CreateInstanceViewModel : ViewModelBase
 
     private async Task CreateAsync()
     {
-        Result = true;
+        if (_instanceManager == null)
+        {
+            // No manager injected (designer mode) — signal done immediately
+            CreatedInstance = null;
+            CreationCompleted?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
+        IsCreating = true;
+        ErrorMessage = "";
+        ProgressValue = 0;
+        ProgressText = "Preparing...";
+        ((RelayCommand)CreateCommand).RaiseCanExecuteChanged();
+
+        try
+        {
+            var components = BuildComponents();
+
+            var assetProgress = new Progress<AssetDownloadProgress>(report =>
+            {
+                ProgressValue = report.TotalFiles > 0
+                    ? (double)report.ProcessedFiles / report.TotalFiles * 100
+                    : 0;
+                ProgressText = $"Downloading assets: {report.ProcessedFiles} / {report.TotalFiles}";
+            });
+
+            var libraryProgress = new Progress<LibraryProcessingProgress>(report =>
+            {
+                ProgressValue = report.TotalLibraries > 0
+                    ? (double)report.ProcessedLibraries / report.TotalLibraries * 100
+                    : 0;
+                ProgressText = $"Processing libraries: {report.ProcessedLibraries} / {report.TotalLibraries}";
+            });
+
+            _logger.Information("Creating instance: {Name}, Version: {Version}", InstanceName, SelectedVersionId);
+
+            CreatedInstance = await _instanceManager.CreateInstanceAsync(
+                InstanceName,
+                components,
+                assetProgress,
+                libraryProgress
+            );
+
+            if (CreatedInstance == null)
+            {
+                ErrorMessage = "Failed to create instance. Check the log viewer for details.";
+                _logger.Error("Instance creation returned null for {Name}", InstanceName);
+                return;
+            }
+
+            ProgressValue = 100;
+            ProgressText = "Done!";
+            _logger.Information("Instance created: {Name}", InstanceName);
+            CreationCompleted?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error creating instance {Name}", InstanceName);
+            ErrorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            IsCreating = false;
+            ((RelayCommand)CreateCommand).RaiseCanExecuteChanged();
+        }
     }
 
     // Local model for Fabric loader version list parsing

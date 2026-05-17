@@ -22,6 +22,8 @@ public class SettingsViewModel : INotifyPropertyChanged
     private bool _hasUnsavedChanges;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    public event EventHandler<(string Title, Action<string?> Callback)>? BrowseFileRequested;
+    public event EventHandler<(string Title, Action<string?> Callback)>? BrowseFolderRequested;
 
     // General Settings
     private string _language = "";
@@ -536,16 +538,18 @@ public class SettingsViewModel : INotifyPropertyChanged
 
     private void BrowseJavaPath()
     {
-        // TODO: Implement file picker dialog when needed
-        // For now, just log
-        Log.Information("Browse Java path requested");
+        BrowseFileRequested?.Invoke(this, ("Select Java Executable", path =>
+        {
+            if (path != null) JavaPath = path;
+        }));
     }
 
     private void BrowseGameDirectory()
     {
-        // TODO: Implement folder picker dialog when needed
-        // For now, just log
-        Log.Information("Browse game directory requested");
+        BrowseFolderRequested?.Invoke(this, ("Select Game Directory", path =>
+        {
+            if (path != null) GameDirectory = path;
+        }));
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)

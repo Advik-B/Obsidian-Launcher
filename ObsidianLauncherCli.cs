@@ -14,6 +14,7 @@ public class ObsidianLauncher
 {
     private static readonly CancellationTokenSource _cts = new();
 
+#pragma warning disable CS8892
     private static async Task Main(string[] args)
     {
         Console.CancelKeyPress += (sender, eventArgs) =>
@@ -184,4 +185,5 @@ public class ObsidianLauncher
                 Console.WriteLine("Launcher exited prematurely or with errors. Check launcher logs for details.");
         }
     }
+#pragma warning restore CS8892
 }
