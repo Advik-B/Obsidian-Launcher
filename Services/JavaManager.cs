@@ -483,6 +483,7 @@ public class JavaManager
     /// Required on Linux/macOS after TAR.GZ extraction since .NET's TarFile does not
     /// preserve Unix file permissions.
     /// </summary>
+    [System.Runtime.Versioning.UnsupportedOSPlatform("windows")]
     private void SetExecutableBitsInBinDirs(string rootDir)
     {
         try

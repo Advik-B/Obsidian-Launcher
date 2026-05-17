@@ -182,7 +182,7 @@ public class ModManager
     public Task<List<ModrinthVersion>?> GetCompatibleVersionsAsync(
         string projectIdOrSlug,
         string gameVersion,
-        string loader,
+        string? loader,
         CancellationToken ct = default)
     {
         return _client.GetProjectVersionsAsync(projectIdOrSlug, gameVersion, loader, ct);
