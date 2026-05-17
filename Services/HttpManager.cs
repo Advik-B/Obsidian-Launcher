@@ -27,12 +27,12 @@ public class HttpManager : IDisposable
         _logger = LogHelper.GetLogger<HttpManager>();
         _logger.Verbose("HttpManager instance created.");
     }
-    
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);
     }
-    
+
     public async Task<HttpResponseMessage> GetAsync(
         string url,
         HttpContent? content = null,
@@ -89,7 +89,7 @@ public class HttpManager : IDisposable
             var directoryPath = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directoryPath))
                 Directory.CreateDirectory(directoryPath);
-            
+
             using var response = await httpClient
                 .GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
 

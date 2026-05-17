@@ -1,0 +1,67 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ObsidianLauncher.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="340"
+        x:Class="ObsidianLauncher.Views.SetupWizardWindow"
+        x:DataType="vm:SetupWizardViewModel"
+        x:CompileBindings="False"
+        Title="Welcome to Obsidian Launcher"
+        Width="480" Height="340"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="*,Auto" Margin="24">
+
+        <!-- Page content -->
+        <StackPanel Grid.Row="0" Spacing="12" VerticalAlignment="Center">
+
+            <!-- Welcome page -->
+            <StackPanel IsVisible="{Binding IsWelcomePage}" Spacing="12">
+                <TextBlock Text="Welcome to Obsidian Launcher" FontSize="22" FontWeight="Bold"/>
+                <TextBlock Text="This wizard will help you set up the launcher for first use. You can change these settings later in the Settings window."
+                           TextWrapping="Wrap" Opacity="0.7"/>
+            </StackPanel>
+
+            <!-- Java page -->
+            <StackPanel IsVisible="{Binding IsJavaPage}" Spacing="12">
+                <TextBlock Text="Java Settings" FontSize="18" FontWeight="SemiBold"/>
+                <TextBlock Text="Leave the Java path empty to auto-detect. The launcher will download Java automatically if needed."
+                           TextWrapping="Wrap" Opacity="0.7"/>
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Java executable path (optional):"/>
+                    <TextBox Text="{Binding JavaPath}" Watermark="Leave empty to auto-detect"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Memory page -->
+            <StackPanel IsVisible="{Binding IsMemoryPage}" Spacing="12">
+                <TextBlock Text="Memory Settings" FontSize="18" FontWeight="SemiBold"/>
+                <StackPanel Spacing="6">
+                    <TextBlock Text="{Binding MinMemoryMB, StringFormat='Minimum RAM: {0} MB'}"/>
+                    <Slider Minimum="256" Maximum="4096" TickFrequency="256" Value="{Binding MinMemoryMB}"/>
+                </StackPanel>
+                <StackPanel Spacing="6">
+                    <TextBlock Text="{Binding MaxMemoryMB, StringFormat='Maximum RAM: {0} MB'}"/>
+                    <Slider Minimum="512" Maximum="32768" TickFrequency="512" Value="{Binding MaxMemoryMB}"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Finish page -->
+            <StackPanel IsVisible="{Binding IsFinishPage}" Spacing="12">
+                <TextBlock Text="All done!" FontSize="22" FontWeight="Bold"/>
+                <TextBlock Text="Obsidian Launcher is ready. Click Finish to start." TextWrapping="Wrap" Opacity="0.7"/>
+            </StackPanel>
+
+        </StackPanel>
+
+        <!-- Navigation buttons -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Content="Back"   Command="{Binding BackCommand}"   IsVisible="{Binding ShowBack}"   Padding="16,6"/>
+            <Button Content="Next"   Command="{Binding NextCommand}"   IsVisible="{Binding ShowNext}"   Padding="16,6"/>
+            <Button Content="Finish" Command="{Binding FinishCommand}" IsVisible="{Binding ShowFinish}" Padding="16,6"/>
+        </StackPanel>
+
+    </Grid>
+</Window>

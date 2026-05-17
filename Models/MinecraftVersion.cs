@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using ObsidianLauncher.Utils;
 
 namespace ObsidianLauncher.Models;
 
@@ -17,36 +18,47 @@ public class MinecraftVersion
     }
 
     [JsonPropertyName("assetIndex")]
-    public AssetIndex AssetIndex { get; set; } // Can be null for very early versions if manifest structure differs
+    public AssetIndex? AssetIndex { get; set; }
 
-    [JsonPropertyName("assets")] public string Assets { get; set; } // e.g., "24", "pre-1.6"
+    [JsonPropertyName("assets")] public string? Assets { get; set; }
 
     [JsonPropertyName("complianceLevel")] public int? ComplianceLevel { get; set; }
 
     [JsonPropertyName("downloads")] public Dictionary<string, DownloadDetails> Downloads { get; set; }
 
-    [JsonPropertyName("id")] public string Id { get; set; }
+    [JsonPropertyName("id")] public required string Id { get; set; }
 
-    [JsonPropertyName("javaVersion")] public JavaVersionInfo JavaVersion { get; set; } // Can be null
+    [JsonPropertyName("javaVersion")] public JavaVersionInfo? JavaVersion { get; set; }
 
     [JsonPropertyName("libraries")] public List<Library> Libraries { get; set; }
 
-    [JsonPropertyName("mainClass")] public string MainClass { get; set; }
+    [JsonPropertyName("mainClass")] public required string MainClass { get; set; }
 
     [JsonPropertyName("minecraftArguments")]
-    public string MinecraftArguments { get; set; } // Present in older versions, null in newer
+    public string? MinecraftArguments { get; set; }
 
     [JsonPropertyName("minimumLauncherVersion")]
     public int? MinimumLauncherVersion { get; set; }
 
-    [JsonPropertyName("releaseTime")] public DateTime ReleaseTime { get; set; }
+    [JsonPropertyName("releaseTime")]
+    [JsonConverter(typeof(FlexibleDateTimeConverter))]
+    public DateTime ReleaseTime { get; set; }
 
-    [JsonPropertyName("time")] public DateTime Time { get; set; }
+    [JsonPropertyName("time")]
+    [JsonConverter(typeof(FlexibleDateTimeConverter))]
+    public DateTime Time { get; set; }
 
-    [JsonPropertyName("type")] public string Type { get; set; }
+    [JsonPropertyName("type")] public required string Type { get; set; }
 
     // Newer version manifest fields - can be null for older versions
-    [JsonPropertyName("arguments")] public VersionArguments Arguments { get; set; }
+    [JsonPropertyName("arguments")] public VersionArguments? Arguments { get; set; }
 
-    [JsonPropertyName("logging")] public VersionLogging Logging { get; set; }
+    [JsonPropertyName("logging")] public VersionLogging? Logging { get; set; }
+
+    /// <summary>
+    ///     Used by mod loader version JSONs (Forge, Fabric, Quilt) to indicate which base Minecraft
+    ///     version this profile extends. The launcher must load the parent version first.
+    /// </summary>
+    [JsonPropertyName("inheritsFrom")]
+    public string? InheritsFrom { get; set; }
 }

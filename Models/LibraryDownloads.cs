@@ -27,5 +27,6 @@ public class LibraryDownloads
     /// </summary>
     [JsonPropertyName("classifiers")]
     public Dictionary<string, LibraryArtifact>
-        Classifiers { get; set; } // Nullable if "classifiers" object might be absent
+        Classifiers
+    { get; set; } // Nullable if "classifiers" object might be absent
 }

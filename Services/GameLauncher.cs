@@ -1,19 +1,14 @@
-﻿// Services/GameLauncher.cs
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ObsidianLauncher.Enums;
 using ObsidianLauncher.Utils;
 using Serilog;
-// For Process and ProcessStartInfo
-// For StringBuilder
-// For Process and ProcessStartInfo
-// For StringBuilder
-// Assuming LauncherConfig is in ObsidianLauncher namespace
 
 namespace ObsidianLauncher.Services;
 
@@ -21,6 +16,8 @@ public class GameLauncher
 {
     private readonly LauncherConfig _config;
     private readonly ILogger _logger;
+
+    public event EventHandler<string>? OutputReceived;
 
     public GameLauncher(LauncherConfig config)
     {
@@ -48,6 +45,8 @@ public class GameLauncher
         string mainClass,
         List<string> gameArguments,
         string workingDirectory,
+        Dictionary<string, string>? environmentVariables = null,
+        string? wrapperCommand = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(javaExecutablePath) || !File.Exists(javaExecutablePath))
@@ -137,17 +136,42 @@ public class GameLauncher
         _logger.Verbose("  Full JVM, MainClass & Game Arguments (Complete): {Arguments}", finalArguments);
 
 
+        string processFileName;
+        string processArguments;
+        if (!string.IsNullOrWhiteSpace(wrapperCommand))
+        {
+            processFileName = wrapperCommand;
+            processArguments = $"{javaExecutablePath} {finalArguments}";
+            _logger.Information("  Wrapper command: {WrapperCommand}", wrapperCommand);
+        }
+        else
+        {
+            processFileName = javaExecutablePath;
+            processArguments = finalArguments;
+        }
+
         var processStartInfo = new ProcessStartInfo
         {
-            FileName = javaExecutablePath,
-            Arguments = finalArguments,
+            FileName = processFileName,
+            Arguments = processArguments,
             WorkingDirectory = workingDirectory,
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            CreateNoWindow = Path.GetFileName(javaExecutablePath)
-                .Equals("javaw.exe", StringComparison.OrdinalIgnoreCase)
+            // CreateNoWindow prevents a console window from appearing on Windows.
+            // On Linux/macOS this flag has no effect, but setting it based on the
+            // OS avoids triggering an unimplemented-member exception on some runtimes.
+            CreateNoWindow = OperatingSystem.IsWindows()
         };
+
+        if (environmentVariables != null)
+        {
+            foreach (var (key, value) in environmentVariables)
+            {
+                processStartInfo.EnvironmentVariables[key] = value;
+                _logger.Verbose("  Env var: {Key}={Value}", key, value);
+            }
+        }
 
         using var process = new Process { StartInfo = processStartInfo };
         process.EnableRaisingEvents = true;
@@ -156,12 +180,20 @@ public class GameLauncher
         // or simply log directly. For console output, direct logging is fine.
         process.OutputDataReceived += (sender, e) =>
         {
-            if (e.Data != null) _logger.Information("[Minecraft STDOUT] {Data}", e.Data);
+            if (e.Data != null)
+            {
+                _logger.Information("[Minecraft STDOUT] {Data}", e.Data);
+                OutputReceived?.Invoke(this, e.Data);
+            }
         };
 
         process.ErrorDataReceived += (sender, e) =>
         {
-            if (e.Data != null) _logger.Error("[Minecraft STDERR] {Data}", e.Data);
+            if (e.Data != null)
+            {
+                _logger.Error("[Minecraft STDERR] {Data}", e.Data);
+                OutputReceived?.Invoke(this, e.Data);
+            }
         };
 
         try
@@ -242,45 +274,3 @@ public class GameLauncher
     }
 }
 
-/// <summary>
-///     Extension method to properly quote arguments for command line usage.
-/// </summary>
-// Services/GameLauncher.cs (or wherever StringBuilderExtensions is)
-public static class StringBuilderExtensions
-{
-    public static StringBuilder AppendArgument(this StringBuilder sb, string argument)
-    {
-        // If the argument is null or purely whitespace, and it's not the first thing
-        // we are appending (meaning sb is not empty), we might still want a space
-        // to separate from a previous valid argument, followed by empty quotes.
-        // However, if it's the first argument and it's null/empty, we should append nothing.
-
-        if (string.IsNullOrWhiteSpace(argument))
-        {
-            if (sb.Length > 0) // If there's already content, add a space then empty quotes
-                sb.Append(' ');
-            sb.Append("\"\""); // Represent empty argument as quoted empty string
-            return sb;
-        }
-
-        // If sb is not empty, means we are appending another argument, so add a space first.
-        if (sb.Length > 0) sb.Append(' ');
-
-        // Quoting logic for non-empty arguments
-        if (argument.Contains(' ') || argument.Contains('"'))
-        {
-            // Basic escaping: double up existing quotes
-            var escapedArgument = argument.Replace("\"", "\\\""); // For " inside "
-            // A more robust solution for Windows might involve more complex escaping
-            // or relying on how .NET's ProcessStartInfo handles array of args if that was an option.
-            // For now, this is a common approach.
-            sb.Append('"').Append(escapedArgument).Append('"');
-        }
-        else
-        {
-            sb.Append(argument);
-        }
-
-        return sb;
-    }
-}

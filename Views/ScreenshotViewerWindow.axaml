@@ -1,0 +1,89 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ObsidianLauncher.ViewModels"
+        x:Class="ObsidianLauncher.Views.ScreenshotViewerWindow"
+        x:CompileBindings="False"
+        Title="Screenshot Viewer"
+        Width="900" Height="600"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True">
+
+    <Design.DataContext>
+        <vm:ScreenshotViewerViewModel/>
+    </Design.DataContext>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Screenshots" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+            <Button Content="Refresh" Command="{Binding RefreshCommand}" Width="100"/>
+            <Button Content="Delete Selected" Command="{Binding DeleteCommand}" Width="120"/>
+            <Button Content="Open in Explorer" Command="{Binding OpenInExplorerCommand}" Width="130"/>
+        </StackPanel>
+
+        <!-- Screenshot Grid -->
+        <Border Grid.Row="2" BorderBrush="Gray" BorderThickness="1" Padding="5">
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Screenshots}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="200" Height="180" Margin="5" Padding="5"
+                                    BorderBrush="Gray" BorderThickness="1"
+                                    Background="White"
+                                    CornerRadius="4">
+                                <StackPanel Spacing="5">
+                                    <!-- Thumbnail Placeholder -->
+                                    <Border Width="180" Height="100"
+                                            Background="LightGray"
+                                            BorderBrush="DarkGray"
+                                            BorderThickness="1">
+                                        <TextBlock Text="Preview"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="Gray"/>
+                                        <!-- TODO: Display actual image thumbnail -->
+                                    </Border>
+
+                                    <!-- Screenshot Info -->
+                                    <TextBlock Text="{Binding FileName}"
+                                               TextTrimming="CharacterEllipsis"
+                                               FontWeight="SemiBold"
+                                               FontSize="11"
+                                               ToolTip.Tip="{Binding FileName}"/>
+                                    <TextBlock Text="{Binding DateTakenDisplay}"
+                                               FontSize="10"
+                                               Foreground="Gray"/>
+                                    <TextBlock Text="{Binding FileSizeDisplay}"
+                                               FontSize="10"
+                                               Foreground="Gray"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Footer -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,10,0,0">
+            <TextBlock Text="{Binding Screenshots.Count, StringFormat='Total: {0} screenshots'}"
+                       VerticalAlignment="Center"
+                       Margin="0,0,20,0"/>
+            <Button Content="Close" Command="{Binding CloseCommand}" Width="80" Click="CloseButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

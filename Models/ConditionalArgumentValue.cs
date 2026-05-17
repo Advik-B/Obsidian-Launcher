@@ -33,19 +33,19 @@ public class ConditionalArgumentValue
     ///         Here, we'll use object and expect the consuming code to check.
     /// </summary>
     [JsonPropertyName("value")]
-    public object Value { get; set; } // Can be string or List<string>
+    public required object Value { get; set; } // Can be string or List<string>
 
     // Helper methods to access the value in a typed way
-    public string GetSingleValue()
+    public string? GetSingleValue()
     {
         return Value as string;
     }
 
-    public List<string> GetListValue()
+    public List<string>? GetListValue()
     {
         if (Value is JsonElement element && element.ValueKind == JsonValueKind.Array)
             return element.Deserialize<List<string>>();
-        return Value as List<string>; // If it was already deserialized as List<string>
+        return Value as List<string>;
     }
 
     public bool IsSingleValue()

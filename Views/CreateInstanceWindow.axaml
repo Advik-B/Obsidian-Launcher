@@ -1,0 +1,174 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ObsidianLauncher.ViewModels"
+        xmlns:enums="using:ObsidianLauncher.Enums"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="480"
+        x:Class="ObsidianLauncher.Views.CreateInstanceWindow"
+        x:DataType="vm:CreateInstanceViewModel"
+        x:CompileBindings="False"
+        Title="Create New Instance"
+        Width="500" Height="480"
+        MinWidth="450" MinHeight="400"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <Design.DataContext>
+        <vm:CreateInstanceViewModel/>
+    </Design.DataContext>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="16"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="16"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="16"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0"
+                   Text="Create New Minecraft Instance"
+                   FontSize="18"
+                   FontWeight="Bold"/>
+
+        <!-- Instance Name -->
+        <StackPanel Grid.Row="2" Spacing="8">
+            <TextBlock Text="Instance Name:" FontWeight="SemiBold"/>
+            <TextBox Text="{Binding InstanceName}"
+                     Watermark="Enter instance name (e.g., My Minecraft World)"
+                     IsEnabled="{Binding !IsCreating}"/>
+        </StackPanel>
+
+        <!-- Minecraft Version -->
+        <StackPanel Grid.Row="4" Spacing="8">
+            <TextBlock Text="Minecraft Version:" FontWeight="SemiBold"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox Grid.Column="0"
+                         Text="{Binding SelectedVersionId}"
+                         Watermark="Select a Minecraft version"
+                         IsReadOnly="True"
+                         IsEnabled="{Binding !IsCreating}"/>
+
+                <Button Grid.Column="2"
+                        Content="Select..."
+                        Command="{Binding SelectVersionCommand}"
+                        Padding="15,5"
+                        IsEnabled="{Binding !IsCreating}"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- Mod Loader -->
+        <StackPanel Grid.Row="6" Spacing="8">
+            <TextBlock Text="Mod Loader:" FontWeight="SemiBold"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <ComboBox Grid.Column="0"
+                          SelectedItem="{Binding SelectedModLoader}"
+                          IsEnabled="{Binding !IsCreating}"
+                          HorizontalAlignment="Stretch">
+                    <ComboBox.Items>
+                        <enums:ModLoaderType>None</enums:ModLoaderType>
+                        <enums:ModLoaderType>Fabric</enums:ModLoaderType>
+                        <enums:ModLoaderType>Quilt</enums:ModLoaderType>
+                        <enums:ModLoaderType>Forge</enums:ModLoaderType>
+                        <enums:ModLoaderType>NeoForge</enums:ModLoaderType>
+                    </ComboBox.Items>
+                </ComboBox>
+
+                <Button Grid.Column="2"
+                        Content="Load Versions"
+                        Command="{Binding LoadModLoaderVersionsCommand}"
+                        Padding="10,5"
+                        IsEnabled="{Binding !IsCreating}"
+                        IsVisible="{Binding ShowModLoaderVersion}"/>
+            </Grid>
+
+            <!-- Loader version dropdown (visible only when a loader is selected) -->
+            <Grid IsVisible="{Binding ShowModLoaderVersion}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <ComboBox Grid.Column="0"
+                          ItemsSource="{Binding ModLoaderVersions}"
+                          SelectedItem="{Binding ModLoaderVersion}"
+                          IsEnabled="{Binding !IsCreating}"
+                          HorizontalAlignment="Stretch"
+                          PlaceholderText="Select loader version (click Load Versions first)"/>
+            </Grid>
+
+            <ProgressBar IsIndeterminate="True"
+                         IsVisible="{Binding IsLoadingLoaderVersions}"
+                         Height="4"/>
+        </StackPanel>
+
+        <!-- Error Message -->
+        <TextBlock Grid.Row="7"
+                   Text="{Binding ErrorMessage}"
+                   Foreground="Red"
+                   FontSize="12"
+                   Margin="0,10,0,0"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="9"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10"
+                    Margin="0,10,0,0">
+            <Button Content="Create"
+                    Padding="20,8"
+                    IsDefault="True"
+                    IsEnabled="{Binding !IsCreating}"
+                    Click="CreateButton_Click"/>
+            <Button Content="Cancel"
+                    Padding="20,8"
+                    IsCancel="True"
+                    IsEnabled="{Binding !IsCreating}"
+                    Click="CancelButton_Click"/>
+        </StackPanel>
+
+        <!-- Creation Progress Overlay -->
+        <Border Grid.Row="0" Grid.RowSpan="10"
+                Background="#CC000000"
+                IsVisible="{Binding IsCreating}">
+            <StackPanel VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        Width="320"
+                        Spacing="12">
+                <TextBlock Text="Creating instance..."
+                           HorizontalAlignment="Center"
+                           Foreground="White"
+                           FontSize="15"
+                           FontWeight="SemiBold"/>
+                <ProgressBar Value="{Binding ProgressValue}"
+                             Maximum="100"
+                             Height="10"
+                             Width="300"/>
+                <TextBlock Text="{Binding ProgressText}"
+                           HorizontalAlignment="Center"
+                           Foreground="#CCCCCC"
+                           FontSize="12"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

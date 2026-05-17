@@ -1,0 +1,75 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ObsidianLauncher.ViewModels"
+        x:Class="ObsidianLauncher.Views.LogViewerWindow"
+        x:CompileBindings="False"
+        Title="Log Viewer"
+        Width="900" Height="600"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True">
+
+    <Design.DataContext>
+        <vm:LogViewerViewModel/>
+    </Design.DataContext>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Log File Viewer" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <!-- Toolbar -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Log File Selector -->
+            <ComboBox Grid.Column="0"
+                      ItemsSource="{Binding LogFiles}"
+                      SelectedItem="{Binding SelectedLogFile}"
+                      PlaceholderText="Select log file..."/>
+
+            <!-- Filter TextBox -->
+            <TextBox Grid.Column="2"
+                     Text="{Binding FilterText}"
+                     Watermark="Filter log content..."/>
+
+            <!-- Toolbar Buttons -->
+            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="5">
+                <Button Content="Clear Filter" Command="{Binding ClearFilterCommand}" Width="100"/>
+                <Button Content="Refresh" Command="{Binding RefreshCommand}" Width="80"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Log Content -->
+        <Border Grid.Row="2" BorderBrush="Gray" BorderThickness="1" Padding="5">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <TextBox Text="{Binding LogContent, Mode=OneWay}"
+                         IsReadOnly="True"
+                         AcceptsReturn="True"
+                         TextWrapping="NoWrap"
+                         FontFamily="Consolas,Courier New,monospace"
+                         FontSize="11"
+                         BorderThickness="0"
+                         Background="Transparent"/>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Footer -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,10,0,0">
+            <Button Content="Copy" Command="{Binding CopyCommand}" Width="80"/>
+            <Button Content="Save As..." Command="{Binding SaveCommand}" Width="100"/>
+            <Button Content="Close" Command="{Binding CloseCommand}" Width="80" Click="CloseButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

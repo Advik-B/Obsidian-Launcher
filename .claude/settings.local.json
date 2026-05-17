@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"S:\\\\Github\\\\Obsidian-Launcher\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "Bash(Head -100)",
+      "Bash(dotnet build *)",
+      "Bash(Select-String -Pattern \"error\")",
+      "Bash(dotnet list *)",
+      "Bash(dotnet nuget *)",
+      "Bash(dotnet package *)",
+      "Bash(curl -s \"https://api.nuget.org/v3-flatcontainer/tmds.dbus.protocol/index.json\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(d['versions'][-20:]\\)\\)\")",
+      "Bash(gh pr *)",
+      "Bash(gh auth *)",
+      "Bash(git checkout *)",
+      "WebFetch(domain:piston-meta.mojang.com)",
+      "WebFetch(domain:meta.fabricmc.net)",
+      "Bash(Get-ChildItem -Path \"S:\\\\Github\\\\Obsidian-Launcher\" -Directory)",
+      "Bash(Select-Object Name)"
+    ]
+  }
+}

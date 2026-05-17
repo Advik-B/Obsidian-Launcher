@@ -1,0 +1,288 @@
+<ui:ContentDialog xmlns="https://github.com/avaloniaui"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:ui="using:FluentAvalonia.UI.Controls"
+                 xmlns:vm="using:ObsidianLauncher.ViewModels"
+                 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+                 x:Class="ObsidianLauncher.Views.SettingsDialog"
+                 Title="Launcher Settings"
+                 PrimaryButtonText="Save"
+                 CloseButtonText="Cancel"
+                 DefaultButton="Primary"
+                 x:DataType="vm:SettingsViewModel">
+
+    <ui:ContentDialog.Resources>
+        <x:Double x:Key="ContentDialogMaxWidth">900</x:Double>
+        <x:Double x:Key="ContentDialogMaxHeight">700</x:Double>
+    </ui:ContentDialog.Resources>
+
+    <TabControl Width="850" Height="650" SelectedIndex="{Binding SelectedPageIndex}">
+        
+        <!-- General Settings Tab -->
+        <TabItem Header="General">
+            <ScrollViewer>
+                <StackPanel Spacing="10" Margin="20">
+                    <TextBlock Text="General Settings" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" />
+
+                    <!-- Language -->
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="Language:" />
+                        <ComboBox ItemsSource="{Binding AvailableLanguages}"
+                                  SelectedItem="{Binding Language}"
+                                  Width="200"
+                                  HorizontalAlignment="Left" />
+                    </StackPanel>
+
+                    <!-- Theme -->
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="Theme:" />
+                        <ComboBox ItemsSource="{Binding AvailableThemes}"
+                                  SelectedItem="{Binding Theme}"
+                                  Width="200"
+                                  HorizontalAlignment="Left" />
+                        <TextBlock Text="Changes will take effect after restarting the launcher"
+                                   FontSize="11"
+                                   Foreground="Gray" />
+                    </StackPanel>
+
+                    <!-- Check for Updates -->
+                    <CheckBox Content="Check for launcher updates on startup"
+                              IsChecked="{Binding CheckForUpdates}" />
+
+                    <!-- Show Console on Launch -->
+                    <CheckBox Content="Show console window when game launches"
+                              IsChecked="{Binding ShowConsoleOnLaunch}" />
+
+                    <!-- Close After Launch -->
+                    <CheckBox Content="Close launcher after game starts"
+                              IsChecked="{Binding CloseAfterLaunch}" />
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- Java Settings Tab -->
+        <TabItem Header="Java">
+            <ScrollViewer>
+                <StackPanel Spacing="10" Margin="20">
+                    <TextBlock Text="Java Settings" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" />
+
+                    <!-- Java Path -->
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="Java Executable Path:" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding JavaPath}"
+                                     Watermark="Leave empty for auto-detection" />
+                            <Button Grid.Column="1"
+                                    Content="Browse..."
+                                    Command="{Binding BrowseJavaPathCommand}"
+                                    Margin="5,0,0,0" />
+                        </Grid>
+                        <TextBlock Text="Leave empty to automatically detect Java from your system"
+                                   FontSize="11"
+                                   Foreground="Gray" />
+                    </StackPanel>
+
+                    <!-- Memory Settings -->
+                    <TextBlock Text="Memory Allocation (MB):" Margin="0,10,0,0" />
+
+                    <!-- Min Memory -->
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="Minimum Memory:" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Slider Grid.Column="0"
+                                    Minimum="256"
+                                    Maximum="16384"
+                                    Value="{Binding MinMemoryMB}"
+                                    TickFrequency="256"
+                                    IsSnapToTickEnabled="True" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding MinMemoryMB, StringFormat={}{0} MB}"
+                                       Width="80"
+                                       TextAlignment="Right"
+                                       Margin="10,0,0,0" />
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Max Memory -->
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="Maximum Memory:" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Slider Grid.Column="0"
+                                    Minimum="512"
+                                    Maximum="32768"
+                                    Value="{Binding MaxMemoryMB}"
+                                    TickFrequency="512"
+                                    IsSnapToTickEnabled="True" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding MaxMemoryMB, StringFormat={}{0} MB}"
+                                       Width="80"
+                                       TextAlignment="Right"
+                                       Margin="10,0,0,0" />
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Java Arguments -->
+                    <StackPanel Spacing="5" Margin="0,10,0,0">
+                        <TextBlock Text="Additional JVM Arguments:" />
+                        <TextBox Text="{Binding JavaArgs}"
+                                 Watermark="-XX:+UseG1GC -Dsun.rmi.dgc.server.gcInterval=2147483646"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MinHeight="80" />
+                        <TextBlock Text="Advanced users only. Incorrect arguments may prevent the game from launching."
+                                   FontSize="11"
+                                   Foreground="Gray" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- Game Settings Tab -->
+        <TabItem Header="Game">
+            <ScrollViewer>
+                <StackPanel Spacing="10" Margin="20">
+                    <TextBlock Text="Game Settings" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" />
+
+                    <!-- Window Size -->
+                    <TextBlock Text="Game Window Size:" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="Width:" />
+                            <NumericUpDown Value="{Binding WindowWidth}"
+                                           Minimum="640"
+                                           Maximum="7680"
+                                           Increment="10"
+                                           Width="120" />
+                        </StackPanel>
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="Height:" />
+                            <NumericUpDown Value="{Binding WindowHeight}"
+                                           Minimum="480"
+                                           Maximum="4320"
+                                           Increment="10"
+                                           Width="120" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Fullscreen -->
+                    <CheckBox Content="Start game in fullscreen mode"
+                              IsChecked="{Binding Fullscreen}"
+                              Margin="0,10,0,0" />
+
+                    <!-- Game Directory -->
+                    <StackPanel Spacing="5" Margin="0,10,0,0">
+                        <TextBlock Text="Custom Game Directory:" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding GameDirectory}"
+                                     Watermark="Leave empty for default" />
+                            <Button Grid.Column="1"
+                                    Content="Browse..."
+                                    Command="{Binding BrowseGameDirectoryCommand}"
+                                    Margin="5,0,0,0" />
+                        </Grid>
+                        <TextBlock Text="Overrides the default .minecraft directory for all instances"
+                                   FontSize="11"
+                                   Foreground="Gray" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- Network Settings Tab -->
+        <TabItem Header="Network">
+            <ScrollViewer>
+                <StackPanel Spacing="10" Margin="20">
+                    <TextBlock Text="Network Settings" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" />
+
+                    <!-- Concurrent Downloads -->
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="Maximum Concurrent Downloads:" />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Slider Grid.Column="0"
+                                    Minimum="1"
+                                    Maximum="20"
+                                    Value="{Binding MaxConcurrentDownloads}"
+                                    TickFrequency="1"
+                                    IsSnapToTickEnabled="True" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding MaxConcurrentDownloads}"
+                                       Width="40"
+                                       TextAlignment="Right"
+                                       Margin="10,0,0,0" />
+                        </Grid>
+                        <TextBlock Text="Higher values may improve download speed but use more system resources"
+                                   FontSize="11"
+                                   Foreground="Gray" />
+                    </StackPanel>
+
+                    <!-- Proxy Settings -->
+                    <CheckBox Content="Use proxy server for downloads"
+                              IsChecked="{Binding UseProxy}"
+                              Margin="0,15,0,10" />
+
+                    <StackPanel Spacing="10" IsEnabled="{Binding UseProxy}" Margin="20,0,0,0">
+                        <!-- Proxy Host -->
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="Proxy Host:" />
+                            <TextBox Text="{Binding ProxyHost}"
+                                     Watermark="proxy.example.com"
+                                     Width="300"
+                                     HorizontalAlignment="Left" />
+                        </StackPanel>
+
+                        <!-- Proxy Port -->
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="Proxy Port:" />
+                            <NumericUpDown Value="{Binding ProxyPort}"
+                                           Minimum="1"
+                                           Maximum="65535"
+                                           Width="120"
+                                           HorizontalAlignment="Left" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- Launcher Behavior Tab -->
+        <TabItem Header="Behavior">
+            <ScrollViewer>
+                <StackPanel Spacing="10" Margin="20">
+                    <TextBlock Text="Launcher Behavior" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" />
+
+                    <!-- Version Filters -->
+                    <TextBlock Text="Show Minecraft Versions:" FontWeight="SemiBold" />
+                    <CheckBox Content="Show snapshot versions"
+                              IsChecked="{Binding ShowSnapshots}" />
+                    <CheckBox Content="Show old alpha versions"
+                              IsChecked="{Binding ShowOldAlpha}" />
+                    <CheckBox Content="Show old beta versions"
+                              IsChecked="{Binding ShowOldBeta}" />
+
+                    <!-- Default Instance Group -->
+                    <StackPanel Spacing="5" Margin="0,15,0,0">
+                        <TextBlock Text="Default Instance Group:" />
+                        <TextBox Text="{Binding DefaultInstanceGroup}"
+                                 Watermark="Default"
+                                 Width="200"
+                                 HorizontalAlignment="Left" />
+                        <TextBlock Text="New instances will be added to this group by default"
+                                   FontSize="11"
+                                   Foreground="Gray" />
+                    </StackPanel>
+
+                    <!-- Reset Button -->
+                    <Button Content="Reset All Settings to Defaults"
+                            Command="{Binding ResetToDefaultsCommand}"
+                            Margin="0,20,0,0"
+                            HorizontalAlignment="Left" />
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+    </TabControl>
+
+</ui:ContentDialog>

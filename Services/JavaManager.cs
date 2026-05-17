@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -9,12 +10,6 @@ using ObsidianLauncher.Enums;
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Utils;
 using Serilog;
-
-
-// For ZipFile
-// For MinecraftVersion, JavaVersionInfo, JavaRuntimeInfo
-// For OsUtils, LoggerSetup (though logger is injected)
-// For OperatingSystemType, ArchitectureType
 namespace ObsidianLauncher.Services;
 
 public class JavaManager
@@ -37,7 +32,7 @@ public class JavaManager
         _logger.Verbose("JavaManager initialization complete. Found {Count} existing runtimes.", _availableRuntimes.Count);
     }
     
-    public async Task<JavaRuntimeInfo> EnsureJavaForMinecraftVersionAsync(
+    public async Task<JavaRuntimeInfo?> EnsureJavaForMinecraftVersionAsync(
         LaunchProfile launchProfile,
         CancellationToken cancellationToken = default)
     {
@@ -67,7 +62,7 @@ public class JavaManager
         // This part remains the same, but it's important to show the full context.
         _logger.Information("No existing suitable Java runtime found for {Component} v{MajorVersion}. Attempting download.", requiredJava.Component, requiredJava.MajorVersion);
 
-        string downloadedArchivePath = null;
+        string? downloadedArchivePath = null;
         var sourceApi = "unknown";
         
         _logger.Information("Attempting download from Adoptium for Java {MajorVersion}...", requiredJava.MajorVersion);
@@ -78,10 +73,12 @@ public class JavaManager
         }
         else
         {
-            // The Mojang download depends on the MinecraftVersion object, which we don't have here.
-            // This logic needs to be adapted if Mojang is a required source. For now, we rely on Adoptium.
-            _logger.Warning("Adoptium download failed. Mojang download from a LaunchProfile is not yet fully supported without the original MinecraftVersion object.");
-            // To support this, you would need to pass the MinecraftVersion object alongside the LaunchProfile, or embed it.
+            _logger.Warning(
+                "Adoptium download failed or no suitable version found for Java {MajorVersion}. Trying Mojang manifest...",
+                requiredJava.MajorVersion);
+            downloadedArchivePath = await _javaDownloader.DownloadJavaForJavaVersionMojangAsync(
+                requiredJava, _config.MojangDownloadsDir, cancellationToken);
+            if (!string.IsNullOrEmpty(downloadedArchivePath)) sourceApi = "mojang";
         }
 
         if (string.IsNullOrEmpty(downloadedArchivePath))
@@ -102,7 +99,7 @@ public class JavaManager
 
             if (!string.IsNullOrEmpty(javaExePath))
             {
-                var effectiveJavaHome = Path.GetDirectoryName(Path.GetDirectoryName(javaExePath));
+                var effectiveJavaHome = Path.GetDirectoryName(Path.GetDirectoryName(javaExePath))!;
                 var newRuntime = new JavaRuntimeInfo
                 {
                     HomePath = effectiveJavaHome,
@@ -173,145 +170,6 @@ public class JavaManager
     }
 
     /// <summary>
-    ///     Ensures a suitable Java runtime is available for the given Minecraft version.
-    ///     It first checks existing runtimes, then attempts to download and extract if necessary.
-    /// </summary>
-    /// <param name="mcVersion">The Minecraft version details.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Information about the ensured Java runtime, or null if unsuccessful.</returns>
-    public async Task<JavaRuntimeInfo> EnsureJavaForMinecraftVersionAsync(
-        MinecraftVersion mcVersion,
-        CancellationToken cancellationToken = default)
-    {
-        _logger.Information("Ensuring Java for Minecraft version: {VersionId}", mcVersion.Id);
-
-        var requiredJava = mcVersion.JavaVersion;
-        _logger.Information("Required Java: Component '{Component}', Major Version '{MajorVersion}'",
-            requiredJava.Component, requiredJava.MajorVersion);
-
-        var existingRuntime = _availableRuntimes.FirstOrDefault(r =>
-            r.ComponentName.Equals(requiredJava.Component, StringComparison.OrdinalIgnoreCase) &&
-            r.MajorVersion == requiredJava.MajorVersion);
-
-        if (existingRuntime != null)
-        {
-            _logger.Information(
-                "Found existing suitable Java runtime: Component '{Component}', Version '{MajorVersion}', Source '{Source}', Home '{HomePath}'",
-                existingRuntime.ComponentName, existingRuntime.MajorVersion, existingRuntime.Source,
-                existingRuntime.HomePath);
-            return existingRuntime;
-        }
-
-        _logger.Information(
-            "No existing suitable Java runtime found for {Component} v{MajorVersion}. Attempting download.",
-            requiredJava.Component, requiredJava.MajorVersion);
-
-        string downloadedArchivePath = null;
-        var sourceApi = "unknown";
-
-        // Try Adoptium first as it's generally preferred for broader Java versions
-        _logger.Information("Attempting download from Adoptium for Java {MajorVersion}...", requiredJava.MajorVersion);
-        downloadedArchivePath =
-            await _javaDownloader.DownloadJavaForSpecificVersionAdoptiumAsync(requiredJava,
-                _config.AdoptiumDownloadsDir, cancellationToken);
-        if (!string.IsNullOrEmpty(downloadedArchivePath))
-        {
-            sourceApi = "adoptium";
-        }
-        else
-        {
-            _logger.Warning(
-                "Adoptium download failed or no suitable version found for Java {MajorVersion}. Trying Mojang manifest...",
-                requiredJava.MajorVersion);
-            downloadedArchivePath =
-                await _javaDownloader.DownloadJavaForMinecraftVersionMojangAsync(mcVersion, _config.MojangDownloadsDir,
-                    cancellationToken);
-            if (!string.IsNullOrEmpty(downloadedArchivePath)) sourceApi = "mojang";
-        }
-
-        if (string.IsNullOrEmpty(downloadedArchivePath))
-        {
-            _logger.Error("Failed to download Java for component '{Component}' v{MajorVersion} from all sources.",
-                requiredJava.Component, requiredJava.MajorVersion);
-            return null;
-        }
-
-        _logger.Information("Java archive downloaded via {SourceApi} to: {DownloadedArchivePath}", sourceApi,
-            downloadedArchivePath);
-
-        // Determine extraction path based on component and version to keep things organized
-        // Example: .mylauncher_data/java_runtimes/jre-legacy_17
-        var extractionTargetDir = GetExtractionPathForRuntime(requiredJava, sourceApi);
-        var runtimeNameForPath = Path.GetFileName(extractionTargetDir); // Used for logging/display
-
-        if (ExtractJavaArchive(downloadedArchivePath, extractionTargetDir, runtimeNameForPath))
-        {
-            _logger.Information("Java archive extracted to: {ExtractionTargetDir}", extractionTargetDir);
-            var javaExePath = FindJavaExecutable(extractionTargetDir);
-
-            if (!string.IsNullOrEmpty(javaExePath))
-            {
-                // The "home" path is typically the directory containing the "bin" directory
-                var effectiveJavaHome = Path.GetDirectoryName(Path.GetDirectoryName(javaExePath));
-
-                var newRuntime = new JavaRuntimeInfo
-                {
-                    HomePath = effectiveJavaHome,
-                    JavaExecutablePath = javaExePath,
-                    MajorVersion = requiredJava.MajorVersion,
-                    ComponentName = requiredJava.Component,
-                    Source = sourceApi // Store where it came from
-                };
-                _availableRuntimes.Add(newRuntime);
-
-                _logger.Information(
-                    "Successfully configured Java runtime: Component={Component}, Version={MajorVersion}, Source={Source}, Home='{HomePath}', Executable='{JavaExecutablePath}'",
-                    newRuntime.ComponentName, newRuntime.MajorVersion, newRuntime.Source, newRuntime.HomePath,
-                    newRuntime.JavaExecutablePath);
-
-                try
-                {
-                    File.Delete(downloadedArchivePath);
-                    _logger.Information("Removed downloaded archive: {DownloadedArchivePath}", downloadedArchivePath);
-                }
-                catch (Exception ex)
-                {
-                    _logger.Warning(ex, "Failed to remove downloaded archive {DownloadedArchivePath}",
-                        downloadedArchivePath);
-                }
-
-                return newRuntime;
-            }
-
-            _logger.Error(
-                "Failed to find Java executable in the extracted archive at {ExtractionTargetDir}. Possible extraction issue or unexpected archive structure.",
-                extractionTargetDir);
-        }
-        else
-        {
-            _logger.Error("Failed to extract Java archive {DownloadedArchivePath} to {ExtractionTargetDir}",
-                downloadedArchivePath, extractionTargetDir);
-        }
-
-        // Cleanup downloaded archive if extraction or finding executable failed
-        if (File.Exists(downloadedArchivePath))
-            try
-            {
-                File.Delete(downloadedArchivePath);
-                _logger.Information("Cleaned up downloaded archive after failure: {DownloadedArchivePath}",
-                    downloadedArchivePath);
-            }
-            catch (Exception ex)
-            {
-                _logger.Warning(ex, "Cleanup: Failed to remove archive {DownloadedArchivePath} after failure",
-                    downloadedArchivePath);
-            }
-
-        return null;
-    }
-
-
-    /// <summary>
     ///     Extracts a Java archive (ZIP or TAR.GZ) to the specified directory.
     /// </summary>
     /// <param name="archivePath">Path to the Java archive file.</param>
@@ -340,26 +198,30 @@ public class JavaManager
             // For simplicity, this example assumes .zip. If .tar.gz is common, this needs expansion.
             if (archivePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
-                ZipFile.ExtractToDirectory(archivePath, extractionDir, true); // true to overwrite files
+                ZipFile.ExtractToDirectory(archivePath, extractionDir, true);
                 _logger.Information("Successfully extracted ZIP archive '{RuntimeName}' to {ExtractionDir}.",
                     runtimeNameForPath, extractionDir);
                 return true;
             }
-            // else if (archivePath.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase))
-            // {
-            //     _logger.Information("Attempting to extract TAR.GZ archive '{RuntimeName}' to {ExtractionDir}...",
-            //        runtimeNameForPath, extractionDir);
-            //     // Implement TAR.GZ extraction here using SharpZipLib or System.Formats.Tar
-            //     // For example with System.Formats.Tar (requires .NET 7+):
-            //     // using var fileStream = File.OpenRead(archivePath);
-            //     // using var gzipStream = new GZipStream(fileStream, CompressionMode.Decompress);
-            //     // TarFile.ExtractToDirectory(gzipStream, extractionDir, true);
-            //     _logger.Error("TAR.GZ extraction not yet implemented for '{RuntimeName}'.", runtimeNameForPath);
-            //     return false;
-            // }
+
+            if (archivePath.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase))
+            {
+                using var fileStream = File.OpenRead(archivePath);
+                using var gzipStream = new GZipStream(fileStream, CompressionMode.Decompress);
+                TarFile.ExtractToDirectory(gzipStream, extractionDir, overwriteFiles: true);
+                _logger.Information("Successfully extracted TAR.GZ archive '{RuntimeName}' to {ExtractionDir}.",
+                    runtimeNameForPath, extractionDir);
+
+                // On Unix, TarFile.ExtractToDirectory does not restore executable bits.
+                // Set the execute bit on all files in bin/ directories.
+                if (!OperatingSystem.IsWindows())
+                    SetExecutableBitsInBinDirs(extractionDir);
+
+                return true;
+            }
 
             _logger.Error(
-                "Unsupported archive format for '{RuntimeName}': {ArchivePath}. Only .zip is currently supported.",
+                "Unsupported archive format for '{RuntimeName}': {ArchivePath}. Only .zip and .tar.gz are supported.",
                 runtimeNameForPath, archivePath);
             return false;
         }
@@ -392,7 +254,7 @@ public class JavaManager
     /// </summary>
     /// <param name="extractedJavaBaseDir">The base directory where the Java archive was extracted.</param>
     /// <returns>The full path to the Java executable, or null if not found.</returns>
-    public string FindJavaExecutable(string extractedJavaBaseDir)
+    public string? FindJavaExecutable(string extractedJavaBaseDir)
     {
         _logger.Verbose("Attempting to find Java executable in/under: {ExtractionBaseDir}", extractedJavaBaseDir);
 
@@ -569,7 +431,7 @@ public class JavaManager
 
                 if (majorVersion > 0 && component != "unknown_component" && !string.IsNullOrEmpty(component))
                 {
-                    var effectiveJavaHome = Path.GetDirectoryName(Path.GetDirectoryName(javaExePath)); // Up from /bin
+                    var effectiveJavaHome = Path.GetDirectoryName(Path.GetDirectoryName(javaExePath))!; // Up from /bin
                     var runtimeInfo = new JavaRuntimeInfo
                     {
                         HomePath = effectiveJavaHome,
@@ -614,5 +476,56 @@ public class JavaManager
         // Example: jre-legacy_17 or adoptium_jdk-hotspot_17
         var dirName = $"{sourceApi}_{javaVersion.Component}_{javaVersion.MajorVersion}";
         return Path.Combine(_config.JavaRuntimesDir, dirName);
+    }
+
+    /// <summary>
+    /// Sets the executable bit on all files inside bin/ subdirectories recursively.
+    /// Required on Linux/macOS after TAR.GZ extraction since .NET's TarFile does not
+    /// preserve Unix file permissions.
+    /// </summary>
+    [System.Runtime.Versioning.UnsupportedOSPlatform("windows")]
+    private void SetExecutableBitsInBinDirs(string rootDir)
+    {
+        try
+        {
+            foreach (var binDir in Directory.EnumerateDirectories(rootDir, "bin", SearchOption.AllDirectories))
+            {
+                foreach (var file in Directory.EnumerateFiles(binDir))
+                {
+                    try
+                    {
+                        var current = File.GetUnixFileMode(file);
+                        var withExec = current
+                            | UnixFileMode.UserExecute
+                            | UnixFileMode.GroupExecute
+                            | UnixFileMode.OtherExecute;
+                        File.SetUnixFileMode(file, withExec);
+                        _logger.Verbose("Set executable bit on: {File}", file);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning(ex, "Failed to set executable bit on {File}", file);
+                    }
+                }
+            }
+
+            // Also handle lib/jspawnhelper and similar helper binaries
+            foreach (var libDir in Directory.EnumerateDirectories(rootDir, "lib", SearchOption.AllDirectories))
+            {
+                foreach (var file in Directory.EnumerateFiles(libDir, "jspawnhelper", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        var current = File.GetUnixFileMode(file);
+                        File.SetUnixFileMode(file, current | UnixFileMode.UserExecute | UnixFileMode.GroupExecute);
+                    }
+                    catch { /* best-effort */ }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Warning(ex, "Error setting executable bits in {RootDir}", rootDir);
+        }
     }
 }

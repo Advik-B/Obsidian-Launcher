@@ -19,15 +19,15 @@ public class LibraryManager
     private readonly ILogger _logger;
     private readonly AssetManager _assetManager;
 
-    public LibraryManager(LauncherConfig config, HttpManager httpManager)
+    public LibraryManager(LauncherConfig config, HttpManager httpManager, AssetManager assetManager)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _httpManager = httpManager ?? throw new ArgumentNullException(nameof(httpManager));
+        _assetManager = assetManager ?? throw new ArgumentNullException(nameof(assetManager));
         _logger = LogHelper.GetLogger<LibraryManager>();
-        _assetManager = new AssetManager(config, httpManager); // Instantiate or inject
         _logger.Verbose("LibraryManager initialized.");
     }
-    
+
     public async Task<List<string>?> EnsureLibrariesAsync(
         LaunchProfile launchProfile,
         string nativesDir,
@@ -81,6 +81,26 @@ public class LibraryManager
                 else
                 {
                     _logger.Error("Failed to ensure main artifact for library {LibraryName}. Path: {Path}", library.Name, artifactLocalPath);
+                }
+            }
+            else if (!string.IsNullOrEmpty(library.Url) && !string.IsNullOrEmpty(library.Name))
+            {
+                // Legacy Forge/mod-loader style: URL base + Maven path derived from name
+                var mavenPath = MavenNameToPath(library.Name);
+                var artifactLocalPath = Path.Combine(_config.LibrariesDir, mavenPath.Replace('/', Path.DirectorySeparatorChar));
+                var downloadUrl = library.Url.TrimEnd('/') + "/" + mavenPath;
+
+                ReportLibraryProgress(progress, library.Name, processedLibraries, totalLibraries, $"Ensuring legacy artifact: {Path.GetFileName(artifactLocalPath)}");
+                mainArtifactOk = await _assetManager.DownloadAndVerifyFileAsync(downloadUrl, artifactLocalPath, string.Empty, $"Legacy library {library.Name}", cancellationToken);
+
+                if (mainArtifactOk)
+                {
+                    classpathEntries.Add(Path.GetFullPath(artifactLocalPath));
+                    _logger.Verbose("Legacy artifact for {LibraryName} is ready at {Path}", library.Name, artifactLocalPath);
+                }
+                else
+                {
+                    _logger.Error("Failed to ensure legacy artifact for library {LibraryName}. URL: {Url}", library.Name, downloadUrl);
                 }
             }
             else if (library.Downloads?.Classifiers == null || !library.Downloads.Classifiers.Any())
@@ -156,7 +176,7 @@ public class LibraryManager
 
         return classpathEntries;
     }
-    
+
     private void ReportLibraryProgress(IProgress<LibraryProcessingProgress>? progress, string libraryName, int processed, int total, string status)
     {
         progress?.Report(new LibraryProcessingProgress
@@ -167,7 +187,7 @@ public class LibraryManager
             Status = status
         });
     }
-    
+
     // Unchanged methods...
     private bool IsLibraryApplicable(Library library)
     {
@@ -194,7 +214,7 @@ public class LibraryManager
 
         return allowed;
     }
-    
+
     private bool CheckOsRule(OperatingSystemInfo osRule)
     {
         if (osRule == null) return true;
@@ -215,7 +235,7 @@ public class LibraryManager
 
         return nameMatch && archMatch;
     }
-    
+
     private string GetCurrentOsNameForNatives()
     {
         return OsUtils.GetCurrentOS() switch
@@ -226,8 +246,8 @@ public class LibraryManager
             _ => "unknown"
         };
     }
-    
-    private bool ExtractNativeJar(string nativeJarPath, string nativesDir, LibraryExtractRule extractRule)
+
+    private bool ExtractNativeJar(string nativeJarPath, string nativesDir, LibraryExtractRule? extractRule)
     {
         try
         {
@@ -259,9 +279,54 @@ public class LibraryManager
             return false;
         }
     }
-    
+
     private async Task<bool> DownloadAndVerifyFileAsync(string url, string localPath, string expectedSha1, string fileDescription, CancellationToken cancellationToken, ulong? expectedSize = null)
     {
         return await _assetManager.DownloadAndVerifyFileAsync(url, localPath, expectedSha1, fileDescription, cancellationToken, expectedSize);
+    }
+
+    /// <summary>
+    /// Converts a Maven artifact name (groupId:artifactId:version[:classifier]) to a relative path.
+    /// e.g. "net.minecraftforge:forge:1.20.1-47.2.0:universal" → "net/minecraftforge/forge/1.20.1-47.2.0/forge-1.20.1-47.2.0-universal.jar"
+    /// </summary>
+    public static string MavenNameToPath(string name)
+    {
+        var parts = name.Split(':');
+        if (parts.Length < 3) return name;
+
+        var group = parts[0].Replace('.', '/');
+        var artifact = parts[1];
+        var version = parts[2];
+        var classifier = parts.Length >= 4 ? "-" + parts[3] : "";
+        var ext = parts.Length >= 5 ? parts[4] : "jar";
+
+        return $"{group}/{artifact}/{version}/{artifact}-{version}{classifier}.{ext}";
+    }
+
+    public List<string> ResolveLibraryClasspath(LaunchProfile launchProfile)
+    {
+        var classpathEntries = new List<string>();
+        if (launchProfile.Libraries == null) return classpathEntries;
+
+        foreach (var library in launchProfile.Libraries)
+        {
+            if (!IsLibraryApplicable(library)) continue;
+
+            if (library.Downloads?.Artifact != null)
+            {
+                classpathEntries.Add(Path.GetFullPath(Path.Combine(
+                    _config.LibrariesDir,
+                    library.Downloads.Artifact.Path.Replace('/', Path.DirectorySeparatorChar))));
+            }
+            else if (!string.IsNullOrEmpty(library.Url) && !string.IsNullOrEmpty(library.Name))
+            {
+                var mavenPath = MavenNameToPath(library.Name);
+                classpathEntries.Add(Path.GetFullPath(Path.Combine(
+                    _config.LibrariesDir,
+                    mavenPath.Replace('/', Path.DirectorySeparatorChar))));
+            }
+        }
+
+        return classpathEntries;
     }
 }

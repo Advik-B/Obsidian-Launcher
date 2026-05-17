@@ -20,7 +20,7 @@ public static class CryptoUtils
     /// <param name="filePath">The path to the file.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A hex-encoded string of the SHA1 hash. Returns null on error (e.g., file not found, crypto error).</returns>
-    public static async Task<string> CalculateFileSHA1Async(string filePath,
+    public static async Task<string?> CalculateFileSHA1Async(string filePath,
         CancellationToken cancellationToken = default)
     {
         _logger.Verbose("Calculating SHA1 for file: {FilePath}", filePath);
@@ -63,7 +63,7 @@ public static class CryptoUtils
     /// <param name="filePath">The path to the file.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A hex-encoded string of the SHA256 hash. Returns null on error (e.g., file not found, crypto error).</returns>
-    public static async Task<string> CalculateFileSHA256Async(string filePath,
+    public static async Task<string?> CalculateFileSHA256Async(string filePath,
         CancellationToken cancellationToken = default)
     {
         _logger.Verbose("Calculating SHA256 for file: {FilePath}", filePath);

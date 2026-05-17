@@ -32,7 +32,7 @@ public class AssetManager
     /// </summary>
     public async Task<bool> EnsureAssetsAsync(
         LaunchProfile launchProfile,
-        IProgress<AssetDownloadProgress> progress = null,
+        IProgress<AssetDownloadProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         if (launchProfile.AssetIndex == null && string.IsNullOrEmpty(launchProfile.Assets))
@@ -46,7 +46,7 @@ public class AssetManager
         var currentAssetIndexMetadata = launchProfile.AssetIndex;
         var assetIndexId =
             launchProfile.AssetIndex?.Id ??
-            launchProfile.Assets; 
+            launchProfile.Assets;
 
         if (currentAssetIndexMetadata == null)
         {
@@ -75,7 +75,7 @@ public class AssetManager
             return false;
         }
 
-        AssetIndexDetails assetIndexDetails;
+        AssetIndexDetails? assetIndexDetails;
         try
         {
             var indexJsonContent = await File.ReadAllTextAsync(assetIndexFilePath, cancellationToken);
@@ -109,51 +109,56 @@ public class AssetManager
                 "Asset index {AssetIndexId} is marked as virtual ({IsVirtual}) or map_to_resources ({MapToResources}). Using modern hash-based storage.",
                 currentAssetIndexMetadata.Id, assetIndexDetails.IsVirtual, assetIndexDetails.MapToResources);
 
-        var downloadTasks = new List<Task<bool>>();
-        var maxConcurrentDownloads = Environment.ProcessorCount; 
+        var semaphore = new SemaphoreSlim(Environment.ProcessorCount, Environment.ProcessorCount);
+        var downloadTasks = new List<Task>();
 
         foreach (var assetEntry in assetIndexDetails.Objects)
         {
             var assetInfo = assetEntry.Value;
-
             var assetHash = assetInfo.Hash;
             var subDir = assetHash.Substring(0, 2);
-            var assetFilename = assetHash;
-            var assetObjectPath = Path.Combine(assetObjectsDir, subDir, assetFilename);
+            var assetObjectPath = Path.Combine(assetObjectsDir, subDir, assetHash);
             var assetDownloadUrl = $"{MinecraftResourcesUrlBase}{subDir}/{assetHash}";
-            
-            while (downloadTasks.Count(t => !t.IsCompleted) >= maxConcurrentDownloads)
-            {
-                await Task.WhenAny(downloadTasks.Where(t => !t.IsCompleted));
-                cancellationToken.ThrowIfCancellationRequested();
-            }
 
-            var downloadTask = Task.Run(async () =>
+            await semaphore.WaitAsync(cancellationToken);
+            downloadTasks.Add(Task.Run(async () =>
             {
-                var success = await DownloadAndVerifyFileAsync(
-                    assetDownloadUrl,
-                    assetObjectPath,
-                    assetHash,
-                    $"Asset {assetHash}",
-                    cancellationToken,
-                    assetInfo.Size);
-
-                Interlocked.Increment(ref processedAssets);
-                if (success) Interlocked.Increment(ref successfullyProcessedAssets);
-                progress?.Report(new AssetDownloadProgress
+                try
                 {
-                    CurrentFile = Path.GetFileName(assetObjectPath),
-                    TotalFiles = totalAssets,
-                    ProcessedFiles = Interlocked.CompareExchange(ref processedAssets, 0, 0),
-                    CurrentFileBytesDownloaded = success ? (long)assetInfo.Size : 0,
-                    CurrentFileTotalBytes = (long)assetInfo.Size
-                });
-                return success;
-            }, cancellationToken);
-            downloadTasks.Add(downloadTask);
+                    var success = await DownloadAndVerifyFileAsync(
+                        assetDownloadUrl,
+                        assetObjectPath,
+                        assetHash,
+                        $"Asset {assetHash}",
+                        cancellationToken,
+                        assetInfo.Size);
+
+                    Interlocked.Increment(ref processedAssets);
+                    if (success) Interlocked.Increment(ref successfullyProcessedAssets);
+                    progress?.Report(new AssetDownloadProgress
+                    {
+                        CurrentFile = Path.GetFileName(assetObjectPath),
+                        TotalFiles = totalAssets,
+                        ProcessedFiles = Interlocked.CompareExchange(ref processedAssets, 0, 0),
+                        CurrentFileBytesDownloaded = success ? (long)assetInfo.Size : 0,
+                        CurrentFileTotalBytes = (long)assetInfo.Size
+                    });
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }, cancellationToken));
         }
 
-        await Task.WhenAll(downloadTasks).ConfigureAwait(false);
+        try
+        {
+            await Task.WhenAll(downloadTasks).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "One or more asset download tasks failed for index {AssetIndexId}.", assetIndexId);
+        }
 
         var allSucceeded = successfullyProcessedAssets == totalAssets;
         if (allSucceeded)
@@ -283,8 +288,8 @@ public class AssetManager
                 _logger.Error(ex, "Failed to delete file {FilePath} after error ({Reason})", filePath, reason);
             }
     }
-    
-    public async Task<string> EnsureClientJarAsync(LaunchProfile launchProfile, CancellationToken cancellationToken)
+
+    public async Task<string?> EnsureClientJarAsync(LaunchProfile launchProfile, CancellationToken cancellationToken)
     {
         _logger.Information("Ensuring Client JAR for Minecraft {VersionId}", launchProfile.Id);
 
@@ -325,4 +330,7 @@ public class AssetManager
             clientJarPath);
         return Path.GetFullPath(clientJarPath);
     }
+
+    public string GetClientJarPath(string versionId) =>
+        Path.GetFullPath(Path.Combine(_config.VersionsDir, versionId, $"{versionId}.jar"));
 }
