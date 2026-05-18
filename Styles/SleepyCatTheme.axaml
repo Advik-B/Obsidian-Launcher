@@ -1,0 +1,302 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <ResourceDictionary.ThemeDictionaries>
+
+    <!-- ============================================================
+         LIGHT (Latte)
+         ============================================================ -->
+    <ResourceDictionary x:Key="Light">
+      <!-- Surfaces -->
+      <Color x:Key="CrustColor">#dce0e8</Color>
+      <Color x:Key="MantleColor">#e6e9ef</Color>
+      <Color x:Key="BaseColor">#eff1f5</Color>
+      <Color x:Key="Surface0Color">#e8e6ef</Color>
+      <Color x:Key="Surface1Color">#dcd9e7</Color>
+      <Color x:Key="Surface2Color">#cfcce0</Color>
+
+      <!-- Foregrounds -->
+      <Color x:Key="Fg1Color">#4c4f69</Color>
+      <Color x:Key="Fg2Color">#5c5f77</Color>
+      <Color x:Key="Fg3Color">#6c6f85</Color>
+      <Color x:Key="FgInvColor">#fff8f3</Color>
+
+      <!-- Brand -->
+      <Color x:Key="PrimaryColor">#8839ef</Color>
+      <Color x:Key="PrimarySoftColor">#cbb6f5</Color>
+      <Color x:Key="PrimaryTintColor">#ecdef9</Color>
+      <Color x:Key="SecondaryColor">#ea76cb</Color>
+      <Color x:Key="SecondarySoftColor">#f5c9e6</Color>
+      <Color x:Key="AccentColor">#fe640b</Color>
+      <Color x:Key="AccentSoftColor">#ffd2b3</Color>
+
+      <!-- Status -->
+      <Color x:Key="SuccessColor">#40a02b</Color>
+      <Color x:Key="SuccessSoftColor">#c4e7bd</Color>
+      <Color x:Key="WarningColor">#df8e1d</Color>
+      <Color x:Key="WarningSoftColor">#f5dfb6</Color>
+      <Color x:Key="DangerColor">#d20f39</Color>
+      <Color x:Key="DangerSoftColor">#f3bcc7</Color>
+      <Color x:Key="InfoColor">#209fb5</Color>
+      <Color x:Key="InfoSoftColor">#b9e1ea</Color>
+
+      <!-- Borders -->
+      <Color x:Key="BorderSoftColor">#d9d5e6</Color>
+      <Color x:Key="Border1Color">#c8c4d8</Color>
+
+      <!-- Brushes -->
+      <SolidColorBrush x:Key="CrustBrush" Color="{StaticResource CrustColor}"/>
+      <SolidColorBrush x:Key="MantleBrush" Color="{StaticResource MantleColor}"/>
+      <SolidColorBrush x:Key="BaseBrush" Color="{StaticResource BaseColor}"/>
+      <SolidColorBrush x:Key="Surface0Brush" Color="{StaticResource Surface0Color}"/>
+      <SolidColorBrush x:Key="Surface1Brush" Color="{StaticResource Surface1Color}"/>
+      <SolidColorBrush x:Key="Surface2Brush" Color="{StaticResource Surface2Color}"/>
+      <SolidColorBrush x:Key="Fg1Brush" Color="{StaticResource Fg1Color}"/>
+      <SolidColorBrush x:Key="Fg2Brush" Color="{StaticResource Fg2Color}"/>
+      <SolidColorBrush x:Key="Fg3Brush" Color="{StaticResource Fg3Color}"/>
+      <SolidColorBrush x:Key="FgInvBrush" Color="{StaticResource FgInvColor}"/>
+      <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+      <SolidColorBrush x:Key="PrimarySoftBrush" Color="{StaticResource PrimarySoftColor}"/>
+      <SolidColorBrush x:Key="PrimaryTintBrush" Color="{StaticResource PrimaryTintColor}"/>
+      <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource SecondaryColor}"/>
+      <SolidColorBrush x:Key="SecondarySoftBrush" Color="{StaticResource SecondarySoftColor}"/>
+      <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+      <SolidColorBrush x:Key="AccentSoftBrush" Color="{StaticResource AccentSoftColor}"/>
+      <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+      <SolidColorBrush x:Key="SuccessSoftBrush" Color="{StaticResource SuccessSoftColor}"/>
+      <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+      <SolidColorBrush x:Key="WarningSoftBrush" Color="{StaticResource WarningSoftColor}"/>
+      <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
+      <SolidColorBrush x:Key="DangerSoftBrush" Color="{StaticResource DangerSoftColor}"/>
+      <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource InfoColor}"/>
+      <SolidColorBrush x:Key="InfoSoftBrush" Color="{StaticResource InfoSoftColor}"/>
+      <SolidColorBrush x:Key="BorderSoftBrush" Color="{StaticResource BorderSoftColor}"/>
+      <SolidColorBrush x:Key="Border1Brush" Color="{StaticResource Border1Color}"/>
+      <SolidColorBrush x:Key="ConsoleFrameBrush" Color="#d3d0e0"/>
+    </ResourceDictionary>
+
+    <!-- ============================================================
+         DARK (Mocha)
+         ============================================================ -->
+    <ResourceDictionary x:Key="Dark">
+      <Color x:Key="CrustColor">#11111b</Color>
+      <Color x:Key="MantleColor">#181825</Color>
+      <Color x:Key="BaseColor">#1e1e2e</Color>
+      <Color x:Key="Surface0Color">#2a2a3d</Color>
+      <Color x:Key="Surface1Color">#313244</Color>
+      <Color x:Key="Surface2Color">#45475a</Color>
+
+      <Color x:Key="Fg1Color">#cdd6f4</Color>
+      <Color x:Key="Fg2Color">#bac2de</Color>
+      <Color x:Key="Fg3Color">#a6adc8</Color>
+      <Color x:Key="FgInvColor">#11111b</Color>
+
+      <Color x:Key="PrimaryColor">#cba6f7</Color>
+      <Color x:Key="PrimarySoftColor">#5a4a86</Color>
+      <Color x:Key="PrimaryTintColor">#2e2745</Color>
+      <Color x:Key="SecondaryColor">#f5c2e7</Color>
+      <Color x:Key="SecondarySoftColor">#6b4a64</Color>
+      <Color x:Key="AccentColor">#fab387</Color>
+      <Color x:Key="AccentSoftColor">#6b4d3a</Color>
+
+      <Color x:Key="SuccessColor">#a6e3a1</Color>
+      <Color x:Key="SuccessSoftColor">#3a5640</Color>
+      <Color x:Key="WarningColor">#f9e2af</Color>
+      <Color x:Key="WarningSoftColor">#6b5a3a</Color>
+      <Color x:Key="DangerColor">#f38ba8</Color>
+      <Color x:Key="DangerSoftColor">#6b3a48</Color>
+      <Color x:Key="InfoColor">#94e2d5</Color>
+      <Color x:Key="InfoSoftColor">#2f5a55</Color>
+
+      <Color x:Key="BorderSoftColor">#2e2e44</Color>
+      <Color x:Key="Border1Color">#3d3d5a</Color>
+
+      <SolidColorBrush x:Key="CrustBrush" Color="{StaticResource CrustColor}"/>
+      <SolidColorBrush x:Key="MantleBrush" Color="{StaticResource MantleColor}"/>
+      <SolidColorBrush x:Key="BaseBrush" Color="{StaticResource BaseColor}"/>
+      <SolidColorBrush x:Key="Surface0Brush" Color="{StaticResource Surface0Color}"/>
+      <SolidColorBrush x:Key="Surface1Brush" Color="{StaticResource Surface1Color}"/>
+      <SolidColorBrush x:Key="Surface2Brush" Color="{StaticResource Surface2Color}"/>
+      <SolidColorBrush x:Key="Fg1Brush" Color="{StaticResource Fg1Color}"/>
+      <SolidColorBrush x:Key="Fg2Brush" Color="{StaticResource Fg2Color}"/>
+      <SolidColorBrush x:Key="Fg3Brush" Color="{StaticResource Fg3Color}"/>
+      <SolidColorBrush x:Key="FgInvBrush" Color="{StaticResource FgInvColor}"/>
+      <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+      <SolidColorBrush x:Key="PrimarySoftBrush" Color="{StaticResource PrimarySoftColor}"/>
+      <SolidColorBrush x:Key="PrimaryTintBrush" Color="{StaticResource PrimaryTintColor}"/>
+      <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource SecondaryColor}"/>
+      <SolidColorBrush x:Key="SecondarySoftBrush" Color="{StaticResource SecondarySoftColor}"/>
+      <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+      <SolidColorBrush x:Key="AccentSoftBrush" Color="{StaticResource AccentSoftColor}"/>
+      <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+      <SolidColorBrush x:Key="SuccessSoftBrush" Color="{StaticResource SuccessSoftColor}"/>
+      <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+      <SolidColorBrush x:Key="WarningSoftBrush" Color="{StaticResource WarningSoftColor}"/>
+      <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
+      <SolidColorBrush x:Key="DangerSoftBrush" Color="{StaticResource DangerSoftColor}"/>
+      <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource InfoColor}"/>
+      <SolidColorBrush x:Key="InfoSoftBrush" Color="{StaticResource InfoSoftColor}"/>
+      <SolidColorBrush x:Key="BorderSoftBrush" Color="{StaticResource BorderSoftColor}"/>
+      <SolidColorBrush x:Key="Border1Brush" Color="{StaticResource Border1Color}"/>
+      <SolidColorBrush x:Key="ConsoleFrameBrush" Color="#14141c"/>
+    </ResourceDictionary>
+
+  </ResourceDictionary.ThemeDictionaries>
+
+  <!-- ============================================================
+       Font Families
+       ============================================================ -->
+  <FontFamily x:Key="QuicksandFont">avares://Obsidian Launcher/Fonts#Quicksand</FontFamily>
+  <FontFamily x:Key="CauseFont">avares://Obsidian Launcher/Fonts#Cause</FontFamily>
+  <FontFamily x:Key="PlaywriteFont">avares://Obsidian Launcher/Fonts#Playwrite GB S</FontFamily>
+
+  <!-- ============================================================
+       Corner Radii
+       ============================================================ -->
+  <CornerRadius x:Key="RadiusXs">6</CornerRadius>
+  <CornerRadius x:Key="RadiusSm">10</CornerRadius>
+  <CornerRadius x:Key="RadiusMd">14</CornerRadius>
+  <CornerRadius x:Key="RadiusLg">20</CornerRadius>
+  <CornerRadius x:Key="RadiusXl">28</CornerRadius>
+  <CornerRadius x:Key="RadiusPill">999</CornerRadius>
+
+  <!-- ============================================================
+       Global Button Styles
+       ============================================================ -->
+  <Style Selector="Button">
+    <Setter Property="FontFamily" Value="{StaticResource QuicksandFont}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="FontSize" Value="13.5"/>
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusPill}"/>
+    <Setter Property="Padding" Value="20,10"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Background" Value="{DynamicResource Surface0Brush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource Fg1Brush}"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                BorderBrush="{TemplateBinding BorderBrush}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <!-- Primary button -->
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource FgInvBrush}"/>
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ Border">
+    <Setter Property="Opacity" Value="0.88"/>
+  </Style>
+
+  <!-- Secondary button -->
+  <Style Selector="Button.secondary">
+    <Setter Property="Background" Value="{DynamicResource Surface0Brush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource Fg1Brush}"/>
+  </Style>
+  <Style Selector="Button.secondary:pointerover /template/ Border">
+    <Setter Property="Background" Value="{DynamicResource Surface1Brush}"/>
+  </Style>
+
+  <!-- Ghost button -->
+  <Style Selector="Button.ghost">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource Fg2Brush}"/>
+  </Style>
+  <Style Selector="Button.ghost:pointerover /template/ Border">
+    <Setter Property="Background" Value="{DynamicResource Surface0Brush}"/>
+  </Style>
+
+  <!-- Soft button -->
+  <Style Selector="Button.soft">
+    <Setter Property="Background" Value="{DynamicResource PrimaryTintBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+  </Style>
+
+  <!-- Danger button -->
+  <Style Selector="Button.danger">
+    <Setter Property="Background" Value="{DynamicResource DangerSoftBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+  </Style>
+
+  <!-- Nav item button -->
+  <Style Selector="Button.nav-item">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource Fg2Brush}"/>
+    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="Padding" Value="12,9"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    <Setter Property="FontSize" Value="13.5"/>
+  </Style>
+  <Style Selector="Button.nav-item:pointerover /template/ Border">
+    <Setter Property="Background" Value="{DynamicResource Surface0Brush}"/>
+  </Style>
+  <Style Selector="Button.nav-item.active">
+    <Setter Property="Background" Value="{DynamicResource PrimaryTintBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+  </Style>
+
+  <!-- ============================================================
+       TextBox style
+       ============================================================ -->
+  <Style Selector="TextBox">
+    <Setter Property="FontFamily" Value="{StaticResource QuicksandFont}"/>
+    <Setter Property="FontSize" Value="13.5"/>
+    <Setter Property="Foreground" Value="{DynamicResource Fg1Brush}"/>
+    <Setter Property="Background" Value="{DynamicResource Surface0Brush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusMd}"/>
+    <Setter Property="Padding" Value="14,11"/>
+    <Setter Property="CaretBrush" Value="{DynamicResource PrimaryBrush}"/>
+    <Setter Property="SelectionBrush" Value="{DynamicResource PrimarySoftBrush}"/>
+  </Style>
+  <Style Selector="TextBox:focus">
+    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+  </Style>
+
+  <!-- ============================================================
+       ComboBox style
+       ============================================================ -->
+  <Style Selector="ComboBox">
+    <Setter Property="FontFamily" Value="{StaticResource QuicksandFont}"/>
+    <Setter Property="FontSize" Value="13.5"/>
+    <Setter Property="Foreground" Value="{DynamicResource Fg1Brush}"/>
+    <Setter Property="Background" Value="{DynamicResource Surface0Brush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusMd}"/>
+    <Setter Property="Padding" Value="14,11"/>
+  </Style>
+
+  <!-- ============================================================
+       ScrollBar
+       ============================================================ -->
+  <Style Selector="ScrollBar">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="ScrollBar /template/ Border#VerticalRoot">
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+
+  <!-- ============================================================
+       Slider
+       ============================================================ -->
+  <Style Selector="Slider">
+    <Setter Property="Background" Value="{DynamicResource Surface1Brush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+  </Style>
+
+</ResourceDictionary>

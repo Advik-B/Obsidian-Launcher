@@ -1,327 +1,356 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:ObsidianLauncher.ViewModels"
-        xmlns:utils="using:ObsidianLauncher.Utils"
+        xmlns:views="using:ObsidianLauncher.Views"
+        xmlns:controls="using:ObsidianLauncher.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="650"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="820"
         x:Class="ObsidianLauncher.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="avares://Obsidian Launcher/Images/icon.ico"
         Title="Obsidian Launcher"
-        Width="1000" Height="650"
-        MinWidth="800" MinHeight="500">
+        Width="1280" Height="820"
+        MinWidth="900" MinHeight="600"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="0"
+        Background="{DynamicResource CrustBrush}"
+        FontFamily="{StaticResource QuicksandFont}">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Window.Resources>
-        <utils:FilePathToBitmapConverter x:Key="FilePathToBitmapConverter"/>
-    </Window.Resources>
+    <!-- Root: window chrome border -->
+    <Border CornerRadius="24"
+            Background="{DynamicResource BaseBrush}"
+            BorderBrush="{DynamicResource BorderSoftBrush}"
+            BorderThickness="1"
+            ClipToBounds="True">
 
-    <DockPanel>
-        <!-- Menu Bar -->
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="_New Instance..."         Command="{Binding CreateInstanceCommand}"/>
-                <Separator/>
-                <MenuItem Header="_Launch"                  Command="{Binding LaunchInstanceCommand}"/>
-                <MenuItem Header="_Kill"                    Command="{Binding KillInstanceCommand}"/>
-                <Separator/>
-                <MenuItem Header="_Edit..."                 Command="{Binding EditInstanceCommand}"/>
-                <MenuItem Header="Change _Group..."         Command="{Binding ChangeGroupCommand}"/>
-                <MenuItem Header="View Instance _Folder"    Command="{Binding ViewInstanceFolderCommand}"/>
-                <MenuItem Header="E_xport Instance..."      Command="{Binding ExportInstanceCommand}"/>
-                <MenuItem Header="_Copy Instance..."        Command="{Binding CopyInstanceCommand}"/>
-                <MenuItem Header="_Delete Instance"         Command="{Binding DeleteInstanceCommand}"/>
-                <MenuItem Header="Create _Shortcut..."      Command="{Binding CreateShortcutCommand}"/>
-                <Separator/>
-                <MenuItem Header="_Import">
-                    <MenuItem Header="_MultiMC / Prism Export (.zip)..." Command="{Binding ImportMultiMcCommand}"/>
-                    <MenuItem Header="_Modrinth Modpack (.mrpack)..."     Command="{Binding ImportModrinthCommand}"/>
-                    <MenuItem Header="_CurseForge Modpack (.zip)..."      Command="{Binding ImportCurseForgeCommand}"/>
-                    <MenuItem Header="_FTB Modpack (by Pack ID)..."       Command="{Binding ImportFtbCommand}"/>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Header="_Settings..."             Command="{Binding OpenSettingsCommand}"/>
-                <MenuItem Header="Close _Window"            Command="{Binding ExitCommand}"/>
-            </MenuItem>
-            <MenuItem Header="_Edit">
-                <MenuItem Header="_Undo Trash Instance"     Command="{Binding UndoTrashCommand}"/>
-            </MenuItem>
-            <MenuItem Header="_View">
-                <MenuItem Header="_Toolbar"    IsChecked="{Binding IsToolbarVisible}"    Command="{Binding ToggleToolbarCommand}"/>
-                <MenuItem Header="_Status Bar" IsChecked="{Binding IsStatusBarVisible}"  Command="{Binding ToggleStatusBarCommand}"/>
-                <MenuItem Header="_News Bar"   IsChecked="{Binding IsNewsBarVisible}"    Command="{Binding ToggleNewsBarCommand}"/>
-                <Separator/>
-                <MenuItem Header="_Screenshots..." Command="{Binding OpenScreenshotViewerCommand}"/>
-                <MenuItem Header="_Log Viewer..."  Command="{Binding OpenLogViewerCommand}"/>
-            </MenuItem>
-            <MenuItem Header="F_olders">
-                <MenuItem Header="Open _Launcher Folder"   Command="{Binding OpenLauncherFolderCommand}"/>
-                <Separator/>
-                <MenuItem Header="Open _Instances Folder"  Command="{Binding OpenInstancesFolderCommand}"/>
-                <Separator/>
-                <MenuItem Header="Open _Logs Folder"       Command="{Binding OpenLogsFolderCommand}"/>
-            </MenuItem>
-            <MenuItem Header="_Accounts">
-                <MenuItem Header="_Manage Accounts..."      Command="{Binding OpenAccountManagementCommand}"/>
-            </MenuItem>
-            <MenuItem Header="_Help">
-                <MenuItem Header="_About..."                Command="{Binding OpenAboutCommand}"/>
-                <MenuItem Header="_Documentation"           Command="{Binding OpenDocumentationCommand}"/>
-                <MenuItem Header="Open _Wiki"               Command="{Binding OpenDocumentationCommand}"/>
-                <Separator/>
-                <MenuItem Header="_Report Bug"              Command="{Binding OpenReportBugCommand}"/>
-                <MenuItem Header="_Discord"                 Command="{Binding OpenDiscordCommand}"/>
-                <MenuItem Header="_Reddit"                  Command="{Binding OpenRedditCommand}"/>
-                <Separator/>
-                <MenuItem Header="View _Log..."             Command="{Binding OpenLogViewerCommand}"/>
-                <MenuItem Header="_Java Manager..."         Command="{Binding OpenJavaManagerCommand}"/>
-                <Separator/>
-                <MenuItem Header="_Check for Updates"       Command="{Binding CheckForUpdatesCommand}"/>
-            </MenuItem>
-        </Menu>
+        <Grid RowDefinitions="44,*">
 
-        <!-- Toolbar -->
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5" Spacing="5"
-                    IsVisible="{Binding IsToolbarVisible}">
-            <Button Content="New Instance"          Command="{Binding CreateInstanceCommand}"       Padding="10,5"/>
-            <Button Content="View Instance Folder"  Command="{Binding ViewInstanceFolderCommand}"   Padding="10,5"/>
-            <Button Content="Settings"              Command="{Binding OpenSettingsCommand}"          Padding="10,5"/>
-            <Separator/>
-            <Button Content="Check Update"          Command="{Binding CheckForUpdatesCommand}"       Padding="10,5"/>
-            <Button Content="Accounts"              Command="{Binding OpenAccountManagementCommand}" Padding="10,5"/>
-        </StackPanel>
+            <!-- ============================================================
+                 TITLE BAR
+                 ============================================================ -->
+            <Border Grid.Row="0"
+                    Background="{DynamicResource MantleBrush}"
+                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                    BorderThickness="0,0,0,1"
+                    x:Name="TitleBar"
+                    PointerPressed="TitleBar_PointerPressed">
+                <Grid ColumnDefinitions="Auto,*,Auto">
 
-        <!-- News Bar (like Prism's news toolbar at bottom) -->
-        <Border DockPanel.Dock="Bottom" BorderBrush="Gray" BorderThickness="0,1,0,0" Padding="6,4"
-                IsVisible="{Binding IsNewsBarVisible}">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Latest:" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" Opacity="0.7"/>
-                <TextBlock Grid.Column="2" Text="{Binding LatestNewsHeadline}" FontSize="11"
-                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Opacity="0.8"/>
-                <Button Grid.Column="3" Content="More News..." Command="{Binding OpenMoreNewsCommand}"
-                        Padding="8,2" FontSize="11"/>
-            </Grid>
-        </Border>
+                    <!-- Left: traffic dots + branding -->
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
+                                Spacing="14"
+                                Margin="14,0"
+                                VerticalAlignment="Center">
+                        <!-- Traffic dots -->
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Border Width="12" Height="12" CornerRadius="6"
+                                    Background="#ed6a5e"
+                                    ToolTip.Tip="Close"
+                                    Cursor="Hand"
+                                    x:Name="CloseBtn">
+                            </Border>
+                            <Border Width="12" Height="12" CornerRadius="6"
+                                    Background="#f5bf4f"
+                                    ToolTip.Tip="Minimize"
+                                    Cursor="Hand"
+                                    x:Name="MinimizeBtn">
+                            </Border>
+                            <Border Width="12" Height="12" CornerRadius="6"
+                                    Background="#62c554"
+                                    ToolTip.Tip="Maximize"
+                                    Cursor="Hand"
+                                    x:Name="MaximizeBtn">
+                            </Border>
+                        </StackPanel>
 
-        <!-- Status Bar -->
-        <Border DockPanel.Dock="Bottom" BorderBrush="Gray" BorderThickness="0,1,0,0" Padding="5"
-                IsVisible="{Binding IsStatusBarVisible}">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
-                    <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding ProgressText}" VerticalAlignment="Center" FontStyle="Italic"/>
-                </StackPanel>
-
-                <ProgressBar Grid.Column="1"
-                             Width="200" Height="20"
-                             Value="{Binding ProgressValue}"
-                             Maximum="100"
-                             IsIndeterminate="{Binding IsLaunching}"
-                             IsVisible="{Binding IsLaunching}"/>
-            </Grid>
-        </Border>
-
-        <!-- Main Content Area -->
-        <Grid DockPanel.Dock="Top">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Instance List -->
-            <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="0,1,1,0" Padding="5">
-                <DockPanel>
-                    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,8,Auto" Margin="0,0,0,8">
-                        <TextBlock Grid.Column="0" Text="Instances"
-                                   FontSize="16" FontWeight="Bold"
-                                   VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="2"
-                                 Text="{Binding SearchFilter}"
-                                 Watermark="Search instances..."
-                                 Width="180"
-                                 VerticalContentAlignment="Center"/>
-                    </Grid>
-
-                    <ListBox ItemsSource="{Binding FilteredInstances}"
-                             SelectedItem="{Binding SelectedInstance}"
-                             Background="Transparent"
-                             DoubleTapped="InstanceList_DoubleTapped">
-                        <ListBox.KeyBindings>
-                            <KeyBinding Gesture="Return" Command="{Binding LaunchInstanceCommand}"/>
-                        </ListBox.KeyBindings>
-                        <ListBox.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="Launch"               Command="{Binding LaunchInstanceCommand}"/>
-                                <MenuItem Header="Kill"                 Command="{Binding KillInstanceCommand}"/>
-                                <Separator/>
-                                <MenuItem Header="Edit..."              Command="{Binding EditInstanceCommand}"/>
-                                <MenuItem Header="Copy..."              Command="{Binding CopyInstanceCommand}"/>
-                                <MenuItem Header="Delete"               Command="{Binding DeleteInstanceCommand}"/>
-                                <Separator/>
-                                <MenuItem Header="Browse Mods..."       Command="{Binding OpenModBrowserCommand}"/>
-                                <MenuItem Header="Open Instance Folder" Command="{Binding ViewInstanceFolderCommand}"/>
-                                <MenuItem Header="Export Instance..."   Command="{Binding ExportInstanceCommand}"/>
-                                <MenuItem Header="Create Shortcut..."   Command="{Binding CreateShortcutCommand}"/>
-                            </ContextMenu>
-                        </ListBox.ContextMenu>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Border Padding="8" Margin="2"
-                                        Background="{DynamicResource SystemControlBackgroundAltMediumBrush}"
-                                        CornerRadius="4">
-                                    <Grid ColumnDefinitions="Auto,10,*">
-                                        <!-- Instance Icon -->
-                                        <Border Grid.Column="0"
-                                                Width="48" Height="48"
-                                                CornerRadius="6"
-                                                ClipToBounds="True"
-                                                Background="#40808080"
-                                                VerticalAlignment="Center">
-                                            <Panel>
-                                                <Image Source="{Binding CustomIconPath, Converter={StaticResource FilePathToBitmapConverter}}"
-                                                       Stretch="UniformToFill"
-                                                       IsVisible="{Binding CustomIconPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                                                <TextBlock Text="{Binding Name[0]}"
-                                                           FontSize="22"
-                                                           FontWeight="Bold"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"
-                                                           Opacity="0.6"
-                                                           IsVisible="{Binding CustomIconPath, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
-                                            </Panel>
-                                        </Border>
-                                        <!-- Instance Info -->
-                                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"/>
-                                            <TextBlock Text="{Binding MinecraftVersionDisplay}"
-                                                       FontSize="11"
-                                                       Opacity="0.6"
-                                                       IsVisible="{Binding MinecraftVersionDisplay, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                                            <TextBlock Text="{Binding Notes}"
-                                                       TextWrapping="NoWrap"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       FontSize="11"
-                                                       Opacity="0.7"
-                                                       IsVisible="{Binding Notes, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <TextBlock Text="{Binding GroupDisplayName, StringFormat='[{0}]'}"
-                                                           FontSize="10"
-                                                           Opacity="0.5"
-                                                           IsVisible="{Binding GroupDisplayName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                                                <TextBlock Text="{Binding LastPlayedDate, StringFormat='Last played: {0:g}'}"
-                                                           FontSize="10"
-                                                           Opacity="0.5"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </DockPanel>
-            </Border>
-
-            <!-- Instance Actions Panel -->
-            <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="0,1,0,0" Padding="10" Width="210">
-                <StackPanel Spacing="6">
-                    <TextBlock Text="Instance Actions" FontWeight="Bold" FontSize="14" Margin="0,0,0,6"/>
-
-                    <Button Content="Launch"
-                            Command="{Binding LaunchInstanceCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            FontWeight="Bold"
-                            Padding="10"/>
-
-                    <Button Content="Kill"
-                            Command="{Binding KillInstanceCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Padding="10"/>
-
-                    <Separator Margin="0,4"/>
-
-                    <Button Content="Edit..."
-                            Command="{Binding EditInstanceCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Padding="10"/>
-
-                    <Button Content="Copy..."
-                            Command="{Binding CopyInstanceCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Padding="10"/>
-
-                    <Button Content="Delete"
-                            Command="{Binding DeleteInstanceCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Padding="10"/>
-
-                    <Separator Margin="0,4"/>
-
-                    <Button Content="Browse Mods..."
-                            Command="{Binding OpenModBrowserCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Padding="10"/>
-
-                    <Button Content="Open Instance Folder"
-                            Command="{Binding ViewInstanceFolderCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Padding="10"/>
-
-                    <Button Content="Export Instance..."
-                            Command="{Binding ExportInstanceCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Padding="10"/>
-
-                    <Button Content="Create Shortcut..."
-                            Command="{Binding CreateShortcutCommand}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Padding="10"/>
-
-                    <Separator Margin="0,4"/>
-
-                    <TextBlock Text="Instance Info" FontWeight="Bold" FontSize="12" Margin="0,0,0,4"/>
-
-                    <StackPanel Spacing="4" IsVisible="{Binding SelectedInstance, Converter={x:Static ObjectConverters.IsNotNull}}">
-                        <TextBlock Text="{Binding SelectedInstance.Name, StringFormat='Name: {0}'}"
-                                   TextWrapping="Wrap" FontSize="11"/>
-                        <TextBlock Text="{Binding SelectedInstance.CreationDate, StringFormat='Created: {0:d}'}"
-                                   FontSize="11"/>
-                        <TextBlock Text="{Binding SelectedInstance.TotalPlaytime, StringFormat='Playtime: {0:hh\\:mm\\:ss}'}"
-                                   FontSize="11"/>
+                        <!-- Title -->
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <TextBlock Text="Obsidian Launcher"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource Fg2Brush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="· cozy edition"
+                                       FontSize="13"
+                                       FontWeight="Normal"
+                                       Foreground="{DynamicResource Fg3Brush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
                     </StackPanel>
 
-                    <TextBlock Text="No instance selected"
-                               FontSize="11"
-                               FontStyle="Italic"
-                               Opacity="0.5"
-                               IsVisible="{Binding SelectedInstance, Converter={x:Static ObjectConverters.IsNull}}"/>
-                </StackPanel>
+                    <!-- Right: status indicators -->
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                Spacing="10"
+                                Margin="14,0"
+                                VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                            <Border Width="6" Height="6" CornerRadius="3" Background="{DynamicResource SuccessBrush}"/>
+                            <TextBlock Text="Ready"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource Fg3Brush}"/>
+                        </StackPanel>
+                        <TextBlock Text="·"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource Border1Brush}"/>
+                        <TextBlock Text="v0.1.0"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource Fg3Brush}"/>
+                    </StackPanel>
+
+                </Grid>
             </Border>
+
+            <!-- ============================================================
+                 BODY: Sidebar + Content
+                 ============================================================ -->
+            <Grid Grid.Row="1" ColumnDefinitions="240,*">
+
+                <!-- SIDEBAR -->
+                <Border Grid.Column="0"
+                        Background="{DynamicResource MantleBrush}"
+                        BorderBrush="{DynamicResource BorderSoftBrush}"
+                        BorderThickness="0,0,1,0">
+                    <DockPanel>
+
+                        <!-- Brand + Nav -->
+                        <StackPanel DockPanel.Dock="Top" Margin="14,18,14,0" Spacing="0">
+
+                            <!-- Brand -->
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="6,0,6,18">
+                                <controls:PixelCatControl CatSize="32"/>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Obsidian"
+                                               FontSize="15"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource Fg1Brush}"
+                                               LetterSpacing="-0.01"/>
+                                    <TextBlock Text="a sleepy launcher"
+                                               FontFamily="{StaticResource PlaywriteFont}"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource SecondaryBrush}"
+                                               Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Account chip -->
+                            <Border Background="{DynamicResource Surface0Brush}"
+                                    CornerRadius="14"
+                                    Padding="10,8"
+                                    Margin="0,0,0,14"
+                                    Cursor="Hand"
+                                    x:Name="AccountChip"
+                                    PointerPressed="AccountChip_PointerPressed">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Grid.Column="0"
+                                            Width="28" Height="28"
+                                            CornerRadius="8"
+                                            Background="{DynamicResource SecondaryBrush}"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="P"
+                                                   FontSize="13"
+                                                   FontWeight="Bold"
+                                                   Foreground="White"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+                                        <TextBlock Text="Player"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource Fg1Brush}"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <Border Width="6" Height="6" CornerRadius="3"
+                                                    Background="{DynamicResource SuccessBrush}"
+                                                    VerticalAlignment="Center"/>
+                                            <TextBlock Text="online"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource Fg3Brush}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="2"
+                                               Text="⌄"
+                                               FontSize="14"
+                                               Foreground="{DynamicResource Fg3Brush}"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Library section -->
+                            <TextBlock Text="LIBRARY"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource Fg3Brush}"
+                                       LetterSpacing="0.14"
+                                       Margin="10,14,10,6"/>
+
+                            <Button Classes="nav-item"
+                                    Classes.active="{Binding IsInstancesScreen}"
+                                    Command="{Binding NavigateToInstancesCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="▶" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Instances" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Classes="nav-item"
+                                    Classes.active="{Binding IsModsScreen}"
+                                    Command="{Binding NavigateToModsCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="⬡" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Mod browser" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Classes="nav-item"
+                                    Classes.active="{Binding IsWorldsScreen}"
+                                    Command="{Binding NavigateToWorldsCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="◉" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Worlds" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- System section -->
+                            <TextBlock Text="SYSTEM"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource Fg3Brush}"
+                                       LetterSpacing="0.14"
+                                       Margin="10,14,10,6"/>
+
+                            <Button Classes="nav-item"
+                                    Classes.active="{Binding IsConsoleScreen}"
+                                    Command="{Binding NavigateToConsoleCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text=">" FontSize="14" VerticalAlignment="Center" FontFamily="Monospace"/>
+                                    <TextBlock Text="Console" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Classes="nav-item"
+                                    Classes.active="{Binding IsAccountsScreen}"
+                                    Command="{Binding NavigateToAccountsCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="👤" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Accounts" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Classes="nav-item"
+                                    Classes.active="{Binding IsSettingsScreen}"
+                                    Command="{Binding NavigateToSettingsCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="⚙" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Settings" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                        </StackPanel>
+
+                        <!-- Sleeping cat card at bottom -->
+                        <Border DockPanel.Dock="Bottom"
+                                Margin="14,0,14,14"
+                                Background="{DynamicResource Surface0Brush}"
+                                CornerRadius="18"
+                                Padding="14">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <Border Width="44" Height="44" CornerRadius="22"
+                                        Background="{DynamicResource PrimaryTintBrush}">
+                                    <controls:PixelCatControl CatSize="28"
+                                                              HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Quiet hours"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg1Brush}"/>
+                                    <TextBlock Text="Notifications muted"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource Fg2Brush}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                    </DockPanel>
+                </Border>
+
+                <!-- CONTENT AREA -->
+                <Grid Grid.Column="1" RowDefinitions="*,30">
+
+                    <!-- Screen content (no dedicated header - each view has its own) -->
+                    <Panel Grid.Row="0">
+
+                        <!-- Instances screen -->
+                        <views:InstancesView IsVisible="{Binding IsInstancesScreen}"/>
+
+                        <!-- Mod browser screen -->
+                        <views:ModBrowserView IsVisible="{Binding IsModsScreen}"/>
+
+                        <!-- Worlds screen -->
+                        <views:WorldsView IsVisible="{Binding IsWorldsScreen}"/>
+
+                        <!-- Console screen -->
+                        <views:ConsoleView IsVisible="{Binding IsConsoleScreen}"/>
+
+                        <!-- Accounts screen -->
+                        <views:AccountsView IsVisible="{Binding IsAccountsScreen}"/>
+
+                        <!-- Settings screen -->
+                        <views:SettingsView IsVisible="{Binding IsSettingsScreen}"/>
+
+                        <!-- Overlays (on top of everything) -->
+                        <views:CreateInstanceOverlay IsVisible="{Binding IsCreateInstanceOpen}"/>
+                        <views:InstanceSettingsOverlay IsVisible="{Binding IsInstanceSettingsOpen}"/>
+
+                    </Panel>
+
+                    <!-- STATUS BAR -->
+                    <Border Grid.Row="1"
+                            Background="{DynamicResource MantleBrush}"
+                            BorderBrush="{DynamicResource BorderSoftBrush}"
+                            BorderThickness="0,1,0,0"
+                            Padding="18,0">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0"
+                                        Orientation="Horizontal"
+                                        Spacing="18"
+                                        VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Border Width="6" Height="6" CornerRadius="3"
+                                            Background="{DynamicResource SuccessBrush}"
+                                            VerticalAlignment="Center"/>
+                                    <TextBlock Text="Java 21 LTS"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource Fg3Brush}"/>
+                                </StackPanel>
+                                <TextBlock Text="·" FontSize="11" Foreground="{DynamicResource Border1Brush}"/>
+                                <TextBlock Text="{Binding StatusText}"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource Fg3Brush}"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource Fg3Brush}"
+                                       VerticalAlignment="Center"
+                                       Text="Mojang OK"/>
+                        </Grid>
+                    </Border>
+
+                </Grid>
+
+            </Grid>
+
         </Grid>
-    </DockPanel>
+
+    </Border>
+
 </Window>

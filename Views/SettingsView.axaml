@@ -1,0 +1,180 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ObsidianLauncher.ViewModels"
+             xmlns:controls="using:ObsidianLauncher.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1040" d:DesignHeight="776"
+             x:Class="ObsidianLauncher.Views.SettingsView"
+             x:DataType="vm:MainWindowViewModel">
+
+    <Grid RowDefinitions="64,*">
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource BaseBrush}"
+                BorderBrush="{DynamicResource BorderSoftBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="28,0">
+            <TextBlock Text="Settings"
+                       FontSize="22"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource Fg1Brush}"
+                       VerticalAlignment="Center"/>
+        </Border>
+
+        <!-- Body -->
+        <ScrollViewer Grid.Row="1" Padding="32,28">
+            <Grid ColumnDefinitions="200,*" MaxWidth="920">
+
+                <!-- Left nav -->
+                <StackPanel Grid.Column="0" Spacing="2">
+                    <Button Classes="nav-item active" Padding="12,9">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="⚙" VerticalAlignment="Center"/>
+                            <TextBlock Text="General" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-item" Padding="12,9">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="🌙" VerticalAlignment="Center"/>
+                            <TextBlock Text="Appearance" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-item" Padding="12,9">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="⬇" VerticalAlignment="Center"/>
+                            <TextBlock Text="Downloads" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-item" Padding="12,9">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="☕" VerticalAlignment="Center"/>
+                            <TextBlock Text="Java" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-item" Padding="12,9">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="ℹ" VerticalAlignment="Center"/>
+                            <TextBlock Text="About" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Right content -->
+                <StackPanel Grid.Column="1" Margin="32,0,0,0" Spacing="0">
+
+                    <TextBlock Text="General"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource Fg1Brush}"
+                               Margin="0,0,0,4"/>
+                    <TextBlock Text="The basics. Nothing scary."
+                               FontSize="13"
+                               Foreground="{DynamicResource Fg3Brush}"
+                               Margin="0,0,0,16"/>
+
+                    <!-- Appearance section: dark/light toggle -->
+                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                            BorderThickness="0,1,0,0"
+                            Padding="0,16">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Theme"
+                                           FontSize="13.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                <TextBlock Text="Light is a sunbeam. Dark is a windowsill at night."
+                                           FontSize="12"
+                                           Foreground="{DynamicResource Fg3Brush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                                <Button Classes="secondary"
+                                        Padding="14,8"
+                                        x:Name="LightThemeBtn">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="☀" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Light" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="secondary"
+                                        Padding="14,8"
+                                        x:Name="DarkThemeBtn">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="🌙" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Dark" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                            BorderThickness="0,1,0,0"
+                            Padding="0,16">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Auto-update launcher"
+                                           FontSize="13.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                <TextBlock Text="Stable channel only."
+                                           FontSize="12"
+                                           Foreground="{DynamicResource Fg3Brush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+                            <CheckBox Grid.Column="1" IsChecked="True" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- About section -->
+                    <StackPanel Margin="0,28,0,0" Spacing="16">
+                        <TextBlock Text="About"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource Fg1Brush}"/>
+
+                        <StackPanel Orientation="Horizontal" Spacing="18">
+                            <controls:PixelCatControl CatSize="84"/>
+                            <StackPanel VerticalAlignment="Center" Spacing="4">
+                                <TextBlock Text="Obsidian Launcher"
+                                           FontSize="22"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                <TextBlock Text="a sleepy launcher for cozy gamers"
+                                           FontFamily="{StaticResource PlaywriteFont}"
+                                           FontSize="16"
+                                           Foreground="{DynamicResource SecondaryBrush}"/>
+                                <TextBlock Text="Version 0.1.0 · .NET 10 · Avalonia"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource Fg3Brush}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock Text="A custom Minecraft launcher built with .NET 10 and Avalonia. Cozy by design."
+                                   FontSize="14"
+                                   Foreground="{DynamicResource Fg2Brush}"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="540"/>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button Classes="secondary"
+                                    Command="{Binding OpenDocumentationCommand}"
+                                    Padding="14,8">
+                                <TextBlock Text="View on GitHub"/>
+                            </Button>
+                            <Button Classes="ghost" Padding="14,8">
+                                <TextBlock Text="Open licenses"/>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+
+                </StackPanel>
+
+            </Grid>
+        </ScrollViewer>
+
+    </Grid>
+
+</UserControl>

@@ -1,0 +1,210 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ObsidianLauncher.ViewModels"
+             xmlns:controls="using:ObsidianLauncher.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1040" d:DesignHeight="776"
+             x:Class="ObsidianLauncher.Views.InstanceSettingsOverlay"
+             x:DataType="vm:MainWindowViewModel">
+
+    <!-- Dark scrim -->
+    <Border Background="#66111111">
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+
+            <!-- Modal card: 880px wide, left rail + content -->
+            <Border Background="{DynamicResource BaseBrush}"
+                    CornerRadius="24"
+                    Width="880"
+                    MaxHeight="700"
+                    BoxShadow="0 18px 40px rgba(0,0,0,0.3)">
+
+                <Grid ColumnDefinitions="220,*">
+
+                    <!-- Left rail -->
+                    <Border Grid.Column="0"
+                            Background="{DynamicResource MantleBrush}"
+                            BorderBrush="{DynamicResource BorderSoftBrush}"
+                            BorderThickness="0,0,1,0"
+                            CornerRadius="24,0,0,24"
+                            Padding="18">
+                        <StackPanel Spacing="0">
+                            <!-- Instance preview -->
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,18">
+                                <Border Width="44" Height="44" CornerRadius="12" ClipToBounds="True">
+                                    <controls:BlockArtControl Palette="grass"
+                                                              HorizontalAlignment="Stretch"
+                                                              VerticalAlignment="Stretch"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding SelectedInstance.Name, FallbackValue='Instance'}"
+                                               FontSize="14"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg1Brush}"/>
+                                    <TextBlock Text="{Binding SelectedInstance.MinecraftVersionDisplay, FallbackValue='1.21'}"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource Fg3Brush}"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Tab nav -->
+                            <Button Classes="nav-item active" Padding="10,8" FontSize="13">
+                                <TextBlock Text="General"/>
+                            </Button>
+                            <Button Classes="nav-item" Padding="10,8" FontSize="13">
+                                <TextBlock Text="Java &amp; memory"/>
+                            </Button>
+                            <Button Classes="nav-item" Padding="10,8" FontSize="13">
+                                <TextBlock Text="Game window"/>
+                            </Button>
+                            <Button Classes="nav-item" Padding="10,8" FontSize="13">
+                                <TextBlock Text="Mod loader"/>
+                            </Button>
+                            <Button Classes="nav-item" Padding="10,8" FontSize="13">
+                                <TextBlock Text="Custom commands"/>
+                            </Button>
+
+                            <!-- Delete -->
+                            <Button Classes="danger"
+                                    Margin="0,24,0,0"
+                                    Padding="10,6"
+                                    FontSize="12"
+                                    Command="{Binding DeleteInstanceCommand}">
+                                <TextBlock Text="Delete instance"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Right pane -->
+                    <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto">
+
+                        <!-- Pane header -->
+                        <Border Grid.Row="0"
+                                BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,0,0,1"
+                                Padding="26,18">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0"
+                                           Text="General"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                <Button Grid.Column="1"
+                                        Classes="ghost"
+                                        Padding="8"
+                                        CornerRadius="12"
+                                        Command="{Binding CloseInstanceSettingsCommand}">
+                                    <TextBlock Text="✕" FontSize="14"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <!-- Form body -->
+                        <ScrollViewer Grid.Row="1" Padding="4,0,26,24">
+                            <StackPanel Spacing="0">
+
+                                <!-- Instance name -->
+                                <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                        BorderThickness="0,0,0,1"
+                                        Padding="26,16">
+                                    <Grid ColumnDefinitions="240,*">
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Instance name"
+                                                       FontSize="13.5"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Fg1Brush}"/>
+                                            <TextBlock Text="Shown in your library. Make it cute."
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource Fg3Brush}"
+                                                       Margin="0,3,0,0"/>
+                                        </StackPanel>
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding SelectedInstance.Name, FallbackValue=''}"
+                                                 VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Notes -->
+                                <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                        BorderThickness="0,0,0,1"
+                                        Padding="26,16">
+                                    <Grid ColumnDefinitions="240,*">
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Notes"
+                                                       FontSize="13.5"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Fg1Brush}"/>
+                                            <TextBlock Text="A little reminder for future-you."
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource Fg3Brush}"
+                                                       Margin="0,3,0,0"/>
+                                        </StackPanel>
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding SelectedInstance.Notes, FallbackValue=''}"
+                                                 AcceptsReturn="True"
+                                                 TextWrapping="Wrap"
+                                                 MinHeight="70"
+                                                 VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- JVM args -->
+                                <Border Padding="26,16">
+                                    <Grid ColumnDefinitions="240,*">
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="JVM arguments"
+                                                       FontSize="13.5"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Fg1Brush}"/>
+                                            <TextBlock Text="For the curious. Aikar's flags are cozy defaults."
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource Fg3Brush}"
+                                                       Margin="0,3,0,0"/>
+                                        </StackPanel>
+                                        <TextBox Grid.Column="1"
+                                                 FontFamily="Monospace"
+                                                 FontSize="12"
+                                                 AcceptsReturn="True"
+                                                 TextWrapping="Wrap"
+                                                 MinHeight="70"
+                                                 VerticalAlignment="Center"
+                                                 Watermark="-XX:+UseG1GC"/>
+                                    </Grid>
+                                </Border>
+
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Footer -->
+                        <Border Grid.Row="2"
+                                Background="{DynamicResource MantleBrush}"
+                                BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="16,14">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                                <Button Classes="ghost"
+                                        Command="{Binding CloseInstanceSettingsCommand}"
+                                        Padding="14,8">
+                                    <TextBlock Text="Cancel"/>
+                                </Button>
+                                <Button Classes="primary"
+                                        Command="{Binding CloseInstanceSettingsCommand}"
+                                        Padding="14,8">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="✓" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Save changes" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+
+                    </Grid>
+
+                </Grid>
+
+            </Border>
+
+        </Grid>
+    </Border>
+
+</UserControl>

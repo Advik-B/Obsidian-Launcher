@@ -1,0 +1,127 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ObsidianLauncher.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1040" d:DesignHeight="776"
+             x:Class="ObsidianLauncher.Views.AccountsView"
+             x:DataType="vm:MainWindowViewModel">
+
+    <Grid RowDefinitions="64,*">
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource BaseBrush}"
+                BorderBrush="{DynamicResource BorderSoftBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="28,0">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="Accounts"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource Fg1Brush}"
+                           VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button Classes="primary" Padding="14,8">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="+" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock Text="Add Microsoft account" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="secondary" Padding="14,8">
+                        <TextBlock Text="Add offline"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Body -->
+        <ScrollViewer Grid.Row="1" Padding="32,28">
+            <StackPanel MaxWidth="720" Spacing="12">
+
+                <!-- Empty state / placeholder -->
+                <Border Background="{DynamicResource Surface0Brush}"
+                        CornerRadius="16"
+                        Padding="18">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <!-- Avatar -->
+                        <Border Grid.Column="0"
+                                Width="56" Height="56"
+                                CornerRadius="14"
+                                Background="{DynamicResource Surface1Brush}">
+                            <TextBlock Text="👤"
+                                       FontSize="28"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        <!-- Info -->
+                        <StackPanel Grid.Column="1" Margin="16,0" VerticalAlignment="Center" Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="Player"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                <Border Background="{DynamicResource SuccessSoftBrush}"
+                                        CornerRadius="999"
+                                        Padding="8,2">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <Border Width="6" Height="6" CornerRadius="3"
+                                                Background="{DynamicResource SuccessBrush}"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Text="active"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource SuccessBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="{DynamicResource Surface1Brush}"
+                                        CornerRadius="999"
+                                        Padding="8,2">
+                                    <TextBlock Text="offline"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg3Brush}"/>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text="no email · local profile"
+                                       FontSize="12.5"
+                                       Foreground="{DynamicResource Fg3Brush}"/>
+                        </StackPanel>
+                        <!-- Actions -->
+                        <Button Grid.Column="2"
+                                Classes="soft"
+                                Padding="12,6">
+                            <TextBlock Text="In use"/>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- Sign in card -->
+                <Border Background="{DynamicResource MantleBrush}"
+                        CornerRadius="20"
+                        BorderBrush="{DynamicResource Border1Brush}"
+                        BorderThickness="1.5"
+                        Padding="24">
+                    <StackPanel Spacing="12" HorizontalAlignment="Center">
+                        <TextBlock Text="Connect with Xbox Live for skins, capes, and Realms."
+                                   FontSize="13"
+                                   Foreground="{DynamicResource Fg3Brush}"
+                                   TextAlignment="Center"/>
+                        <Button Classes="primary"
+                                HorizontalAlignment="Center"
+                                Padding="16,10">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="👤" VerticalAlignment="Center"/>
+                                <TextBlock Text="Sign in with Microsoft" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
+
+</UserControl>

@@ -1,0 +1,185 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ObsidianLauncher.ViewModels"
+             xmlns:controls="using:ObsidianLauncher.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1040" d:DesignHeight="776"
+             x:Class="ObsidianLauncher.Views.CreateInstanceOverlay"
+             x:DataType="vm:MainWindowViewModel">
+
+    <!-- Dark scrim -->
+    <Border Background="#66111111"
+            x:Name="Scrim"
+            PointerPressed="Scrim_PointerPressed">
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+
+            <!-- Modal card -->
+            <Border Background="{DynamicResource BaseBrush}"
+                    CornerRadius="24"
+                    Width="680"
+                    MaxHeight="660"
+                    BoxShadow="0 18px 40px rgba(0,0,0,0.3)">
+                <Border.InputBindings>
+                    <!-- Consume click so it doesn't close via scrim -->
+                </Border.InputBindings>
+
+                <Grid RowDefinitions="Auto,*,Auto">
+
+                    <!-- Header -->
+                    <Border Grid.Row="0"
+                            BorderBrush="{DynamicResource BorderSoftBrush}"
+                            BorderThickness="0,0,0,1"
+                            Padding="22,18">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Step 1 of 3"
+                                           FontSize="10"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource PrimaryBrush}"
+                                           LetterSpacing="0.14"/>
+                                <TextBlock Text="A new instance, then?"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Fg1Brush}"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Classes="ghost"
+                                    Padding="8"
+                                    CornerRadius="12"
+                                    Command="{Binding CloseCreateInstanceCommand}">
+                                <TextBlock Text="✕" FontSize="14"/>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- Body -->
+                    <ScrollViewer Grid.Row="1" Padding="22">
+                        <StackPanel Spacing="18">
+
+                            <!-- Name input -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="What should we call it?"
+                                           FontSize="13.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                <TextBox Watermark="Cozy expedition"
+                                         FontSize="15"
+                                         x:Name="NameBox"/>
+                            </StackPanel>
+
+                            <!-- Palette picker -->
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Cover art"
+                                           FontSize="13.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                <WrapPanel Orientation="Horizontal">
+                                    <Border Width="90" Height="70" CornerRadius="14" Margin="0,0,10,10"
+                                            BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="2"
+                                            ClipToBounds="True" Cursor="Hand">
+                                        <controls:BlockArtControl Palette="grass"
+                                                                  HorizontalAlignment="Stretch"
+                                                                  VerticalAlignment="Stretch"/>
+                                    </Border>
+                                    <Border Width="90" Height="70" CornerRadius="14" Margin="0,0,10,10"
+                                            BorderThickness="2" BorderBrush="Transparent"
+                                            ClipToBounds="True" Cursor="Hand">
+                                        <controls:BlockArtControl Palette="cobble"
+                                                                  HorizontalAlignment="Stretch"
+                                                                  VerticalAlignment="Stretch"/>
+                                    </Border>
+                                    <Border Width="90" Height="70" CornerRadius="14" Margin="0,0,10,10"
+                                            BorderThickness="2" BorderBrush="Transparent"
+                                            ClipToBounds="True" Cursor="Hand">
+                                        <controls:BlockArtControl Palette="diamond"
+                                                                  HorizontalAlignment="Stretch"
+                                                                  VerticalAlignment="Stretch"/>
+                                    </Border>
+                                    <Border Width="90" Height="70" CornerRadius="14" Margin="0,0,10,10"
+                                            BorderThickness="2" BorderBrush="Transparent"
+                                            ClipToBounds="True" Cursor="Hand">
+                                        <controls:BlockArtControl Palette="lapis"
+                                                                  HorizontalAlignment="Stretch"
+                                                                  VerticalAlignment="Stretch"/>
+                                    </Border>
+                                    <Border Width="90" Height="70" CornerRadius="14" Margin="0,0,10,10"
+                                            BorderThickness="2" BorderBrush="Transparent"
+                                            ClipToBounds="True" Cursor="Hand">
+                                        <controls:BlockArtControl Palette="nether"
+                                                                  HorizontalAlignment="Stretch"
+                                                                  VerticalAlignment="Stretch"/>
+                                    </Border>
+                                    <Border Width="90" Height="70" CornerRadius="14" Margin="0,0,10,10"
+                                            BorderThickness="2" BorderBrush="Transparent"
+                                            ClipToBounds="True" Cursor="Hand">
+                                        <controls:BlockArtControl Palette="mauve"
+                                                                  HorizontalAlignment="Stretch"
+                                                                  VerticalAlignment="Stretch"/>
+                                    </Border>
+                                    <Border Width="90" Height="70" CornerRadius="14" Margin="0,0,10,10"
+                                            BorderThickness="2" BorderBrush="Transparent"
+                                            ClipToBounds="True" Cursor="Hand">
+                                        <controls:BlockArtControl Palette="cherry"
+                                                                  HorizontalAlignment="Stretch"
+                                                                  VerticalAlignment="Stretch"/>
+                                    </Border>
+                                    <Border Width="90" Height="70" CornerRadius="14" Margin="0,0,10,10"
+                                            BorderThickness="2" BorderBrush="Transparent"
+                                            ClipToBounds="True" Cursor="Hand">
+                                        <controls:BlockArtControl Palette="oakwood"
+                                                                  HorizontalAlignment="Stretch"
+                                                                  VerticalAlignment="Stretch"/>
+                                    </Border>
+                                </WrapPanel>
+                            </StackPanel>
+
+                            <!-- Tip -->
+                            <Border Background="{DynamicResource SecondarySoftBrush}"
+                                    CornerRadius="16"
+                                    Padding="14">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="🫖" FontSize="22" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Tip. Naming an instance is like naming a houseplant — you'll talk to it."
+                                               FontSize="13"
+                                               Foreground="{DynamicResource Fg1Brush}"
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Footer -->
+                    <Border Grid.Row="2"
+                            Background="{DynamicResource MantleBrush}"
+                            BorderBrush="{DynamicResource BorderSoftBrush}"
+                            BorderThickness="0,1,0,0"
+                            Padding="16,14">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                            <Button Classes="ghost"
+                                    Command="{Binding CloseCreateInstanceCommand}"
+                                    Padding="14,8">
+                                <TextBlock Text="Cancel"/>
+                            </Button>
+                            <Button Classes="primary"
+                                    x:Name="CreateBtn"
+                                    Padding="14,8">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="Next" VerticalAlignment="Center"/>
+                                    <TextBlock Text="→" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                </Grid>
+
+            </Border>
+
+        </Grid>
+    </Border>
+
+</UserControl>

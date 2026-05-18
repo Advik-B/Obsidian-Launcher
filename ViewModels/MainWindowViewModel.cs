@@ -54,6 +54,12 @@ public class MainWindowViewModel : ViewModelBase
     private string _latestNewsHeadline = "Loading news...";
     private string _searchFilter = "";
 
+    // --- Routing ---
+    private string _currentRoute = "instances";
+    private bool _isDarkMode = false;
+    private bool _isCreateInstanceOpen = false;
+    private bool _isInstanceSettingsOpen = false;
+
     public MainWindowViewModel()
     {
         _logger = LogHelper.GetLogger<MainWindowViewModel>();
@@ -123,6 +129,18 @@ public class MainWindowViewModel : ViewModelBase
         OpenRedditCommand = new RelayCommand(() => OpenUrl("https://reddit.com/r/feedthebeast"));
         OpenMoreNewsCommand = new RelayCommand(() => OpenUrl("https://www.minecraft.net/en-us/articles"));
         ToggleNewsBarCommand = new RelayCommand(() => IsNewsBarVisible = !IsNewsBarVisible);
+
+        // Overlay close commands
+        CloseCreateInstanceCommand   = new RelayCommand(() => IsCreateInstanceOpen = false);
+        CloseInstanceSettingsCommand = new RelayCommand(() => IsInstanceSettingsOpen = false);
+
+        // Routing commands
+        NavigateToInstancesCommand = new RelayCommand(() => CurrentRoute = "instances");
+        NavigateToModsCommand      = new RelayCommand(() => CurrentRoute = "mods");
+        NavigateToWorldsCommand    = new RelayCommand(() => CurrentRoute = "worlds");
+        NavigateToConsoleCommand   = new RelayCommand(() => CurrentRoute = "console");
+        NavigateToAccountsCommand  = new RelayCommand(() => CurrentRoute = "accounts");
+        NavigateToSettingsCommand  = new RelayCommand(() => CurrentRoute = "settings");
 
         // Load initial data
         _ = LoadInstancesAsync();
@@ -284,6 +302,60 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand OpenMoreNewsCommand { get; }
     public ICommand ToggleNewsBarCommand { get; }
 
+    // --- Overlay close commands ---
+    public ICommand CloseCreateInstanceCommand { get; }
+    public ICommand CloseInstanceSettingsCommand { get; }
+
+    // --- Routing commands ---
+    public ICommand NavigateToInstancesCommand { get; }
+    public ICommand NavigateToModsCommand { get; }
+    public ICommand NavigateToWorldsCommand { get; }
+    public ICommand NavigateToConsoleCommand { get; }
+    public ICommand NavigateToAccountsCommand { get; }
+    public ICommand NavigateToSettingsCommand { get; }
+
+    public string CurrentRoute
+    {
+        get => _currentRoute;
+        set
+        {
+            if (SetProperty(ref _currentRoute, value))
+            {
+                OnPropertyChanged(nameof(IsInstancesScreen));
+                OnPropertyChanged(nameof(IsModsScreen));
+                OnPropertyChanged(nameof(IsWorldsScreen));
+                OnPropertyChanged(nameof(IsConsoleScreen));
+                OnPropertyChanged(nameof(IsAccountsScreen));
+                OnPropertyChanged(nameof(IsSettingsScreen));
+            }
+        }
+    }
+
+    public bool IsInstancesScreen => CurrentRoute == "instances";
+    public bool IsModsScreen      => CurrentRoute == "mods";
+    public bool IsWorldsScreen    => CurrentRoute == "worlds";
+    public bool IsConsoleScreen   => CurrentRoute == "console";
+    public bool IsAccountsScreen  => CurrentRoute == "accounts";
+    public bool IsSettingsScreen  => CurrentRoute == "settings";
+
+    public bool IsDarkMode
+    {
+        get => _isDarkMode;
+        set => SetProperty(ref _isDarkMode, value);
+    }
+
+    public bool IsCreateInstanceOpen
+    {
+        get => _isCreateInstanceOpen;
+        set => SetProperty(ref _isCreateInstanceOpen, value);
+    }
+
+    public bool IsInstanceSettingsOpen
+    {
+        get => _isInstanceSettingsOpen;
+        set => SetProperty(ref _isInstanceSettingsOpen, value);
+    }
+
     private async Task LoadInstancesAsync()
     {
         try
@@ -348,6 +420,7 @@ public class MainWindowViewModel : ViewModelBase
         try
         {
             IsLaunching = true;
+            CurrentRoute = "console";
             StatusText = $"Launching {SelectedInstance.Name}...";
             ProgressValue = 0;
             ProgressText = "Preparing...";
@@ -510,22 +583,7 @@ public class MainWindowViewModel : ViewModelBase
         try
         {
             _logger.Information("Create instance requested");
-            
-            var createViewModel = new CreateInstanceViewModel(_httpManager, _instanceManager, _launcherSettings);
-            var createWindow = new Views.CreateInstanceWindow(createViewModel);
-
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                var result = await createWindow.ShowDialog<CreateInstanceViewModel?>(desktop.MainWindow!);
-
-                if (result?.CreatedInstance != null)
-                {
-                    Instances.Add(result.CreatedInstance);
-                    SelectedInstance = result.CreatedInstance;
-                    StatusText = $"Instance '{result.CreatedInstance.Name}' created successfully";
-                    _logger.Information("Instance created successfully: {InstanceName}", result.CreatedInstance.Name);
-                }
-            }
+            IsCreateInstanceOpen = true;
         }
         catch (Exception ex)
         {
@@ -542,22 +600,7 @@ public class MainWindowViewModel : ViewModelBase
         try
         {
             _logger.Information("Edit instance requested: {InstanceName}", SelectedInstance.Name);
-            
-            var settingsWindow = new Views.InstanceSettingsWindow(SelectedInstance, _launcherSettings);
-            
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                var result = await settingsWindow.ShowDialog<bool>(desktop.MainWindow!);
-                
-                if (result)
-                {
-                    var instanceName = SelectedInstance.Name;
-                    // Persist the in-memory changes to instance.json before reloading
-                    await _instanceManager.SaveInstanceAsync(SelectedInstance);
-                    await LoadInstancesAsync();
-                    StatusText = $"Instance '{instanceName}' updated";
-                }
-            }
+            IsInstanceSettingsOpen = true;
         }
         catch (Exception ex)
         {
@@ -597,50 +640,16 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private async void OpenSettings()
+    private void OpenSettings()
     {
-        try
-        {
-            _logger.Information("Opening settings dialog");
-
-            var settingsViewModel = new SettingsViewModel(_launcherSettings);
-            var settingsWindow = new Views.SettingsWindow(settingsViewModel);
-
-            // Get the main window to show the dialog as modal
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                await settingsWindow.ShowDialog(desktop.MainWindow!);
-            }
-
-            StatusText = "Settings updated";
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Failed to open settings dialog");
-            StatusText = "Failed to open settings dialog";
-        }
+        CurrentRoute = "settings";
+        StatusText = "Settings";
     }
 
-    private async void OpenAccountManagement()
+    private void OpenAccountManagement()
     {
-        try
-        {
-            _logger.Information("Opening account management");
-
-            var accountWindow = new Views.AccountManagementWindow(_launcherConfig);
-
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                await accountWindow.ShowDialog(desktop.MainWindow!);
-            }
-
-            StatusText = "Account management closed";
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Failed to open account management");
-            StatusText = "Failed to open account management";
-        }
+        CurrentRoute = "accounts";
+        StatusText = "Accounts";
     }
 
     private async void OpenLogViewer()
