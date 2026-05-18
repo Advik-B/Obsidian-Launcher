@@ -12,9 +12,6 @@
         Title="Obsidian Launcher"
         Width="1280" Height="820"
         MinWidth="900" MinHeight="600"
-        ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaChromeHints="NoChrome"
-        ExtendClientAreaTitleBarHeightHint="0"
         Background="{DynamicResource CrustBrush}"
         FontFamily="{StaticResource QuicksandFont}">
 
@@ -22,96 +19,13 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <!-- Root: window chrome border -->
-    <Border CornerRadius="24"
-            Background="{DynamicResource BaseBrush}"
-            BorderBrush="{DynamicResource BorderSoftBrush}"
-            BorderThickness="1"
-            ClipToBounds="True">
+    <!-- Root content -->
+    <Border Background="{DynamicResource BaseBrush}">
 
-        <Grid RowDefinitions="44,*">
-
-            <!-- ============================================================
-                 TITLE BAR
-                 ============================================================ -->
-            <Border Grid.Row="0"
-                    Background="{DynamicResource MantleBrush}"
-                    BorderBrush="{DynamicResource BorderSoftBrush}"
-                    BorderThickness="0,0,0,1"
-                    x:Name="TitleBar"
-                    PointerPressed="TitleBar_PointerPressed">
-                <Grid ColumnDefinitions="Auto,*,Auto">
-
-                    <!-- Left: traffic dots + branding -->
-                    <StackPanel Grid.Column="0"
-                                Orientation="Horizontal"
-                                Spacing="14"
-                                Margin="14,0"
-                                VerticalAlignment="Center">
-                        <!-- Traffic dots -->
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Border Width="12" Height="12" CornerRadius="6"
-                                    Background="#ed6a5e"
-                                    ToolTip.Tip="Close"
-                                    Cursor="Hand"
-                                    x:Name="CloseBtn">
-                            </Border>
-                            <Border Width="12" Height="12" CornerRadius="6"
-                                    Background="#f5bf4f"
-                                    ToolTip.Tip="Minimize"
-                                    Cursor="Hand"
-                                    x:Name="MinimizeBtn">
-                            </Border>
-                            <Border Width="12" Height="12" CornerRadius="6"
-                                    Background="#62c554"
-                                    ToolTip.Tip="Maximize"
-                                    Cursor="Hand"
-                                    x:Name="MaximizeBtn">
-                            </Border>
-                        </StackPanel>
-
-                        <!-- Title -->
-                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                            <TextBlock Text="Obsidian Launcher"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource Fg2Brush}"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text="· cozy edition"
-                                       FontSize="13"
-                                       FontWeight="Normal"
-                                       Foreground="{DynamicResource Fg3Brush}"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </StackPanel>
-
-                    <!-- Right: status indicators -->
-                    <StackPanel Grid.Column="2"
-                                Orientation="Horizontal"
-                                Spacing="10"
-                                Margin="14,0"
-                                VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                            <Border Width="6" Height="6" CornerRadius="3" Background="{DynamicResource SuccessBrush}"/>
-                            <TextBlock Text="Ready"
-                                       FontSize="11"
-                                       Foreground="{DynamicResource Fg3Brush}"/>
-                        </StackPanel>
-                        <TextBlock Text="·"
-                                   FontSize="11"
-                                   Foreground="{DynamicResource Border1Brush}"/>
-                        <TextBlock Text="v0.1.0"
-                                   FontSize="11"
-                                   Foreground="{DynamicResource Fg3Brush}"/>
-                    </StackPanel>
-
-                </Grid>
-            </Border>
-
-            <!-- ============================================================
-                 BODY: Sidebar + Content
-                 ============================================================ -->
-            <Grid Grid.Row="1" ColumnDefinitions="240,*">
+        <!-- ============================================================
+             BODY: Sidebar + Content
+             ============================================================ -->
+        <Grid ColumnDefinitions="240,*">
 
                 <!-- SIDEBAR -->
                 <Border Grid.Column="0"
@@ -154,7 +68,7 @@
                                             CornerRadius="8"
                                             Background="{DynamicResource SecondaryBrush}"
                                             VerticalAlignment="Center">
-                                        <TextBlock Text="P"
+                                        <TextBlock Text="{Binding ActivePlayerInitial}"
                                                    FontSize="13"
                                                    FontWeight="Bold"
                                                    Foreground="White"
@@ -162,7 +76,7 @@
                                                    VerticalAlignment="Center"/>
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
-                                        <TextBlock Text="Player"
+                                        <TextBlock Text="{Binding ActivePlayerName}"
                                                    FontSize="13"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource Fg1Brush}"/>
@@ -170,7 +84,7 @@
                                             <Border Width="6" Height="6" CornerRadius="3"
                                                     Background="{DynamicResource SuccessBrush}"
                                                     VerticalAlignment="Center"/>
-                                            <TextBlock Text="online"
+                                            <TextBlock Text="offline"
                                                        FontSize="11"
                                                        Foreground="{DynamicResource Fg3Brush}"/>
                                         </StackPanel>
@@ -264,31 +178,6 @@
 
                         </StackPanel>
 
-                        <!-- Sleeping cat card at bottom -->
-                        <Border DockPanel.Dock="Bottom"
-                                Margin="14,0,14,14"
-                                Background="{DynamicResource Surface0Brush}"
-                                CornerRadius="18"
-                                Padding="14">
-                            <StackPanel Orientation="Horizontal" Spacing="12">
-                                <Border Width="44" Height="44" CornerRadius="22"
-                                        Background="{DynamicResource PrimaryTintBrush}">
-                                    <controls:PixelCatControl CatSize="28"
-                                                              HorizontalAlignment="Center"
-                                                              VerticalAlignment="Center"/>
-                                </Border>
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="Quiet hours"
-                                               FontSize="13"
-                                               FontWeight="SemiBold"
-                                               Foreground="{DynamicResource Fg1Brush}"/>
-                                    <TextBlock Text="Notifications muted"
-                                               FontSize="11"
-                                               Foreground="{DynamicResource Fg2Brush}"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
                     </DockPanel>
                 </Border>
 
@@ -329,37 +218,48 @@
                     <Border Grid.Row="1"
                             Background="{DynamicResource MantleBrush}"
                             BorderBrush="{DynamicResource BorderSoftBrush}"
-                            BorderThickness="0,1,0,0"
-                            Padding="18,0">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <StackPanel Grid.Column="0"
-                                        Orientation="Horizontal"
-                                        Spacing="18"
-                                        VerticalAlignment="Center">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Border Width="6" Height="6" CornerRadius="3"
-                                            Background="{DynamicResource SuccessBrush}"
-                                            VerticalAlignment="Center"/>
-                                    <TextBlock Text="Java 21 LTS"
+                            BorderThickness="0,1,0,0">
+                        <StackPanel>
+                            <!-- Progress bar (visible during launch) -->
+                            <ProgressBar Value="{Binding ProgressValue}"
+                                         Minimum="0" Maximum="100"
+                                         Height="3"
+                                         CornerRadius="0"
+                                         IsVisible="{Binding IsLaunching}"
+                                         Margin="0"/>
+                            <!-- Status row -->
+                            <Grid ColumnDefinitions="*,Auto" Margin="18,0">
+                                <StackPanel Grid.Column="0"
+                                            Orientation="Horizontal"
+                                            Spacing="18"
+                                            VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Border Width="6" Height="6" CornerRadius="3"
+                                                Background="{DynamicResource SuccessBrush}"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding JavaVersionText}"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource Fg3Brush}"/>
+                                    </StackPanel>
+                                    <TextBlock Text="·" FontSize="11" Foreground="{DynamicResource Border1Brush}"/>
+                                    <TextBlock Text="{Binding StatusText}"
                                                FontSize="11"
                                                Foreground="{DynamicResource Fg3Brush}"/>
+                                    <TextBlock Text="{Binding ProgressText}"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource Fg3Brush}"
+                                               IsVisible="{Binding IsLaunching}"/>
                                 </StackPanel>
-                                <TextBlock Text="·" FontSize="11" Foreground="{DynamicResource Border1Brush}"/>
-                                <TextBlock Text="{Binding StatusText}"
+                                <TextBlock Grid.Column="1"
                                            FontSize="11"
-                                           Foreground="{DynamicResource Fg3Brush}"/>
-                            </StackPanel>
-                            <TextBlock Grid.Column="1"
-                                       FontSize="11"
-                                       Foreground="{DynamicResource Fg3Brush}"
-                                       VerticalAlignment="Center"
-                                       Text="Mojang OK"/>
-                        </Grid>
+                                           Foreground="{DynamicResource Fg3Brush}"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding MojangStatusText}"/>
+                            </Grid>
+                        </StackPanel>
                     </Border>
 
                 </Grid>
-
-            </Grid>
 
         </Grid>
 

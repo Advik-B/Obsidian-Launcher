@@ -1,6 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ObsidianLauncher.ViewModels"
+             xmlns:utils="using:ObsidianLauncher.Utils"
+             xmlns:models="using:ObsidianLauncher.Models"
              xmlns:controls="using:ObsidianLauncher.Controls"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -15,8 +17,8 @@
             <!-- Modal card: 880px wide, left rail + content -->
             <Border Background="{DynamicResource BaseBrush}"
                     CornerRadius="24"
-                    Width="880"
-                    MaxHeight="700"
+                    Width="920"
+                    MaxHeight="720"
                     BoxShadow="0 18 40 #4D000000">
 
                 <Grid ColumnDefinitions="220,*">
@@ -48,19 +50,39 @@
                             </StackPanel>
 
                             <!-- Tab nav -->
-                            <Button Classes="nav-item active" Padding="10,8" FontSize="13">
+                            <Button Classes="nav-item"
+                                    Classes.active="{Binding IsInstanceSettingsGeneralTab}"
+                                    Padding="10,8" FontSize="13"
+                                    Command="{Binding NavigateInstanceSettingsTabCommand}"
+                                    CommandParameter="general">
                                 <TextBlock Text="General"/>
                             </Button>
-                            <Button Classes="nav-item" Padding="10,8" FontSize="13">
+                            <Button Classes="nav-item"
+                                    Classes.active="{Binding IsInstanceSettingsJavaTab}"
+                                    Padding="10,8" FontSize="13"
+                                    Command="{Binding NavigateInstanceSettingsTabCommand}"
+                                    CommandParameter="java">
                                 <TextBlock Text="Java &amp; memory"/>
                             </Button>
-                            <Button Classes="nav-item" Padding="10,8" FontSize="13">
+                            <Button Classes="nav-item"
+                                    Classes.active="{Binding IsInstanceSettingsGameTab}"
+                                    Padding="10,8" FontSize="13"
+                                    Command="{Binding NavigateInstanceSettingsTabCommand}"
+                                    CommandParameter="game">
                                 <TextBlock Text="Game window"/>
                             </Button>
-                            <Button Classes="nav-item" Padding="10,8" FontSize="13">
+                            <Button Classes="nav-item"
+                                    Classes.active="{Binding IsInstanceSettingsModLoaderTab}"
+                                    Padding="10,8" FontSize="13"
+                                    Command="{Binding NavigateInstanceSettingsTabCommand}"
+                                    CommandParameter="modloader">
                                 <TextBlock Text="Mod loader"/>
                             </Button>
-                            <Button Classes="nav-item" Padding="10,8" FontSize="13">
+                            <Button Classes="nav-item"
+                                    Classes.active="{Binding IsInstanceSettingsCommandsTab}"
+                                    Padding="10,8" FontSize="13"
+                                    Command="{Binding NavigateInstanceSettingsTabCommand}"
+                                    CommandParameter="commands">
                                 <TextBlock Text="Custom commands"/>
                             </Button>
 
@@ -85,7 +107,7 @@
                                 Padding="26,18">
                             <Grid ColumnDefinitions="*,Auto">
                                 <TextBlock Grid.Column="0"
-                                           Text="General"
+                                           Text="{Binding InstanceSettingsTab}"
                                            FontSize="18"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource Fg1Brush}"/>
@@ -99,80 +121,485 @@
                             </Grid>
                         </Border>
 
-                        <!-- Form body -->
-                        <ScrollViewer Grid.Row="1" Padding="4,0,26,24">
-                            <StackPanel Spacing="0">
+                        <!-- Form body (tabbed) -->
+                        <ScrollViewer Grid.Row="1" Padding="4,0,4,4">
+                            <Panel>
 
-                                <!-- Instance name -->
-                                <Border BorderBrush="{DynamicResource BorderSoftBrush}"
-                                        BorderThickness="0,0,0,1"
-                                        Padding="26,16">
-                                    <Grid ColumnDefinitions="240,*">
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="Instance name"
-                                                       FontSize="13.5"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource Fg1Brush}"/>
-                                            <TextBlock Text="Shown in your library. Make it cute."
-                                                       FontSize="12"
-                                                       Foreground="{DynamicResource Fg3Brush}"
-                                                       Margin="0,3,0,0"/>
+                                <!-- ── General tab ── -->
+                                <StackPanel Spacing="0"
+                                            IsVisible="{Binding IsInstanceSettingsGeneralTab}">
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16">
+                                        <Grid ColumnDefinitions="240,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Instance name"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="Shown in your library. Make it cute."
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding SelectedInstance.Name, FallbackValue=''}"
+                                                     VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16">
+                                        <Grid ColumnDefinitions="240,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Notes"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="A little reminder for future-you."
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding SelectedInstance.Notes, FallbackValue=''}"
+                                                     AcceptsReturn="True"
+                                                     TextWrapping="Wrap"
+                                                     MinHeight="70"
+                                                     VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Padding="26,16">
+                                        <Grid ColumnDefinitions="240,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="JVM arguments"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="For the curious. Aikar's flags are cozy defaults."
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding SelectedInstanceJvmArgs}"
+                                                     FontFamily="Monospace"
+                                                     FontSize="12"
+                                                     AcceptsReturn="False"
+                                                     TextWrapping="Wrap"
+                                                     MinHeight="70"
+                                                     VerticalAlignment="Center"
+                                                     Watermark="-XX:+UseG1GC -Xms512m"/>
+                                        </Grid>
+                                    </Border>
+
+                                </StackPanel>
+
+                                <!-- ── Java & memory tab ── -->
+                                <StackPanel Spacing="0"
+                                            IsVisible="{Binding IsInstanceSettingsJavaTab}">
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16">
+                                        <Grid ColumnDefinitions="240,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Override Java settings"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="Use custom Java for this instance only."
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <CheckBox Grid.Column="1"
+                                                      IsChecked="{Binding CurrentInstanceSettingsVm.UseCustomJavaSettings, FallbackValue=False}"
+                                                      VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16"
+                                            IsEnabled="{Binding CurrentInstanceSettingsVm.UseCustomJavaSettings, FallbackValue=False}">
+                                        <Grid ColumnDefinitions="240,*,Auto">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Java executable"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="Leave empty for auto-detect."
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding CurrentInstanceSettingsVm.JavaPath, FallbackValue=''}"
+                                                     FontFamily="Monospace"
+                                                     FontSize="12"
+                                                     VerticalAlignment="Center"
+                                                     Watermark="/usr/lib/jvm/…"/>
+                                            <Button Grid.Column="2"
+                                                    Classes="ghost"
+                                                    Margin="8,0,0,0"
+                                                    Padding="10,7"
+                                                    x:Name="BrowseJavaBtn">
+                                                <TextBlock Text="Browse…" FontSize="12"/>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16"
+                                            IsEnabled="{Binding CurrentInstanceSettingsVm.UseCustomJavaSettings, FallbackValue=False}">
+                                        <Grid ColumnDefinitions="240,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Minimum memory"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="{Binding CurrentInstanceSettingsVm.MinMemoryMB, StringFormat='{}{0} MB', FallbackValue='512 MB'}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <Slider Grid.Column="1"
+                                                    Minimum="256" Maximum="32768"
+                                                    Value="{Binding CurrentInstanceSettingsVm.MinMemoryMB, FallbackValue=512}"
+                                                    VerticalAlignment="Center"
+                                                    TickFrequency="256"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Padding="26,16"
+                                            IsEnabled="{Binding CurrentInstanceSettingsVm.UseCustomJavaSettings, FallbackValue=False}">
+                                        <Grid ColumnDefinitions="240,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Maximum memory"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="{Binding CurrentInstanceSettingsVm.MaxMemoryMB, StringFormat='{}{0} MB', FallbackValue='2048 MB'}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <Slider Grid.Column="1"
+                                                    Minimum="256" Maximum="32768"
+                                                    Value="{Binding CurrentInstanceSettingsVm.MaxMemoryMB, FallbackValue=2048}"
+                                                    VerticalAlignment="Center"
+                                                    TickFrequency="256"/>
+                                        </Grid>
+                                    </Border>
+
+                                </StackPanel>
+
+                                <!-- ── Game window tab ── -->
+                                <StackPanel Spacing="0"
+                                            IsVisible="{Binding IsInstanceSettingsGameTab}">
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16">
+                                        <Grid ColumnDefinitions="240,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Override window settings"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="Custom dimensions for this instance."
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <CheckBox Grid.Column="1"
+                                                      IsChecked="{Binding CurrentInstanceSettingsVm.UseCustomGameSettings, FallbackValue=False}"
+                                                      VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16"
+                                            IsEnabled="{Binding CurrentInstanceSettingsVm.UseCustomGameSettings, FallbackValue=False}">
+                                        <Grid ColumnDefinitions="240,*,16,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Window size"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="Width × Height in pixels."
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <NumericUpDown Grid.Column="1"
+                                                           Value="{Binding CurrentInstanceSettingsVm.WindowWidth, FallbackValue=1280}"
+                                                           Minimum="320" Maximum="7680"
+                                                           Increment="10"
+                                                           Watermark="Width"
+                                                           VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2"
+                                                       Text="×"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center"
+                                                       Foreground="{DynamicResource Fg3Brush}"/>
+                                            <NumericUpDown Grid.Column="3"
+                                                           Value="{Binding CurrentInstanceSettingsVm.WindowHeight, FallbackValue=720}"
+                                                           Minimum="240" Maximum="4320"
+                                                           Increment="10"
+                                                           Watermark="Height"
+                                                           VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Padding="26,16"
+                                            IsEnabled="{Binding CurrentInstanceSettingsVm.UseCustomGameSettings, FallbackValue=False}">
+                                        <Grid ColumnDefinitions="240,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Start fullscreen"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                            </StackPanel>
+                                            <CheckBox Grid.Column="1"
+                                                      IsChecked="{Binding CurrentInstanceSettingsVm.Fullscreen, FallbackValue=False}"
+                                                      VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                </StackPanel>
+
+                                <!-- ── Mod loader tab ── -->
+                                <StackPanel Spacing="0"
+                                            IsVisible="{Binding IsInstanceSettingsModLoaderTab}">
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16">
+                                        <Grid ColumnDefinitions="240,*">
+                                            <TextBlock Grid.Column="0"
+                                                       Text="Components"
+                                                       FontSize="13.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Fg1Brush}"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding CurrentInstanceSettingsVm.VersionDisplayText, FallbackValue='Unknown version'}"
+                                                       FontSize="13"
+                                                       Foreground="{DynamicResource Fg2Brush}"
+                                                       VerticalAlignment="Center"
+                                                       TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Padding="26,12">
+                                        <StackPanel Spacing="8">
+                                            <Grid ColumnDefinitions="*,Auto,Auto">
+                                                <TextBlock Grid.Column="0"
+                                                           Text="Installed mods"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding CurrentInstanceSettingsVm.ModsStatusText, FallbackValue=''}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,12,0"/>
+                                                <Button Grid.Column="2"
+                                                        Classes="ghost"
+                                                        Padding="10,6"
+                                                        Command="{Binding CurrentInstanceSettingsVm.OpenModsFolderCommand}">
+                                                    <TextBlock Text="Open folder" FontSize="12"/>
+                                                </Button>
+                                            </Grid>
+
+                                            <ItemsControl x:Name="ModsList"
+                                                          ItemsSource="{Binding CurrentInstanceSettingsVm.Mods, FallbackValue={}}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:CompileBindings="False">
+                                                        <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                                                BorderThickness="0,0,0,1"
+                                                                Padding="0,8">
+                                                            <Grid ColumnDefinitions="*,Auto,Auto">
+                                                                <StackPanel Grid.Column="0">
+                                                                    <TextBlock Text="{Binding Name}"
+                                                                               FontSize="13"
+                                                                               Foreground="{DynamicResource Fg1Brush}"
+                                                                               TextTrimming="CharacterEllipsis"/>
+                                                                    <TextBlock Text="{Binding SizeBytes, StringFormat='{}{0:N0} bytes'}"
+                                                                               FontSize="11"
+                                                                               Foreground="{DynamicResource Fg3Brush}"/>
+                                                                </StackPanel>
+                                                                <Button Grid.Column="1"
+                                                                        Classes="ghost"
+                                                                        Padding="8,5"
+                                                                        Margin="4,0"
+                                                                        Command="{Binding DataContext.CurrentInstanceSettingsVm.ToggleModByItemCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                        CommandParameter="{Binding}">
+                                                                    <TextBlock Text="{Binding IsEnabled, Converter={x:Static utils:BoolToToggleTextConverter.Instance}}"
+                                                                               FontSize="11"/>
+                                                                </Button>
+                                                                <Button Grid.Column="2"
+                                                                        Classes="danger"
+                                                                        Padding="8,5"
+                                                                        Command="{Binding DataContext.CurrentInstanceSettingsVm.DeleteModByItemCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                        CommandParameter="{Binding}">
+                                                                    <TextBlock Text="✕" FontSize="11"/>
+                                                                </Button>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
                                         </StackPanel>
-                                        <TextBox Grid.Column="1"
-                                                 Text="{Binding SelectedInstance.Name, FallbackValue=''}"
-                                                 VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
+                                    </Border>
 
-                                <!-- Notes -->
-                                <Border BorderBrush="{DynamicResource BorderSoftBrush}"
-                                        BorderThickness="0,0,0,1"
-                                        Padding="26,16">
-                                    <Grid ColumnDefinitions="240,*">
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="Notes"
-                                                       FontSize="13.5"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource Fg1Brush}"/>
-                                            <TextBlock Text="A little reminder for future-you."
-                                                       FontSize="12"
-                                                       Foreground="{DynamicResource Fg3Brush}"
-                                                       Margin="0,3,0,0"/>
+                                </StackPanel>
+
+                                <!-- ── Custom commands tab ── -->
+                                <StackPanel Spacing="0"
+                                            IsVisible="{Binding IsInstanceSettingsCommandsTab}">
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16">
+                                        <Grid ColumnDefinitions="200,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Pre-launch command"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="Runs before the game starts."
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding CurrentInstanceSettingsVm.PreLaunchCommand, FallbackValue=''}"
+                                                     FontFamily="Monospace" FontSize="12"
+                                                     VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16">
+                                        <Grid ColumnDefinitions="200,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Post-exit command"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="Runs after the game exits."
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding CurrentInstanceSettingsVm.PostLaunchCommand, FallbackValue=''}"
+                                                     FontFamily="Monospace" FontSize="12"
+                                                     VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16">
+                                        <Grid ColumnDefinitions="200,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Wrapper command"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="e.g. gamemoderun or mangohud."
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding CurrentInstanceSettingsVm.WrapperCommand, FallbackValue=''}"
+                                                     FontFamily="Monospace" FontSize="12"
+                                                     VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16">
+                                        <Grid ColumnDefinitions="200,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Quick play server"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="host:port to join on launch."
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding CurrentInstanceSettingsVm.QuickPlayServer, FallbackValue=''}"
+                                                     FontFamily="Monospace" FontSize="12"
+                                                     VerticalAlignment="Center"
+                                                     Watermark="play.hypixel.net:25565"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="26,16">
+                                        <Grid ColumnDefinitions="200,*">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Quick play world"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                                <TextBlock Text="Singleplayer world name."
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource Fg3Brush}"
+                                                           Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding CurrentInstanceSettingsVm.QuickPlayWorld, FallbackValue=''}"
+                                                     FontFamily="Monospace" FontSize="12"
+                                                     VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Environment variables -->
+                                    <Border Padding="26,16">
+                                        <StackPanel Spacing="10">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Grid.Column="0"
+                                                           Text="Environment variables"
+                                                           FontSize="13.5" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Fg1Brush}"
+                                                           VerticalAlignment="Center"/>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                                    <Button Classes="secondary"
+                                                            Padding="10,5"
+                                                            Command="{Binding CurrentInstanceSettingsVm.AddEnvVarCommand}">
+                                                        <TextBlock Text="+ Add" FontSize="12"/>
+                                                    </Button>
+                                                    <Button Classes="ghost"
+                                                            Padding="10,5"
+                                                            Command="{Binding CurrentInstanceSettingsVm.RemoveEnvVarCommand}">
+                                                        <TextBlock Text="Remove" FontSize="12"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                            <DataGrid ItemsSource="{Binding CurrentInstanceSettingsVm.EnvironmentVariables, FallbackValue={}}"
+                                                      SelectedItem="{Binding CurrentInstanceSettingsVm.SelectedEnvVar}"
+                                                      AutoGenerateColumns="False"
+                                                      MinHeight="80"
+                                                      MaxHeight="180">
+                                                <DataGrid.Columns>
+                                                    <DataGridTextColumn Header="Key"
+                                                                        Binding="{Binding Key}"
+                                                                        Width="*"/>
+                                                    <DataGridTextColumn Header="Value"
+                                                                        Binding="{Binding Value}"
+                                                                        Width="*"/>
+                                                </DataGrid.Columns>
+                                            </DataGrid>
                                         </StackPanel>
-                                        <TextBox Grid.Column="1"
-                                                 Text="{Binding SelectedInstance.Notes, FallbackValue=''}"
-                                                 AcceptsReturn="True"
-                                                 TextWrapping="Wrap"
-                                                 MinHeight="70"
-                                                 VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
+                                    </Border>
 
-                                <!-- JVM args -->
-                                <Border Padding="26,16">
-                                    <Grid ColumnDefinitions="240,*">
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="JVM arguments"
-                                                       FontSize="13.5"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource Fg1Brush}"/>
-                                            <TextBlock Text="For the curious. Aikar's flags are cozy defaults."
-                                                       FontSize="12"
-                                                       Foreground="{DynamicResource Fg3Brush}"
-                                                       Margin="0,3,0,0"/>
-                                        </StackPanel>
-                                        <TextBox Grid.Column="1"
-                                                 FontFamily="Monospace"
-                                                 FontSize="12"
-                                                 AcceptsReturn="True"
-                                                 TextWrapping="Wrap"
-                                                 MinHeight="70"
-                                                 VerticalAlignment="Center"
-                                                 Watermark="-XX:+UseG1GC"/>
-                                    </Grid>
-                                </Border>
+                                </StackPanel>
 
-                            </StackPanel>
+                            </Panel>
                         </ScrollViewer>
 
                         <!-- Footer -->
@@ -188,7 +615,7 @@
                                     <TextBlock Text="Cancel"/>
                                 </Button>
                                 <Button Classes="primary"
-                                        Command="{Binding CloseInstanceSettingsCommand}"
+                                        Command="{Binding SaveSelectedInstanceCommand}"
                                         Padding="14,8">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <TextBlock Text="✓" VerticalAlignment="Center"/>

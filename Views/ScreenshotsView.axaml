@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ObsidianLauncher.ViewModels"
+             xmlns:utils="using:ObsidianLauncher.Utils"
              xmlns:controls="using:ObsidianLauncher.Controls"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -19,8 +20,7 @@
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <TextBlock Text="Screenshots"
-                               FontSize="22"
-                               FontWeight="SemiBold"
+                               FontSize="22" FontWeight="SemiBold"
                                Foreground="{DynamicResource Fg1Brush}"
                                VerticalAlignment="Center"/>
                     <TextBlock Text="· your captured moments"
@@ -28,165 +28,88 @@
                                Foreground="{DynamicResource Fg3Brush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <Button Classes="secondary" Padding="14,8">
-                        <TextBlock Text="Open folder"/>
-                    </Button>
-                </StackPanel>
+                <Button Grid.Column="1"
+                        Classes="secondary" Padding="14,8"
+                        VerticalAlignment="Center"
+                        Command="{Binding OpenScreenshotsFolderCommand}">
+                    <TextBlock Text="Open folder"/>
+                </Button>
             </Grid>
         </Border>
 
-        <!-- Body: grid of screenshot cards -->
-        <ScrollViewer Grid.Row="1" Padding="28,20"
-                      HorizontalScrollBarVisibility="Disabled">
-            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left">
+        <!-- Body -->
+        <Grid Grid.Row="1">
 
-                <!-- Card 1 -->
-                <Border Width="220" Height="160" Margin="0,0,16,16"
-                        CornerRadius="{DynamicResource CardCornerRadius}"
-                        ClipToBounds="True"
-                        Cursor="Hand">
-                    <Grid>
-                        <controls:BlockArtControl Width="220" Height="160"
-                                                  Palette="cherry"/>
-                        <Border Background="{DynamicResource ScrimBrush}"
-                                VerticalAlignment="Bottom"
-                                Padding="10,6">
-                            <StackPanel>
-                                <TextBlock Text="2025-08-12_14.32.01"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           Foreground="White"/>
-                                <TextBlock Text="Survival World"
-                                           FontSize="10"
-                                           Foreground="#CCFFFFFF"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
+            <!-- Empty state -->
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="14"
+                        IsVisible="{Binding HasScreenshots, Converter={x:Static utils:NotBoolConverter.Instance}}">
+                <TextBlock Text="No screenshots yet"
+                           FontSize="18" FontWeight="SemiBold"
+                           Foreground="{DynamicResource Fg1Brush}"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Screenshots taken in-game (F2) appear here."
+                           FontSize="13"
+                           Foreground="{DynamicResource Fg3Brush}"
+                           HorizontalAlignment="Center"
+                           TextWrapping="Wrap"
+                           MaxWidth="320" TextAlignment="Center"/>
+                <Button Classes="secondary"
+                        HorizontalAlignment="Center"
+                        Padding="14,8"
+                        Command="{Binding OpenScreenshotsFolderCommand}">
+                    <TextBlock Text="Open screenshots folder"/>
+                </Button>
+            </StackPanel>
 
-                <!-- Card 2 -->
-                <Border Width="220" Height="160" Margin="0,0,16,16"
-                        CornerRadius="{DynamicResource CardCornerRadius}"
-                        ClipToBounds="True"
-                        Cursor="Hand">
-                    <Grid>
-                        <controls:BlockArtControl Width="220" Height="160"
-                                                  Palette="grass"/>
-                        <Border Background="{DynamicResource ScrimBrush}"
-                                VerticalAlignment="Bottom"
-                                Padding="10,6">
-                            <StackPanel>
-                                <TextBlock Text="2025-08-10_09.15.44"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           Foreground="White"/>
-                                <TextBlock Text="Creative Build"
-                                           FontSize="10"
-                                           Foreground="#CCFFFFFF"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
+            <!-- Screenshot grid -->
+            <ScrollViewer Padding="28,20"
+                          HorizontalScrollBarVisibility="Disabled"
+                          IsVisible="{Binding HasScreenshots}">
+                <ItemsControl ItemsSource="{Binding ScreenshotFiles}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ScreenshotItem">
+                            <Border Width="220" Height="160" Margin="0,0,16,16"
+                                    CornerRadius="{DynamicResource CardCornerRadius}"
+                                    ClipToBounds="True"
+                                    Cursor="Hand">
+                                <Grid>
+                                    <!-- Actual screenshot image -->
+                                    <Image Source="{Binding Thumbnail}"
+                                           Stretch="UniformToFill"
+                                           IsVisible="{Binding Thumbnail, Converter={x:Static utils:NotNullToBoolConverter.Instance}}"/>
+                                    <!-- Placeholder when no image loaded -->
+                                    <controls:BlockArtControl Palette="cobble"
+                                                              HorizontalAlignment="Stretch"
+                                                              VerticalAlignment="Stretch"
+                                                              IsVisible="{Binding Thumbnail, Converter={x:Static utils:NullToBoolConverter.Instance}}"/>
+                                    <Border Background="{DynamicResource ScrimBrush}"
+                                            VerticalAlignment="Bottom"
+                                            Padding="10,6">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding FileName}"
+                                                       FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="White"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding DateTaken, StringFormat='{}{0:d}'}"
+                                                       FontSize="10"
+                                                       Foreground="#CCFFFFFF"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
 
-                <!-- Card 3 -->
-                <Border Width="220" Height="160" Margin="0,0,16,16"
-                        CornerRadius="{DynamicResource CardCornerRadius}"
-                        ClipToBounds="True"
-                        Cursor="Hand">
-                    <Grid>
-                        <controls:BlockArtControl Width="220" Height="160"
-                                                  Palette="diamond"/>
-                        <Border Background="{DynamicResource ScrimBrush}"
-                                VerticalAlignment="Bottom"
-                                Padding="10,6">
-                            <StackPanel>
-                                <TextBlock Text="2025-08-07_20.01.09"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           Foreground="White"/>
-                                <TextBlock Text="Underground Cave"
-                                           FontSize="10"
-                                           Foreground="#CCFFFFFF"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
-
-                <!-- Card 4 -->
-                <Border Width="220" Height="160" Margin="0,0,16,16"
-                        CornerRadius="{DynamicResource CardCornerRadius}"
-                        ClipToBounds="True"
-                        Cursor="Hand">
-                    <Grid>
-                        <controls:BlockArtControl Width="220" Height="160"
-                                                  Palette="lapis"/>
-                        <Border Background="{DynamicResource ScrimBrush}"
-                                VerticalAlignment="Bottom"
-                                Padding="10,6">
-                            <StackPanel>
-                                <TextBlock Text="2025-08-05_17.45.33"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           Foreground="White"/>
-                                <TextBlock Text="Village at Sunset"
-                                           FontSize="10"
-                                           Foreground="#CCFFFFFF"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
-
-                <!-- Card 5 -->
-                <Border Width="220" Height="160" Margin="0,0,16,16"
-                        CornerRadius="{DynamicResource CardCornerRadius}"
-                        ClipToBounds="True"
-                        Cursor="Hand">
-                    <Grid>
-                        <controls:BlockArtControl Width="220" Height="160"
-                                                  Palette="nether"/>
-                        <Border Background="{DynamicResource ScrimBrush}"
-                                VerticalAlignment="Bottom"
-                                Padding="10,6">
-                            <StackPanel>
-                                <TextBlock Text="2025-07-30_22.11.55"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           Foreground="White"/>
-                                <TextBlock Text="Nether Fortress"
-                                           FontSize="10"
-                                           Foreground="#CCFFFFFF"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
-
-                <!-- Card 6 -->
-                <Border Width="220" Height="160" Margin="0,0,16,16"
-                        CornerRadius="{DynamicResource CardCornerRadius}"
-                        ClipToBounds="True"
-                        Cursor="Hand">
-                    <Grid>
-                        <controls:BlockArtControl Width="220" Height="160"
-                                                  Palette="endstone"/>
-                        <Border Background="{DynamicResource ScrimBrush}"
-                                VerticalAlignment="Bottom"
-                                Padding="10,6">
-                            <StackPanel>
-                                <TextBlock Text="2025-07-25_03.08.17"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           Foreground="White"/>
-                                <TextBlock Text="The End — Dragon"
-                                           FontSize="10"
-                                           Foreground="#CCFFFFFF"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
-
-            </WrapPanel>
-        </ScrollViewer>
+        </Grid>
 
     </Grid>
 

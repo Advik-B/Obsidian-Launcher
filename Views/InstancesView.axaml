@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ObsidianLauncher.ViewModels"
              xmlns:models="using:ObsidianLauncher.Models"
+             xmlns:utils="using:ObsidianLauncher.Utils"
              xmlns:controls="using:ObsidianLauncher.Controls"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -52,6 +53,23 @@
                         </Grid>
                     </Border>
 
+                    <!-- Import dropdown -->
+                    <Button Classes="secondary" Padding="14,8">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Modrinth (.mrpack)"
+                                          Command="{Binding ImportModrinthCommand}"/>
+                                <MenuItem Header="MultiMC / Prism (.zip)"
+                                          Command="{Binding ImportMultiMcCommand}"/>
+                                <MenuItem Header="CurseForge (.zip)"
+                                          Command="{Binding ImportCurseForgeCommand}"/>
+                                <MenuItem Header="FTB (by ID)"
+                                          Command="{Binding ImportFtbCommand}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                        <TextBlock Text="Import ▾"/>
+                    </Button>
+
                     <!-- New Instance button -->
                     <Button Classes="primary"
                             Command="{Binding CreateInstanceCommand}"
@@ -96,7 +114,19 @@
                         </StackPanel>
                     </Button>
                     <Button Classes="secondary">
-                        <TextBlock Text="Import modpack"/>
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Modrinth (.mrpack)"
+                                          Command="{Binding ImportModrinthCommand}"/>
+                                <MenuItem Header="MultiMC / Prism (.zip)"
+                                          Command="{Binding ImportMultiMcCommand}"/>
+                                <MenuItem Header="CurseForge (.zip)"
+                                          Command="{Binding ImportCurseForgeCommand}"/>
+                                <MenuItem Header="FTB (by ID)"
+                                          Command="{Binding ImportFtbCommand}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                        <TextBlock Text="Import modpack ▾"/>
                     </Button>
                 </StackPanel>
             </StackPanel>
@@ -104,29 +134,78 @@
             <!-- Instance grid (scroll) -->
             <ScrollViewer x:Name="InstanceGridScroll" Padding="32,28"
                           HorizontalScrollBarVisibility="Disabled">
-                <ItemsControl x:Name="InstanceGrid"
-                              ItemsSource="{Binding FilteredInstances}">
-                    <ItemsControl.ItemsPanel>
+                <ListBox x:Name="InstanceGrid"
+                         ItemsSource="{Binding FilteredInstances}"
+                         SelectedItem="{Binding SelectedInstance}"
+                         SelectionMode="Single"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Padding="0">
+                    <ListBox.ItemContainerTheme>
+                        <ControlTheme TargetType="ListBoxItem">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                        </ControlTheme>
+                    </ListBox.ItemContainerTheme>
+                    <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel/>
                         </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="models:Instance">
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:Instance" x:CompileBindings="False">
                             <Border Background="{DynamicResource Surface0Brush}"
                                     CornerRadius="20"
                                     Margin="0,0,20,20"
                                     Width="280"
                                     ClipToBounds="True"
                                     Cursor="Hand">
-                                <Grid RowDefinitions="156,Auto">
-                                    <!-- Block art thumbnail -->
-                                    <controls:BlockArtControl Grid.Row="0"
-                                                              Palette="grass"
-                                                              HorizontalAlignment="Stretch"
-                                                              VerticalAlignment="Stretch"/>
+
+                                <!-- Right-click context menu -->
+                                <Border.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Edit"
+                                                  Command="{Binding DataContext.EditInstanceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                                        <MenuItem Header="Launch"
+                                                  Command="{Binding DataContext.LaunchInstanceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                                        <Separator/>
+                                        <MenuItem Header="Copy instance"
+                                                  Command="{Binding DataContext.CopyInstanceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                                        <MenuItem Header="Export…"
+                                                  Command="{Binding DataContext.ExportInstanceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                                        <MenuItem Header="View instance folder"
+                                                  Command="{Binding DataContext.ViewInstanceFolderCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                                        <MenuItem Header="Create backup"
+                                                  Command="{Binding DataContext.CreateBackupCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                                        <MenuItem Header="Create shortcut"
+                                                  Command="{Binding DataContext.CreateShortcutCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                                        <Separator/>
+                                        <MenuItem Header="Delete"
+                                                  Command="{Binding DataContext.DeleteInstanceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                                    </ContextMenu>
+                                </Border.ContextMenu>
+
+                                <Grid RowDefinitions="156,Auto,Auto">
+                                    <!-- Block art thumbnail with gear overlay -->
+                                    <Panel Grid.Row="0">
+                                        <controls:BlockArtControl Palette="grass"
+                                                                  HorizontalAlignment="Stretch"
+                                                                  VerticalAlignment="Stretch"/>
+                                        <!-- Gear button (top-right) -->
+                                        <Button Classes="ghost"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Top"
+                                                Margin="0,8,8,0"
+                                                Padding="7"
+                                                CornerRadius="8"
+                                                Background="#88000000"
+                                                Command="{Binding DataContext.EditInstanceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}">
+                                            <TextBlock Text="⚙" FontSize="13" Foreground="White"/>
+                                        </Button>
+                                    </Panel>
                                     <!-- Info -->
-                                    <StackPanel Grid.Row="1" Margin="16,14" Spacing="8">
+                                    <StackPanel Grid.Row="1" Margin="16,14,16,8" Spacing="6">
                                         <TextBlock Text="{Binding Name}"
                                                    FontSize="15"
                                                    FontWeight="SemiBold"
@@ -143,16 +222,40 @@
                                                            FontWeight="SemiBold"
                                                            Foreground="{DynamicResource PrimaryBrush}"/>
                                             </Border>
+                                            <!-- Group pill -->
+                                            <Border Background="{DynamicResource SecondarySoftBrush}"
+                                                    CornerRadius="999"
+                                                    Padding="9,3"
+                                                    Margin="0,0,4,4"
+                                                    IsVisible="{Binding GroupDisplayName, Converter={x:Static utils:StringNotEmptyConverter.Instance}}">
+                                                <TextBlock Text="{Binding GroupDisplayName}"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource SecondaryBrush}"/>
+                                            </Border>
                                         </WrapPanel>
                                         <TextBlock Text="{Binding LastPlayedDate, StringFormat=\{0:d\}}"
                                                    FontSize="11"
                                                    Foreground="{DynamicResource Fg3Brush}"/>
                                     </StackPanel>
+                                    <!-- Launch button -->
+                                    <Button Grid.Row="2"
+                                            Classes="primary"
+                                            Margin="12,0,12,14"
+                                            Padding="0,7"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            Command="{Binding DataContext.LaunchInstanceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                            <TextBlock Text="▶" FontSize="11" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Launch" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
                                 </Grid>
                             </Border>
                         </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                    </ListBox.ItemTemplate>
+                </ListBox>
             </ScrollViewer>
 
         </Grid>

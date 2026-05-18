@@ -1,5 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
+using ObsidianLauncher.ViewModels;
 
 namespace ObsidianLauncher.Views;
 
@@ -8,20 +10,46 @@ public partial class CreateInstanceOverlay : UserControl
     public CreateInstanceOverlay()
     {
         InitializeComponent();
+        DataContextChanged += OnDataContextChanged;
+    }
 
-        if (this.FindControl<Button>("CreateBtn") is { } btn)
-            btn.Click += (_, _) =>
+    private void OnDataContextChanged(object? sender, System.EventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+            vm.PropertyChanged += (_, args) =>
             {
-                // For now just close the overlay; full wizard in future iteration
-                if (DataContext is ViewModels.MainWindowViewModel vm)
-                    vm.CloseCreateInstanceCommand.Execute(null);
+                if (args.PropertyName == nameof(MainWindowViewModel.NewInstancePalette))
+                    UpdatePaletteHighlight(vm.NewInstancePalette);
             };
+    }
+
+    private void Palette_Tapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is Border b && b.Tag is string palette && DataContext is MainWindowViewModel vm)
+        {
+            vm.NewInstancePalette = palette;
+            UpdatePaletteHighlight(palette);
+        }
+    }
+
+    private void UpdatePaletteHighlight(string selectedPalette)
+    {
+        if (this.FindControl<WrapPanel>("PalettePanel") is not { } panel) return;
+        foreach (var child in panel.Children)
+        {
+            if (child is Border b && b.Tag is string palette)
+            {
+                b.BorderBrush = palette == selectedPalette
+                    ? this.TryFindResource("PrimaryBrush", out var res) ? (Avalonia.Media.IBrush?)res : Avalonia.Media.Brushes.Transparent
+                    : Avalonia.Media.Brushes.Transparent;
+                b.BorderThickness = new Avalonia.Thickness(2);
+            }
+        }
     }
 
     private void Scrim_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        // Only close if the scrim itself was clicked (not the modal card)
-        if (e.Source == sender && DataContext is ViewModels.MainWindowViewModel vm)
+        if (e.Source == sender && DataContext is MainWindowViewModel vm)
             vm.CloseCreateInstanceCommand.Execute(null);
     }
 }

@@ -12,21 +12,6 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
-
-        if (this.FindControl<Border>("CloseBtn") is { } closeBtn)
-            closeBtn.PointerPressed += (_, _) =>
-            {
-                if (DataContext is MainWindowViewModel vm) vm.ExitCommand.Execute(null);
-            };
-
-        if (this.FindControl<Border>("MinimizeBtn") is { } minBtn)
-            minBtn.PointerPressed += (_, _) => WindowState = WindowState.Minimized;
-
-        if (this.FindControl<Border>("MaximizeBtn") is { } maxBtn)
-            maxBtn.PointerPressed += (_, _) =>
-                WindowState = WindowState == WindowState.Maximized
-                    ? WindowState.Normal
-                    : WindowState.Maximized;
     }
 
     private void OnDataContextChanged(object? sender, System.EventArgs e)
@@ -97,12 +82,6 @@ public partial class MainWindow : Window
 
         await dialog.ShowDialog(this);
         args.Result.SetResult(confirmed);
-    }
-
-    private void TitleBar_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-            BeginMoveDrag(e);
     }
 
     private void AccountChip_PointerPressed(object? sender, PointerPressedEventArgs e)

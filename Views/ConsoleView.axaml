@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="1040" d:DesignHeight="776"
              x:Class="ObsidianLauncher.Views.ConsoleView"
+             xmlns:utils="using:ObsidianLauncher.Utils"
              x:DataType="vm:MainWindowViewModel">
 
     <Grid RowDefinitions="64,*">
@@ -28,13 +29,16 @@
                                VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <Button Classes="ghost" Padding="12,6">
+                    <Button Classes="ghost" Padding="12,6"
+                            x:Name="ExportLogBtn">
                         <TextBlock Text="Export log"/>
                     </Button>
-                    <Button Classes="secondary" Padding="12,6">
+                    <Button Classes="secondary" Padding="12,6"
+                            x:Name="PauseBtn">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <TextBlock Text="⏸" VerticalAlignment="Center"/>
-                            <TextBlock Text="Pause" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding ConsolePauseButtonLabel}"
+                                       VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <Button Classes="danger" Padding="12,6"
