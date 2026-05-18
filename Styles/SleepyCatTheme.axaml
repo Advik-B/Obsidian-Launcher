@@ -104,6 +104,21 @@
           <SolidColorBrush x:Key="ToolTipForegroundBrush" Color="{DynamicResource Text}"/>
           <SolidColorBrush x:Key="StatusBarBackgroundBrush" Color="{DynamicResource Crust}"/>
 
+          <!-- Named-alias brushes used by view files -->
+          <SolidColorBrush x:Key="Fg1Brush" Color="{DynamicResource Text}"/>
+          <SolidColorBrush x:Key="Fg2Brush" Color="{DynamicResource Subtext1}"/>
+          <SolidColorBrush x:Key="Fg3Brush" Color="{DynamicResource Overlay0}"/>
+          <SolidColorBrush x:Key="Border1Brush" Color="{DynamicResource Surface2}"/>
+          <SolidColorBrush x:Key="BorderSoftBrush" Color="{DynamicResource Surface1}"/>
+          <SolidColorBrush x:Key="PrimaryTintBrush" Color="#ecdef9"/>
+          <SolidColorBrush x:Key="SecondaryBrush" Color="#ea76cb"/>
+          <SolidColorBrush x:Key="SecondarySoftBrush" Color="#f5c9e6"/>
+          <SolidColorBrush x:Key="ConsoleFrameBrush" Color="#d3d0e0"/>
+          <SolidColorBrush x:Key="InfoBrush" Color="#209fb5"/>
+          <SolidColorBrush x:Key="InfoSoftBrush" Color="#b9e1ea"/>
+          <SolidColorBrush x:Key="SuccessSoftBrush" Color="#c4e7bd"/>
+          <SolidColorBrush x:Key="DangerSoftBrush" Color="#f3bcc7"/>
+
           <!-- Legacy Fluent-style aliases (needed by old XAML referencing SystemControl* brushes) -->
           <SolidColorBrush x:Key="SystemControlBackgroundAltMediumBrush" Color="{DynamicResource Surface0}"/>
           <SolidColorBrush x:Key="SystemControlBackgroundBaseLowBrush" Color="{DynamicResource Surface1}"/>
@@ -221,6 +236,21 @@
           <SolidColorBrush x:Key="ToolTipForegroundBrush" Color="{DynamicResource Text}"/>
           <SolidColorBrush x:Key="StatusBarBackgroundBrush" Color="{DynamicResource Crust}"/>
 
+          <!-- Named-alias brushes used by view files -->
+          <SolidColorBrush x:Key="Fg1Brush" Color="{DynamicResource Text}"/>
+          <SolidColorBrush x:Key="Fg2Brush" Color="{DynamicResource Subtext1}"/>
+          <SolidColorBrush x:Key="Fg3Brush" Color="{DynamicResource Overlay0}"/>
+          <SolidColorBrush x:Key="Border1Brush" Color="{DynamicResource Surface2}"/>
+          <SolidColorBrush x:Key="BorderSoftBrush" Color="{DynamicResource Surface1}"/>
+          <SolidColorBrush x:Key="PrimaryTintBrush" Color="#2e2745"/>
+          <SolidColorBrush x:Key="SecondaryBrush" Color="#f5c2e7"/>
+          <SolidColorBrush x:Key="SecondarySoftBrush" Color="#6b4a64"/>
+          <SolidColorBrush x:Key="ConsoleFrameBrush" Color="#14141c"/>
+          <SolidColorBrush x:Key="InfoBrush" Color="#94e2d5"/>
+          <SolidColorBrush x:Key="InfoSoftBrush" Color="#2f5a55"/>
+          <SolidColorBrush x:Key="SuccessSoftBrush" Color="#3a5640"/>
+          <SolidColorBrush x:Key="DangerSoftBrush" Color="#6b3a48"/>
+
           <!-- Legacy Fluent-style aliases -->
           <SolidColorBrush x:Key="SystemControlBackgroundAltMediumBrush" Color="{DynamicResource Surface0}"/>
           <SolidColorBrush x:Key="SystemControlBackgroundBaseLowBrush" Color="{DynamicResource Surface1}"/>
@@ -249,7 +279,10 @@
 
       </ResourceDictionary.ThemeDictionaries>
 
-
+      <!-- Font families (theme-independent, placed in outer ResourceDictionary) -->
+      <FontFamily x:Key="QuicksandFont">avares://Obsidian Launcher/Fonts#Quicksand</FontFamily>
+      <FontFamily x:Key="CauseFont">avares://Obsidian Launcher/Fonts#Cause</FontFamily>
+      <FontFamily x:Key="PlaywriteFont">avares://Obsidian Launcher/Fonts#Playwrite GB S</FontFamily>
 
   <!-- ═══════════════════════════════════════════════════════════════
        BUTTON
@@ -1393,7 +1426,7 @@
     <Setter Property="Background" Value="{DynamicResource WindowBackgroundBrush}"/>
     <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}"/>
     <Setter Property="FontSize" Value="{DynamicResource BodyFontSize}"/>
-    <Setter Property="FontFamily" Value="$Default"/>
+    <Setter Property="FontFamily" Value="{StaticResource QuicksandFont}"/>
   </Style>
 
   <!-- ═══════════════════════════════════════════════════════════════
@@ -1402,7 +1435,7 @@
   <Style Selector="TextBlock">
     <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}"/>
     <Setter Property="FontSize" Value="{DynamicResource BodyFontSize}"/>
-    <Setter Property="FontFamily" Value="$Default"/>
+    <Setter Property="FontFamily" Value="{StaticResource QuicksandFont}"/>
     <Setter Property="TextWrapping" Value="NoWrap"/>
   </Style>
 

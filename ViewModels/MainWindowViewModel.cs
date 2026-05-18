@@ -135,12 +135,13 @@ public class MainWindowViewModel : ViewModelBase
         CloseInstanceSettingsCommand = new RelayCommand(() => IsInstanceSettingsOpen = false);
 
         // Routing commands
-        NavigateToInstancesCommand = new RelayCommand(() => CurrentRoute = "instances");
-        NavigateToModsCommand      = new RelayCommand(() => CurrentRoute = "mods");
-        NavigateToWorldsCommand    = new RelayCommand(() => CurrentRoute = "worlds");
-        NavigateToConsoleCommand   = new RelayCommand(() => CurrentRoute = "console");
-        NavigateToAccountsCommand  = new RelayCommand(() => CurrentRoute = "accounts");
-        NavigateToSettingsCommand  = new RelayCommand(() => CurrentRoute = "settings");
+        NavigateToInstancesCommand   = new RelayCommand(() => CurrentRoute = "instances");
+        NavigateToModsCommand        = new RelayCommand(() => CurrentRoute = "mods");
+        NavigateToWorldsCommand      = new RelayCommand(() => CurrentRoute = "worlds");
+        NavigateToScreenshotsCommand = new RelayCommand(() => CurrentRoute = "screenshots");
+        NavigateToConsoleCommand     = new RelayCommand(() => CurrentRoute = "console");
+        NavigateToAccountsCommand    = new RelayCommand(() => CurrentRoute = "accounts");
+        NavigateToSettingsCommand    = new RelayCommand(() => CurrentRoute = "settings");
 
         // Load initial data
         _ = LoadInstancesAsync();
@@ -310,6 +311,7 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand NavigateToInstancesCommand { get; }
     public ICommand NavigateToModsCommand { get; }
     public ICommand NavigateToWorldsCommand { get; }
+    public ICommand NavigateToScreenshotsCommand { get; }
     public ICommand NavigateToConsoleCommand { get; }
     public ICommand NavigateToAccountsCommand { get; }
     public ICommand NavigateToSettingsCommand { get; }
@@ -324,6 +326,7 @@ public class MainWindowViewModel : ViewModelBase
                 OnPropertyChanged(nameof(IsInstancesScreen));
                 OnPropertyChanged(nameof(IsModsScreen));
                 OnPropertyChanged(nameof(IsWorldsScreen));
+                OnPropertyChanged(nameof(IsScreenshotsScreen));
                 OnPropertyChanged(nameof(IsConsoleScreen));
                 OnPropertyChanged(nameof(IsAccountsScreen));
                 OnPropertyChanged(nameof(IsSettingsScreen));
@@ -331,12 +334,13 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public bool IsInstancesScreen => CurrentRoute == "instances";
-    public bool IsModsScreen      => CurrentRoute == "mods";
-    public bool IsWorldsScreen    => CurrentRoute == "worlds";
-    public bool IsConsoleScreen   => CurrentRoute == "console";
-    public bool IsAccountsScreen  => CurrentRoute == "accounts";
-    public bool IsSettingsScreen  => CurrentRoute == "settings";
+    public bool IsInstancesScreen  => CurrentRoute == "instances";
+    public bool IsModsScreen       => CurrentRoute == "mods";
+    public bool IsWorldsScreen     => CurrentRoute == "worlds";
+    public bool IsScreenshotsScreen => CurrentRoute == "screenshots";
+    public bool IsConsoleScreen    => CurrentRoute == "console";
+    public bool IsAccountsScreen   => CurrentRoute == "accounts";
+    public bool IsSettingsScreen   => CurrentRoute == "settings";
 
     public bool IsDarkMode
     {

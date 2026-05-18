@@ -218,6 +218,15 @@
                                 </StackPanel>
                             </Button>
 
+                            <Button Classes="nav-item"
+                                    Classes.active="{Binding IsScreenshotsScreen}"
+                                    Command="{Binding NavigateToScreenshotsCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="⬛" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Screenshots" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
                             <!-- System section -->
                             <TextBlock Text="SYSTEM"
                                        FontSize="10"
@@ -297,6 +306,9 @@
 
                         <!-- Worlds screen -->
                         <views:WorldsView IsVisible="{Binding IsWorldsScreen}"/>
+
+                        <!-- Screenshots screen -->
+                        <views:ScreenshotsView IsVisible="{Binding IsScreenshotsScreen}"/>
 
                         <!-- Console screen -->
                         <views:ConsoleView IsVisible="{Binding IsConsoleScreen}"/>
