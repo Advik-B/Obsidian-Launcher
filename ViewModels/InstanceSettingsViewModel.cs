@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -24,6 +25,7 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
     private string _notes = "";
     private string _author = "";
     private bool _isFavorite;
+    private string _customIconPath = "";
 
     private string _javaPath = "";
     private int _minMemoryMB;
@@ -44,8 +46,18 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
     private string _quickPlayWorld = "";
     private EnvVarEntry? _selectedEnvVar;
 
+    // Mods
+    private ResourceItem? _selectedMod;
+    private string _modsStatusText = "";
+
+    // Other Logs
+    private string? _selectedLogFile;
+
     public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler<Action<string?>>? BrowseJavaPathRequested;
+    public event EventHandler<Action<string?>>? PickIconRequested;
+    public event EventHandler? OpenScreenshotViewerRequested;
+    public event EventHandler? OpenWorldManagerRequested;
 
     public bool HasUnsavedChanges
     {
@@ -83,6 +95,12 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
     {
         get => _isFavorite;
         set { if (_isFavorite != value) { _isFavorite = value; HasUnsavedChanges = true; OnPropertyChanged(); } }
+    }
+
+    public string CustomIconPath
+    {
+        get => _customIconPath;
+        set { if (_customIconPath != value) { _customIconPath = value; HasUnsavedChanges = true; OnPropertyChanged(); } }
     }
 
     public bool UseCustomJavaSettings
@@ -186,15 +204,102 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
         }
     }
 
+    // Version display
+    public string VersionDisplayText
+    {
+        get
+        {
+            var parts = new List<string>();
+            foreach (var c in _instance.Components)
+            {
+                if (c.Uid == "net.minecraft" || c.Uid == "minecraft")
+                    parts.Add($"Minecraft {c.Version}");
+                else if (c.Uid.Contains("fabric"))
+                    parts.Add($"Fabric {c.Version}");
+                else if (c.Uid.Contains("forge"))
+                    parts.Add($"Forge {c.Version}");
+                else if (c.Uid.Contains("quilt"))
+                    parts.Add($"Quilt {c.Version}");
+                else if (c.Uid.Contains("neoforge"))
+                    parts.Add($"NeoForge {c.Version}");
+                else
+                    parts.Add($"{c.Uid} {c.Version}");
+            }
+            return parts.Count > 0 ? string.Join(" + ", parts) : "Unknown version";
+        }
+    }
+
+    // Mods
+    public ObservableCollection<ResourceItem> Mods { get; } = new();
+
+    public ResourceItem? SelectedMod
+    {
+        get => _selectedMod;
+        set
+        {
+            if (_selectedMod != value)
+            {
+                _selectedMod = value;
+                OnPropertyChanged();
+                ((RelayCommand)ToggleModCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)DeleteModCommand).RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string ModsStatusText
+    {
+        get => _modsStatusText;
+        set { _modsStatusText = value; OnPropertyChanged(); }
+    }
+
+    // Resource Packs
+    public ObservableCollection<ResourceItem> ResourcePacks { get; } = new();
+
+    // Shader Packs
+    public ObservableCollection<ResourceItem> ShaderPacks { get; } = new();
+
+    // Log Files
+    public ObservableCollection<string> LogFiles { get; } = new();
+
+    public string? SelectedLogFile
+    {
+        get => _selectedLogFile;
+        set
+        {
+            if (_selectedLogFile != value)
+            {
+                _selectedLogFile = value;
+                OnPropertyChanged();
+                ((RelayCommand)OpenLogFileCommand).RaiseCanExecuteChanged();
+            }
+        }
+    }
+
     // Commands
     public ICommand BrowseJavaPathCommand { get; }
+    public ICommand PickIconCommand { get; }
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand AddEnvVarCommand { get; }
     public ICommand RemoveEnvVarCommand { get; }
+    public ICommand LoadModsCommand { get; }
+    public ICommand ToggleModCommand { get; }
+    public ICommand OpenModsFolderCommand { get; }
+    public ICommand DeleteModCommand { get; }
+    public ICommand LoadResourcePacksCommand { get; }
+    public ICommand OpenResourcePacksFolderCommand { get; }
+    public ICommand LoadShaderPacksCommand { get; }
+    public ICommand OpenShaderPacksFolderCommand { get; }
+    public ICommand OpenScreenshotViewerCommand { get; }
+    public ICommand OpenWorldManagerCommand { get; }
+    public ICommand OpenInstanceFolderCommand { get; }
+    public ICommand OpenLogFileCommand { get; }
+    public ICommand RefreshLogFilesCommand { get; }
 
     // Constructor for use without settings (e.g., designer)
     public InstanceSettingsViewModel(Instance instance) : this(instance, null) { }
+
 
     public InstanceSettingsViewModel(Instance instance, LauncherSettings? launcherSettings)
     {
@@ -202,13 +307,37 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
         _launcherSettings = launcherSettings;
 
         BrowseJavaPathCommand = new RelayCommand(BrowseJavaPath);
+        PickIconCommand = new RelayCommand(PickIcon);
         SaveCommand = new RelayCommand(SaveSettings, () => HasUnsavedChanges);
         CancelCommand = new RelayCommand(() => { }); // Dialog handles close
         AddEnvVarCommand = new RelayCommand(() => { EnvironmentVariables.Add(new EnvVarEntry()); HasUnsavedChanges = true; });
         RemoveEnvVarCommand = new RelayCommand(() => { if (SelectedEnvVar != null) { EnvironmentVariables.Remove(SelectedEnvVar); SelectedEnvVar = null; HasUnsavedChanges = true; } }, () => SelectedEnvVar != null);
 
+        LoadModsCommand = new RelayCommand(LoadMods);
+        ToggleModCommand = new RelayCommand(ToggleMod, () => SelectedMod != null);
+        OpenModsFolderCommand = new RelayCommand(OpenModsFolder);
+        DeleteModCommand = new RelayCommand(DeleteMod, () => SelectedMod != null);
+
+        LoadResourcePacksCommand = new RelayCommand(LoadResourcePacks);
+        OpenResourcePacksFolderCommand = new RelayCommand(OpenResourcePacksFolder);
+
+        LoadShaderPacksCommand = new RelayCommand(LoadShaderPacks);
+        OpenShaderPacksFolderCommand = new RelayCommand(OpenShaderPacksFolder);
+
+        OpenScreenshotViewerCommand = new RelayCommand(() => OpenScreenshotViewerRequested?.Invoke(this, EventArgs.Empty));
+        OpenWorldManagerCommand = new RelayCommand(() => OpenWorldManagerRequested?.Invoke(this, EventArgs.Empty));
+
+        OpenInstanceFolderCommand = new RelayCommand(OpenInstanceFolder);
+        OpenLogFileCommand = new RelayCommand(OpenLogFile, () => SelectedLogFile != null);
+        RefreshLogFilesCommand = new RelayCommand(RefreshLogFiles);
+
         LoadSettings();
         HasUnsavedChanges = false;
+
+        LoadMods();
+        LoadResourcePacks();
+        LoadShaderPacks();
+        RefreshLogFiles();
     }
 
     private void LoadSettings()
@@ -217,6 +346,7 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
         _notes = _instance.Notes ?? "";
         _author = _instance.Author ?? "";
         _isFavorite = _instance.IsFavorite;
+        _customIconPath = _instance.CustomIconPath ?? "";
 
         if (_launcherSettings != null && !string.IsNullOrEmpty(_instance.InstancePath))
         {
@@ -268,6 +398,7 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
         _instance.Notes = Notes;
         _instance.Author = Author;
         _instance.IsFavorite = IsFavorite;
+        _instance.CustomIconPath = CustomIconPath;
 
         if (_instanceConfig != null)
         {
@@ -296,6 +427,202 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
 
         HasUnsavedChanges = false;
         Log.Information("Instance settings saved for {Instance}", _instance.Name);
+    }
+
+    private void LoadMods()
+    {
+        Mods.Clear();
+        var modsFolder = System.IO.Path.Combine(_instance.GameDataPath, "mods");
+        if (!Directory.Exists(modsFolder))
+        {
+            ModsStatusText = "No mods folder found.";
+            return;
+        }
+
+        var files = Directory.GetFiles(modsFolder, "*.*");
+        int count = 0;
+        foreach (var file in files)
+        {
+            var ext = System.IO.Path.GetExtension(file).ToLowerInvariant();
+            // Match .jar, .zip, .jar.disabled
+            if (ext == ".jar" || ext == ".zip" || file.EndsWith(".jar.disabled", StringComparison.OrdinalIgnoreCase))
+            {
+                var fileName = System.IO.Path.GetFileName(file);
+                bool isEnabled = !file.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase);
+                // Strip .disabled suffix for display name
+                var displayName = isEnabled
+                    ? System.IO.Path.GetFileNameWithoutExtension(file)
+                    : System.IO.Path.GetFileNameWithoutExtension(System.IO.Path.GetFileNameWithoutExtension(file));
+                var size = new FileInfo(file).Length;
+
+                Mods.Add(new ResourceItem(file, displayName)
+                {
+                    IsEnabled = isEnabled,
+                    SizeBytes = size
+                });
+                count++;
+            }
+        }
+
+        ModsStatusText = count == 0 ? "No mods found." : $"{count} mod(s) loaded.";
+    }
+
+    private void ToggleMod()
+    {
+        if (SelectedMod == null) return;
+
+        try
+        {
+            var path = SelectedMod.Path;
+            string newPath;
+            if (SelectedMod.IsEnabled)
+                newPath = path + ".disabled";
+            else
+                newPath = path.Substring(0, path.Length - ".disabled".Length);
+
+            File.Move(path, newPath);
+            LoadMods();
+        }
+        catch (Exception ex)
+        {
+            ModsStatusText = $"Error toggling mod: {ex.Message}";
+            Log.Error(ex, "Failed to toggle mod {Mod}", SelectedMod?.Name);
+        }
+    }
+
+    private void OpenModsFolder()
+    {
+        var modsFolder = System.IO.Path.Combine(_instance.GameDataPath, "mods");
+        if (!Directory.Exists(modsFolder))
+            Directory.CreateDirectory(modsFolder);
+
+        Process.Start(new ProcessStartInfo { FileName = modsFolder, UseShellExecute = true });
+    }
+
+    private void DeleteMod()
+    {
+        if (SelectedMod == null) return;
+
+        try
+        {
+            ModsStatusText = $"Deleting {SelectedMod.Name}...";
+            File.Delete(SelectedMod.Path);
+            LoadMods();
+            ModsStatusText = "Mod deleted.";
+        }
+        catch (Exception ex)
+        {
+            ModsStatusText = $"Error deleting mod: {ex.Message}";
+            Log.Error(ex, "Failed to delete mod {Mod}", SelectedMod?.Name);
+        }
+    }
+
+    private void LoadResourcePacks()
+    {
+        ResourcePacks.Clear();
+        var folder = System.IO.Path.Combine(_instance.GameDataPath, "resourcepacks");
+        if (!Directory.Exists(folder)) return;
+
+        foreach (var file in Directory.GetFiles(folder))
+        {
+            var ext = System.IO.Path.GetExtension(file).ToLowerInvariant();
+            if (ext == ".zip" || ext == ".jar")
+            {
+                ResourcePacks.Add(new ResourceItem(file, System.IO.Path.GetFileNameWithoutExtension(file))
+                {
+                    SizeBytes = new FileInfo(file).Length
+                });
+            }
+        }
+        // Also include subdirectories as resource packs
+        foreach (var dir in Directory.GetDirectories(folder))
+        {
+            ResourcePacks.Add(new ResourceItem(dir, System.IO.Path.GetFileName(dir)));
+        }
+    }
+
+    private void OpenResourcePacksFolder()
+    {
+        var folder = System.IO.Path.Combine(_instance.GameDataPath, "resourcepacks");
+        if (!Directory.Exists(folder))
+            Directory.CreateDirectory(folder);
+        Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+    }
+
+    private void LoadShaderPacks()
+    {
+        ShaderPacks.Clear();
+        var folder = System.IO.Path.Combine(_instance.GameDataPath, "shaderpacks");
+        if (!Directory.Exists(folder)) return;
+
+        foreach (var file in Directory.GetFiles(folder))
+        {
+            var ext = System.IO.Path.GetExtension(file).ToLowerInvariant();
+            if (ext == ".zip" || ext == ".jar")
+            {
+                ShaderPacks.Add(new ResourceItem(file, System.IO.Path.GetFileNameWithoutExtension(file))
+                {
+                    SizeBytes = new FileInfo(file).Length
+                });
+            }
+        }
+        foreach (var dir in Directory.GetDirectories(folder))
+        {
+            ShaderPacks.Add(new ResourceItem(dir, System.IO.Path.GetFileName(dir)));
+        }
+    }
+
+    private void OpenShaderPacksFolder()
+    {
+        var folder = System.IO.Path.Combine(_instance.GameDataPath, "shaderpacks");
+        if (!Directory.Exists(folder))
+            Directory.CreateDirectory(folder);
+        Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+    }
+
+    private void OpenInstanceFolder()
+    {
+        var path = _instance.GameDataPath;
+        if (!Directory.Exists(path))
+            Directory.CreateDirectory(path);
+        Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
+    }
+
+    private void RefreshLogFiles()
+    {
+        LogFiles.Clear();
+        var logsFolder = System.IO.Path.Combine(_instance.GameDataPath, "logs");
+        if (!Directory.Exists(logsFolder)) return;
+
+        foreach (var file in Directory.GetFiles(logsFolder))
+        {
+            LogFiles.Add(System.IO.Path.GetFileName(file));
+        }
+    }
+
+    private void OpenLogFile()
+    {
+        if (SelectedLogFile == null) return;
+
+        var filePath = System.IO.Path.Combine(_instance.GameDataPath, "logs", SelectedLogFile);
+        if (!File.Exists(filePath)) return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo { FileName = filePath, UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to open log file {FilePath}", filePath);
+        }
+    }
+
+    private void PickIcon()
+    {
+        PickIconRequested?.Invoke(this, path =>
+        {
+            if (path != null) CustomIconPath = path;
+        });
     }
 
     private void BrowseJavaPath()

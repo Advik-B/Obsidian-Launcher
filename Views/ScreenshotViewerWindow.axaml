@@ -46,16 +46,12 @@
                                     Background="White"
                                     CornerRadius="4">
                                 <StackPanel Spacing="5">
-                                    <!-- Thumbnail Placeholder -->
+                                    <!-- Thumbnail -->
                                     <Border Width="180" Height="100"
                                             Background="LightGray"
-                                            BorderBrush="DarkGray"
-                                            BorderThickness="1">
-                                        <TextBlock Text="Preview"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center"
-                                                   Foreground="Gray"/>
-                                        <!-- TODO: Display actual image thumbnail -->
+                                            ClipToBounds="True">
+                                        <Image Source="{Binding Thumbnail}"
+                                               Stretch="UniformToFill"/>
                                     </Border>
 
                                     <!-- Screenshot Info -->

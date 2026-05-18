@@ -3,10 +3,13 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Windows.Input;
+using Avalonia.Media.Imaging;
 using Serilog;
 
 namespace ObsidianLauncher.ViewModels;
@@ -140,12 +143,21 @@ public class ScreenshotViewerViewModel : INotifyPropertyChanged
 
         try
         {
-            // TODO: Open file in system file explorer/viewer
-            Log.Information("Opening screenshot in explorer: {File}", SelectedScreenshot.FileName);
+            var folder = Path.GetDirectoryName(SelectedScreenshot.FilePath);
+            if (string.IsNullOrEmpty(folder)) return;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                Process.Start("explorer.exe", $"/select,\"{SelectedScreenshot.FilePath}\"");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                Process.Start(new ProcessStartInfo("xdg-open", folder) { UseShellExecute = true });
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                Process.Start(new ProcessStartInfo("open", $"-R \"{SelectedScreenshot.FilePath}\"") { UseShellExecute = true });
+
+            Log.Information("Opened screenshot in explorer: {File}", SelectedScreenshot.FileName);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error opening screenshot: {File}", SelectedScreenshot.FileName);
+            Log.Error(ex, "Error opening screenshot in explorer: {File}", SelectedScreenshot.FileName);
         }
     }
 
@@ -164,6 +176,16 @@ public class ScreenshotItem
     public string FileName { get; set; } = "";
     public DateTime DateTaken { get; set; }
     public long FileSizeBytes { get; set; }
+
+    public Bitmap? Thumbnail
+    {
+        get
+        {
+            if (!File.Exists(FilePath)) return null;
+            try { return new Bitmap(FilePath); }
+            catch { return null; }
+        }
+    }
 
     public string FileSizeDisplay
     {

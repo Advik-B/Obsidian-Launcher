@@ -18,7 +18,10 @@
       "WebFetch(domain:piston-meta.mojang.com)",
       "WebFetch(domain:meta.fabricmc.net)",
       "Bash(Get-ChildItem -Path \"S:\\\\Github\\\\Obsidian-Launcher\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(Get-ChildItem *)",
+      "Bash(findstr /S /R \"Copy.*\\\\.\\\\.\\\\.\" Views\\\\*.axaml)",
+      "Bash(dotnet test *)"
     ]
   }
 }

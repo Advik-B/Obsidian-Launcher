@@ -12,5 +12,13 @@ public partial class CrashReportWindow : Window
         InitializeComponent();
         DataContext = viewModel;
         viewModel.CloseRequested += (_, _) => Close();
+        viewModel.CopyRequested += OnCopyRequested;
+    }
+
+    private async void OnCopyRequested(object? sender, string content)
+    {
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard != null)
+            await clipboard.SetTextAsync(content);
     }
 }

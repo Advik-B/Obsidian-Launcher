@@ -36,6 +36,11 @@
             <Button Content="Copy"
                     Command="{Binding CopyCommand}" />
 
+            <!-- Copy All Button -->
+            <Button Content="Copy All"
+                    Command="{Binding CopyAllCommand}"
+                    ToolTip.Tip="Copy all log entries (ignores active filter)"/>
+
             <!-- Save Button -->
             <Button Content="Save to File"
                     Command="{Binding SaveToFileCommand}" />

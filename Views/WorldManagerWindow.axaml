@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:ObsidianLauncher.ViewModels"
+        xmlns:utils="using:ObsidianLauncher.Utils"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="480"
@@ -11,6 +12,10 @@
         Width="700" Height="480"
         MinWidth="550" MinHeight="380"
         WindowStartupLocation="CenterOwner">
+
+    <Window.Resources>
+        <utils:FilePathToBitmapConverter x:Key="FilePathToBitmapConverter"/>
+    </Window.Resources>
 
     <DockPanel Margin="12">
 
@@ -65,7 +70,12 @@
                                     Width="64" Height="64"
                                     Background="#30808080"
                                     CornerRadius="4"
-                                    VerticalAlignment="Top"/>
+                                    ClipToBounds="True"
+                                    VerticalAlignment="Top">
+                                <Image Source="{Binding IconPath, Converter={StaticResource FilePathToBitmapConverter}}"
+                                       Stretch="UniformToFill"
+                                       IsVisible="{Binding IconPath, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                            </Border>
 
                             <StackPanel Grid.Column="2" Spacing="3" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding LevelName}"

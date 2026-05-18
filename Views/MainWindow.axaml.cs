@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using FluentAvalonia.UI.Controls;
 using ObsidianLauncher.ViewModels;
 
@@ -30,5 +31,11 @@ public partial class MainWindow : Window
 
         var result = await dialog.ShowAsync();
         args.Result.SetResult(result == ContentDialogResult.Primary);
+    }
+
+    private void InstanceList_DoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+            vm.LaunchInstanceCommand.Execute(null);
     }
 }

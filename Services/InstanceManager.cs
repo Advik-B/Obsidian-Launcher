@@ -790,6 +790,121 @@ public class InstanceManager
     }
 
     /// <summary>
+    ///     Zips the entire instance directory to the specified output path.
+    /// </summary>
+    /// <param name="instance">The instance to export.</param>
+    /// <param name="outputPath">Destination .zip file path.</param>
+    /// <returns>The output path on success, or null on failure.</returns>
+    public async Task<string?> ExportInstanceToZipAsync(Instance instance, string outputPath)
+    {
+        if (instance == null) throw new ArgumentNullException(nameof(instance));
+        if (string.IsNullOrWhiteSpace(outputPath)) throw new ArgumentException("Output path cannot be empty.", nameof(outputPath));
+
+        if (string.IsNullOrWhiteSpace(instance.InstancePath) || !Directory.Exists(instance.InstancePath))
+        {
+            _logger.Error("Instance path does not exist for '{InstanceName}': {InstancePath}", instance.Name, instance.InstancePath);
+            return null;
+        }
+
+        try
+        {
+            var exportDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(exportDir))
+                Directory.CreateDirectory(exportDir);
+
+            if (File.Exists(outputPath))
+                File.Delete(outputPath);
+
+            await Task.Run(() => System.IO.Compression.ZipFile.CreateFromDirectory(instance.InstancePath, outputPath));
+            _logger.Information("Exported instance '{InstanceName}' to {OutputPath}", instance.Name, outputPath);
+            return outputPath;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to export instance '{InstanceName}' to {OutputPath}", instance.Name, outputPath);
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Copies a source instance to a new instance with the given name.
+    /// </summary>
+    /// <param name="source">The source instance to copy.</param>
+    /// <param name="newName">Display name for the new instance.</param>
+    /// <returns>The new instance on success, or null on failure.</returns>
+    public async Task<Instance?> CopyInstanceAsync(Instance source, string newName)
+    {
+        if (source == null) throw new ArgumentNullException(nameof(source));
+        if (string.IsNullOrWhiteSpace(newName)) throw new ArgumentException("New name cannot be empty.", nameof(newName));
+
+        return await CopyInstanceAsync(source.Name, newName, copyPlaytimeData: false);
+    }
+
+    /// <summary>
+    ///     Restores the most recent backup of an instance from the backups directory.
+    /// </summary>
+    /// <param name="instanceName">The name of the instance to restore.</param>
+    /// <returns>The restored instance on success, or null if no backup was found or restore failed.</returns>
+    public async Task<Instance?> UndoTrashAsync(string instanceName)
+    {
+        if (string.IsNullOrWhiteSpace(instanceName))
+            throw new ArgumentException("Instance name cannot be empty.", nameof(instanceName));
+
+        var sanitized = SanitizeName(instanceName);
+        var backupsDir = Path.Combine(_launcherConfig.BaseDataPath, "backups", "instances");
+
+        if (!Directory.Exists(backupsDir))
+        {
+            _logger.Warning("Backups directory does not exist: {BackupsDir}", backupsDir);
+            return null;
+        }
+
+        // Find all backup directories that match the sanitized instance name prefix
+        var allBackups = Directory.GetDirectories(backupsDir)
+            .Where(d => Path.GetFileName(d).StartsWith(sanitized + "_", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(d => d) // ISO-style timestamp names sort correctly
+            .ToList();
+
+        if (allBackups.Count == 0)
+        {
+            _logger.Warning("No backups found for instance '{InstanceName}' in {BackupsDir}", instanceName, backupsDir);
+            return null;
+        }
+
+        var mostRecentBackup = allBackups[0];
+        var targetPath = GetInstancePath(sanitized);
+
+        if (Directory.Exists(targetPath))
+        {
+            _logger.Error("Cannot restore instance '{InstanceName}': an instance with that name already exists at {TargetPath}.", instanceName, targetPath);
+            return null;
+        }
+
+        try
+        {
+            await Task.Run(() => CopyDirectory(mostRecentBackup, targetPath));
+            _logger.Information("Restored instance '{InstanceName}' from backup {BackupPath}", instanceName, mostRecentBackup);
+
+            var restored = await LoadInstanceAsync(sanitized);
+            if (restored != null)
+            {
+                restored.LastModifiedDate = DateTime.UtcNow;
+                await SaveInstanceAsync(restored);
+            }
+            return restored;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to restore instance '{InstanceName}' from backup {BackupPath}", instanceName, mostRecentBackup);
+            if (Directory.Exists(targetPath))
+            {
+                try { Directory.Delete(targetPath, true); } catch { /* best effort */ }
+            }
+            return null;
+        }
+    }
+
+    /// <summary>
     ///     Helper method to recursively copy a directory.
     /// </summary>
     private static void CopyDirectory(string sourceDir, string destDir)

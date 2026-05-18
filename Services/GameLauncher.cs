@@ -17,13 +17,33 @@ public class GameLauncher
     private readonly LauncherConfig _config;
     private readonly ILogger _logger;
 
+    private CancellationTokenSource? _currentGameCts;
+
     public event EventHandler<string>? OutputReceived;
+
+    /// <summary>Gets whether a game process is currently running.</summary>
+    public bool IsGameRunning => _currentGameCts != null && !_currentGameCts.IsCancellationRequested;
 
     public GameLauncher(LauncherConfig config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _logger = LogHelper.GetLogger<GameLauncher>();
         _logger.Verbose("GameLauncher initialized.");
+    }
+
+    /// <summary>
+    ///     Cancels the currently running game process, if any.
+    /// </summary>
+    public void KillGame()
+    {
+        if (_currentGameCts == null || _currentGameCts.IsCancellationRequested)
+        {
+            _logger.Warning("KillGame called but no game is currently running.");
+            return;
+        }
+
+        _logger.Information("KillGame requested — cancelling current game CancellationTokenSource.");
+        _currentGameCts.Cancel();
     }
 
     /// <summary>
@@ -173,6 +193,13 @@ public class GameLauncher
             }
         }
 
+        // Create a linked CTS so both the caller's token and KillGame() can cancel.
+        var linkedCts = cancellationToken.CanBeCanceled
+            ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
+            : new CancellationTokenSource();
+        _currentGameCts = linkedCts;
+        var effectiveToken = linkedCts.Token;
+
         using var process = new Process { StartInfo = processStartInfo };
         process.EnableRaisingEvents = true;
 
@@ -211,8 +238,8 @@ public class GameLauncher
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            // Asynchronously wait for the process to exit or cancellation.
-            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            // Asynchronously wait for the process to exit or cancellation (including KillGame()).
+            await process.WaitForExitAsync(effectiveToken).ConfigureAwait(false);
 
             // Ensure all output is flushed after process exits but before we declare it finished
             // This might not be strictly necessary if reading is complete, but can help catch trailing messages.
@@ -270,6 +297,13 @@ public class GameLauncher
                 }
 
             return -1; // General error code
+        }
+        finally
+        {
+            // Clear the current CTS reference once the game session ends.
+            if (ReferenceEquals(_currentGameCts, linkedCts))
+                _currentGameCts = null;
+            linkedCts.Dispose();
         }
     }
 }

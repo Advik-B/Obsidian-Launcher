@@ -91,6 +91,7 @@ public class ConsoleViewModel : INotifyPropertyChanged
     // Commands
     public ICommand ClearCommand { get; }
     public ICommand CopyCommand { get; }
+    public ICommand CopyAllCommand { get; }
     public ICommand SaveToFileCommand { get; }
 
     public ConsoleViewModel()
@@ -101,6 +102,7 @@ public class ConsoleViewModel : INotifyPropertyChanged
 
         ClearCommand = new RelayCommand(Clear);
         CopyCommand = new RelayCommand(CopyToClipboard);
+        CopyAllCommand = new RelayCommand(CopyAllToClipboard);
         SaveToFileCommand = new RelayCommand(SaveToFile);
 
         // Subscribe to collection changes
@@ -164,6 +166,12 @@ public class ConsoleViewModel : INotifyPropertyChanged
     private void CopyToClipboard()
     {
         var content = string.Join('\n', FilteredLogEntries.Select(e => e.FormattedMessage));
+        CopyRequested?.Invoke(this, content);
+    }
+
+    private void CopyAllToClipboard()
+    {
+        var content = string.Join('\n', LogEntries.Select(e => e.FormattedMessage));
         CopyRequested?.Invoke(this, content);
     }
 

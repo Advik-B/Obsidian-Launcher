@@ -89,4 +89,7 @@ public class ResourceItem
     public string? LevelName { get; set; }
     public string? GameMode { get; set; }
     public DateTime? LastPlayed { get; set; }
+
+    /// <summary>Optional path to an icon image file for this resource (e.g. icon.png for worlds).</summary>
+    public string? IconPath { get; set; }
 }

@@ -1,16 +1,21 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:ObsidianLauncher.ViewModels"
+        xmlns:utils="using:ObsidianLauncher.Utils"
         x:Class="ObsidianLauncher.Views.InstanceSettingsWindow"
         x:CompileBindings="False"
         Title="Instance Settings"
-        Width="600" Height="550"
+        Width="700" Height="600"
         WindowStartupLocation="CenterOwner"
         CanResize="True">
 
     <Design.DataContext>
         <vm:InstanceSettingsViewModel/>
     </Design.DataContext>
+
+    <Window.Resources>
+        <utils:FilePathToBitmapConverter x:Key="FilePathToBitmapConverter"/>
+    </Window.Resources>
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -30,27 +35,62 @@
                     <StackPanel Margin="10" Spacing="15">
                         <TextBlock Text="Instance Information" FontWeight="SemiBold" FontSize="14"/>
 
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Instance Name:"/>
-                            <TextBox Text="{Binding Name}" Watermark="Enter instance name"/>
-                        </StackPanel>
+                        <!-- Icon + Name side by side -->
+                        <Grid ColumnDefinitions="Auto,12,*">
+                            <StackPanel Grid.Column="0" Spacing="6" Width="80">
+                                <Border Width="72" Height="72" CornerRadius="8" ClipToBounds="True"
+                                        Background="#40808080">
+                                    <Panel>
+                                        <Image Source="{Binding CustomIconPath, Converter={StaticResource FilePathToBitmapConverter}}"
+                                               Stretch="UniformToFill"
+                                               IsVisible="{Binding CustomIconPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                        <TextBlock Text="?"
+                                                   FontSize="28" FontWeight="Bold"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Opacity="0.5"
+                                                   IsVisible="{Binding CustomIconPath, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+                                    </Panel>
+                                </Border>
+                                <Button Content="Change Icon" Command="{Binding PickIconCommand}"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                        FontSize="11" Padding="4,3"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="10" VerticalAlignment="Center">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Instance Name:"/>
+                                    <TextBox Text="{Binding Name}" Watermark="Enter instance name"/>
+                                </StackPanel>
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Author:"/>
+                                    <TextBox Text="{Binding Author}" Watermark="Enter author name (optional)"/>
+                                </StackPanel>
+                                <CheckBox Content="Mark as Favorite" IsChecked="{Binding IsFavorite}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Author:"/>
-                            <TextBox Text="{Binding Author}" Watermark="Enter author name (optional)"/>
-                        </StackPanel>
+            <!-- Version Tab -->
+            <TabItem Header="Version">
+                <ScrollViewer>
+                    <StackPanel Margin="10" Spacing="10">
+                        <TextBlock Text="Version Information" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="{Binding VersionDisplayText}" FontSize="13" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Notes:"/>
-                            <TextBox Text="{Binding Notes}"
-                                     Watermark="Enter notes about this instance (optional)"
-                                     AcceptsReturn="True"
-                                     Height="80"
-                                     TextWrapping="Wrap"/>
-                        </StackPanel>
-
-                        <CheckBox Content="Mark as Favorite"
-                                  IsChecked="{Binding IsFavorite}"/>
+            <!-- Notes Tab -->
+            <TabItem Header="Notes">
+                <ScrollViewer>
+                    <StackPanel Margin="10" Spacing="10">
+                        <TextBlock Text="Instance Notes" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBox Text="{Binding Notes}"
+                                 AcceptsReturn="True"
+                                 MinHeight="200"
+                                 TextWrapping="Wrap"
+                                 Watermark="Enter notes about this instance..."/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -209,6 +249,123 @@
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
+
+            <!-- Mods Tab -->
+            <TabItem Header="Mods">
+                <DockPanel Margin="10">
+                    <!-- Action bar at bottom -->
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                        <Button Content="Toggle Enable/Disable" Command="{Binding ToggleModCommand}" Padding="12,4"
+                                IsEnabled="{Binding SelectedMod, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                        <Button Content="Delete" Command="{Binding DeleteModCommand}" Padding="12,4"
+                                IsEnabled="{Binding SelectedMod, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                        <Button Content="Open Folder" Command="{Binding OpenModsFolderCommand}" Padding="12,4"/>
+                        <Button Content="Refresh" Command="{Binding LoadModsCommand}" Padding="12,4"/>
+                    </StackPanel>
+                    <!-- Status -->
+                    <TextBlock DockPanel.Dock="Bottom" Text="{Binding ModsStatusText}" FontSize="11" Opacity="0.7" Margin="0,4,0,0"/>
+                    <!-- List -->
+                    <ListBox ItemsSource="{Binding Mods}"
+                             SelectedItem="{Binding SelectedMod}"
+                             Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="4">
+                                    <CheckBox IsChecked="{Binding IsEnabled}" IsHitTestVisible="False"/>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding SizeBytes, StringFormat='{}{0:N0} bytes'}" FontSize="10" Opacity="0.6"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </TabItem>
+
+            <!-- Resource Packs Tab -->
+            <TabItem Header="Resource Packs">
+                <DockPanel Margin="10">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                        <Button Content="Open Folder" Command="{Binding OpenResourcePacksFolderCommand}" Padding="12,4"/>
+                        <Button Content="Refresh" Command="{Binding LoadResourcePacksCommand}" Padding="12,4"/>
+                    </StackPanel>
+                    <ListBox ItemsSource="{Binding ResourcePacks}" Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Name}" Margin="4" FontSize="13"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </TabItem>
+
+            <!-- Shader Packs Tab -->
+            <TabItem Header="Shader Packs">
+                <DockPanel Margin="10">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                        <Button Content="Open Folder" Command="{Binding OpenShaderPacksFolderCommand}" Padding="12,4"/>
+                        <Button Content="Refresh" Command="{Binding LoadShaderPacksCommand}" Padding="12,4"/>
+                    </StackPanel>
+                    <ListBox ItemsSource="{Binding ShaderPacks}" Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Name}" Margin="4" FontSize="13"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </TabItem>
+
+            <!-- Worlds Tab -->
+            <TabItem Header="Worlds">
+                <StackPanel Margin="10" Spacing="10">
+                    <TextBlock Text="World Manager" FontWeight="SemiBold" FontSize="14"/>
+                    <TextBlock Text="Manage your Minecraft worlds for this instance." TextWrapping="Wrap" Opacity="0.7"/>
+                    <Button Content="Open World Manager..." Command="{Binding OpenWorldManagerCommand}" Padding="12,6" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </TabItem>
+
+            <!-- Servers Tab -->
+            <TabItem Header="Servers">
+                <StackPanel Margin="10" Spacing="10">
+                    <TextBlock Text="Server List" FontWeight="SemiBold" FontSize="14"/>
+                    <TextBlock Text="The server list is stored in servers.dat inside the instance folder. Edit it in-game or use the button below to open the instance folder."
+                               TextWrapping="Wrap" Opacity="0.7"/>
+                    <Button Content="Open Instance Folder" Command="{Binding OpenInstanceFolderCommand}"
+                            Padding="12,6" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </TabItem>
+
+            <!-- Other Logs Tab -->
+            <TabItem Header="Other Logs">
+                <DockPanel Margin="10">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                        <Button Content="Open Selected Log" Command="{Binding OpenLogFileCommand}" Padding="12,4"
+                                IsEnabled="{Binding SelectedLogFile, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                        <Button Content="Refresh" Command="{Binding RefreshLogFilesCommand}" Padding="12,4"/>
+                    </StackPanel>
+                    <ListBox ItemsSource="{Binding LogFiles}"
+                             SelectedItem="{Binding SelectedLogFile}"
+                             Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Margin="4" FontSize="13"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </TabItem>
+
+            <!-- Screenshots Tab -->
+            <TabItem Header="Screenshots">
+                <StackPanel Margin="10" Spacing="10">
+                    <TextBlock Text="Screenshots" FontWeight="SemiBold" FontSize="14"/>
+                    <TextBlock Text="View and manage screenshots taken in this instance." TextWrapping="Wrap" Opacity="0.7"/>
+                    <Button Content="Open Screenshot Viewer..." Command="{Binding OpenScreenshotViewerCommand}" Padding="12,6" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </TabItem>
+
         </TabControl>
 
         <!-- Footer Buttons -->

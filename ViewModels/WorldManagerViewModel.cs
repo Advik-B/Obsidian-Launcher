@@ -74,6 +74,7 @@ public class WorldManagerViewModel : ViewModelBase
     public ICommand CloseCommand { get; }
 
     public event EventHandler? CloseRequested;
+    public event EventHandler<ConfirmWorldDeleteEventArgs>? ConfirmDeleteRequested;
 
     private async Task LoadWorldsAsync()
     {
@@ -138,9 +139,22 @@ public class WorldManagerViewModel : ViewModelBase
     {
         if (SelectedWorld == null) return;
 
+        var args = new ConfirmWorldDeleteEventArgs(SelectedWorld.Name);
+        ConfirmDeleteRequested?.Invoke(this, args);
+        var confirmed = await args.Result.Task;
+        if (!confirmed) return;
+
         _resourceManager.DeleteResource(SelectedWorld, createBackup: true);
         Worlds.Remove(SelectedWorld);
         SelectedWorld = null;
         StatusText = "World deleted (backup created)";
     }
+}
+
+public class ConfirmWorldDeleteEventArgs : EventArgs
+{
+    public string WorldName { get; }
+    public TaskCompletionSource<bool> Result { get; } = new();
+
+    public ConfirmWorldDeleteEventArgs(string name) { WorldName = name; }
 }

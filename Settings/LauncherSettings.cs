@@ -37,6 +37,10 @@ public class LauncherSettings
     public Setting<int> ProxyPort { get; }
     public Setting<int> MaxConcurrentDownloads { get; }
 
+    // External Tools
+    public Setting<string> ExternalBrowser { get; }
+    public Setting<string> ExternalTextEditor { get; }
+
     // Launcher Behavior
     public Setting<bool> ShowSnapshots { get; }
     public Setting<bool> ShowOldAlpha { get; }
@@ -77,6 +81,10 @@ public class LauncherSettings
         ProxyHost = _settingsManager.RegisterString("ProxyHost", "", "Proxy server hostname");
         ProxyPort = _settingsManager.RegisterInt("ProxyPort", 8080, "Proxy server port");
         MaxConcurrentDownloads = _settingsManager.RegisterInt("MaxConcurrentDownloads", 5, "Maximum concurrent downloads");
+
+        // External Tools
+        ExternalBrowser = _settingsManager.RegisterString("ExternalBrowser", "", "External browser executable path (empty for system default)");
+        ExternalTextEditor = _settingsManager.RegisterString("ExternalTextEditor", "", "External text editor executable path (empty for system default)");
 
         // Launcher Behavior
         ShowSnapshots = _settingsManager.RegisterBool("ShowSnapshots", false, "Show snapshot versions");

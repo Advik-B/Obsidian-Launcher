@@ -24,12 +24,30 @@ public class CrashReportViewModel : ViewModelBase
     public bool HasSuggestion => !string.IsNullOrWhiteSpace(Report.Suggestion);
 
     public ICommand CloseCommand { get; }
+    public ICommand CopyToClipboardCommand { get; }
 
     public CrashReportViewModel(CrashReport report)
     {
         Report = report;
         CloseCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
+        CopyToClipboardCommand = new RelayCommand(CopyToClipboard);
     }
 
     public event EventHandler? CloseRequested;
+    public event EventHandler<string>? CopyRequested;
+
+    private void CopyToClipboard()
+    {
+        var text = $"""
+            Obsidian Launcher — Crash Report
+            Instance: {Report.InstanceName}
+            Exit Code: {Report.ExitCode}
+            Category: {CategoryText}
+            Suggestion: {Suggestion ?? "None"}
+
+            --- Relevant Log Lines ---
+            {LogExcerpt}
+            """;
+        CopyRequested?.Invoke(this, text);
+    }
 }

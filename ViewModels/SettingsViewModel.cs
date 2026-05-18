@@ -50,6 +50,10 @@ public class SettingsViewModel : INotifyPropertyChanged
     private int _proxyPort;
     private int _maxConcurrentDownloads;
 
+    // External Tools
+    private string _externalBrowser = "";
+    private string _externalTextEditor = "";
+
     // Launcher Behavior
     private bool _showSnapshots;
     private bool _showOldAlpha;
@@ -399,9 +403,40 @@ public class SettingsViewModel : INotifyPropertyChanged
         }
     }
 
+    // External Tools Properties
+    public string ExternalBrowser
+    {
+        get => _externalBrowser;
+        set
+        {
+            if (_externalBrowser != value)
+            {
+                _externalBrowser = value;
+                HasUnsavedChanges = true;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string ExternalTextEditor
+    {
+        get => _externalTextEditor;
+        set
+        {
+            if (_externalTextEditor != value)
+            {
+                _externalTextEditor = value;
+                HasUnsavedChanges = true;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     // Commands
     public ICommand BrowseJavaPathCommand { get; }
     public ICommand BrowseGameDirectoryCommand { get; }
+    public ICommand BrowseExternalBrowserCommand { get; }
+    public ICommand BrowseExternalEditorCommand { get; }
     public ICommand ResetToDefaultsCommand { get; }
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
@@ -420,6 +455,8 @@ public class SettingsViewModel : INotifyPropertyChanged
         // Initialize commands
         BrowseJavaPathCommand = new RelayCommand(BrowseJavaPath);
         BrowseGameDirectoryCommand = new RelayCommand(BrowseGameDirectory);
+        BrowseExternalBrowserCommand = new RelayCommand(BrowseExternalBrowser);
+        BrowseExternalEditorCommand = new RelayCommand(BrowseExternalEditor);
         ResetToDefaultsCommand = new RelayCommand(ResetToDefaults);
         SaveCommand = new RelayCommand(SaveSettings, () => HasUnsavedChanges);
         CancelCommand = new RelayCommand(CancelChanges);
@@ -455,6 +492,9 @@ public class SettingsViewModel : INotifyPropertyChanged
         _showOldAlpha = _settings.ShowOldAlpha.Value;
         _showOldBeta = _settings.ShowOldBeta.Value;
         _defaultInstanceGroup = _settings.DefaultInstanceGroup.Value;
+
+        _externalBrowser = _settings.ExternalBrowser.Value;
+        _externalTextEditor = _settings.ExternalTextEditor.Value;
 
         // Notify all properties changed at once
         OnPropertyChanged(string.Empty);
@@ -495,6 +535,10 @@ public class SettingsViewModel : INotifyPropertyChanged
             _settings.ShowOldBeta.Value = ShowOldBeta;
             _settings.DefaultInstanceGroup.Value = DefaultInstanceGroup;
 
+            // External Tools
+            _settings.ExternalBrowser.Value = ExternalBrowser;
+            _settings.ExternalTextEditor.Value = ExternalTextEditor;
+
             // Validate and save
             _settings.ValidateMemorySettings();
             _settings.Save();
@@ -524,7 +568,8 @@ public class SettingsViewModel : INotifyPropertyChanged
             "JavaPath", "MinMemoryMB", "MaxMemoryMB", "JavaArgs",
             "WindowWidth", "WindowHeight", "Fullscreen", "GameDirectory",
             "UseProxy", "ProxyHost", "ProxyPort", "MaxConcurrentDownloads",
-            "ShowSnapshots", "ShowOldAlpha", "ShowOldBeta", "DefaultInstanceGroup"
+            "ShowSnapshots", "ShowOldAlpha", "ShowOldBeta", "DefaultInstanceGroup",
+            "ExternalBrowser", "ExternalTextEditor"
         };
 
         foreach (var key in keys)
@@ -549,6 +594,22 @@ public class SettingsViewModel : INotifyPropertyChanged
         BrowseFolderRequested?.Invoke(this, ("Select Game Directory", path =>
         {
             if (path != null) GameDirectory = path;
+        }));
+    }
+
+    private void BrowseExternalBrowser()
+    {
+        BrowseFileRequested?.Invoke(this, ("Select External Browser Executable", path =>
+        {
+            if (path != null) ExternalBrowser = path;
+        }));
+    }
+
+    private void BrowseExternalEditor()
+    {
+        BrowseFileRequested?.Invoke(this, ("Select External Text Editor Executable", path =>
+        {
+            if (path != null) ExternalTextEditor = path;
         }));
     }
 

@@ -100,6 +100,8 @@ public class VersionSelectorViewModel : INotifyPropertyChanged
     public ICommand CancelCommand { get; }
     public ICommand RefreshCommand { get; }
 
+    public event EventHandler? SelectRequested;
+
     public VersionSelectorViewModel() : this(showSnapshots: true, showOldAlpha: false, showOldBeta: false) { }
 
     public VersionSelectorViewModel(bool showSnapshots, bool showOldAlpha, bool showOldBeta)
@@ -108,7 +110,9 @@ public class VersionSelectorViewModel : INotifyPropertyChanged
         _showOldAlpha = showOldAlpha;
         _showOldBeta = showOldBeta;
 
-        SelectCommand = new RelayCommand(() => { }, () => SelectedVersionEntry != null);
+        SelectCommand = new RelayCommand(
+            () => SelectRequested?.Invoke(this, EventArgs.Empty),
+            () => SelectedVersionEntry != null);
         CancelCommand = new RelayCommand(() => { });
         RefreshCommand = new RelayCommand(async () => await LoadVersionsAsync());
 

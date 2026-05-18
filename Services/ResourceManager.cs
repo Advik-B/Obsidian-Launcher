@@ -161,6 +161,11 @@ public class ResourceManager
                 }
                 catch { /* NBT parse failure is non-fatal */ }
 
+                // Populate icon path if icon.png exists in the world folder
+                var iconPath = Path.Combine(dir, "icon.png");
+                if (File.Exists(iconPath))
+                    resourceItem.IconPath = iconPath;
+
                 resources.Add(resourceItem);
             }
         }

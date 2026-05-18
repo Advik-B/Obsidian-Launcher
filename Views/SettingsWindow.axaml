@@ -280,6 +280,40 @@
                 </ScrollViewer>
             </TabItem>
 
+            <!-- External Tools Tab -->
+            <TabItem Header="External Tools">
+                <ScrollViewer>
+                    <StackPanel Spacing="10" Margin="20">
+                        <TextBlock Text="External Tools" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                        <TextBlock Text="These programs are used when opening files or launching external utilities."
+                                   TextWrapping="Wrap" Opacity="0.7" Margin="0,0,0,15"/>
+
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="External Browser:"/>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBox Grid.Column="0" Text="{Binding ExternalBrowser}"
+                                         Watermark="Leave empty for system default"/>
+                                <Button Grid.Column="1" Content="Browse..."
+                                        Command="{Binding BrowseExternalBrowserCommand}" Margin="5,0,0,0"/>
+                            </Grid>
+                            <TextBlock Text="Used when opening documentation links." FontSize="11" Foreground="Gray"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="5" Margin="0,10,0,0">
+                            <TextBlock Text="External Text Editor:"/>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBox Grid.Column="0" Text="{Binding ExternalTextEditor}"
+                                         Watermark="Leave empty for system default (notepad)"/>
+                                <Button Grid.Column="1" Content="Browse..."
+                                        Command="{Binding BrowseExternalEditorCommand}" Margin="5,0,0,0"/>
+                            </Grid>
+                            <TextBlock Text="Used when opening log files and configuration files." FontSize="11" Foreground="Gray"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
         </TabControl>
 
         <!-- Bottom buttons -->

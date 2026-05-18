@@ -88,4 +88,24 @@ public class Instance
     // Quick play
     public string? QuickPlayServer { get; set; }
     public string? QuickPlayWorld { get; set; }
+
+    /// <summary>
+    ///     Display name of the group this instance belongs to. Populated by the UI layer; not persisted.
+    /// </summary>
+    [JsonIgnore]
+    public string? GroupDisplayName { get; set; }
+
+    [JsonIgnore]
+    public string MinecraftVersionDisplay
+    {
+        get
+        {
+            foreach (var c in Components)
+            {
+                if (c.Uid == "net.minecraft" || c.Uid == "minecraft")
+                    return c.Version ?? "";
+            }
+            return Components.Count > 0 ? Components[0].Version ?? "" : "";
+        }
+    }
 }

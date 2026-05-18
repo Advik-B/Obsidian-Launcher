@@ -48,6 +48,11 @@ public class MainWindowViewModel : ViewModelBase
     private bool _isLaunching;
     private double _progressValue;
     private string _progressText;
+    private bool _isToolbarVisible = true;
+    private bool _isStatusBarVisible = true;
+    private bool _isNewsBarVisible = true;
+    private string _latestNewsHeadline = "Loading news...";
+    private string _searchFilter = "";
 
     public MainWindowViewModel()
     {
@@ -82,6 +87,7 @@ public class MainWindowViewModel : ViewModelBase
 
         // Initialize commands
         LaunchInstanceCommand = new RelayCommand(async () => await LaunchInstanceAsync(), () => SelectedInstance != null && !IsLaunching);
+        KillInstanceCommand = new RelayCommand(() => _gameLauncher.KillGame(), () => IsLaunching);
         CreateInstanceCommand = new RelayCommand(async () => await CreateInstanceAsync());
         EditInstanceCommand = new RelayCommand(async () => await EditInstanceAsync(), () => SelectedInstance != null);
         DeleteInstanceCommand = new RelayCommand(async () => await DeleteInstanceAsync(), () => SelectedInstance != null);
@@ -99,11 +105,30 @@ public class MainWindowViewModel : ViewModelBase
         OpenJavaManagerCommand = new RelayCommand(OpenJavaManager);
         CheckForUpdatesCommand = new RelayCommand(async () => await CheckForUpdatesAsync());
         OpenModBrowserCommand = new RelayCommand(async () => await OpenModBrowserAsync(), () => SelectedInstance != null);
+        OpenAboutCommand = new RelayCommand(async () => await OpenAboutAsync());
+        OpenDocumentationCommand = new RelayCommand(OpenDocumentation);
+        OpenReportBugCommand = new RelayCommand(OpenReportBug);
+        ToggleToolbarCommand = new RelayCommand(() => IsToolbarVisible = !IsToolbarVisible);
+        ToggleStatusBarCommand = new RelayCommand(() => IsStatusBarVisible = !IsStatusBarVisible);
+        ViewInstanceFolderCommand = new RelayCommand(ViewInstanceFolder, () => SelectedInstance != null);
+        ExportInstanceCommand = new RelayCommand(async () => await ExportInstanceAsync(), () => SelectedInstance != null);
+        CopyInstanceCommand = new RelayCommand(async () => await CopyInstanceAsync(), () => SelectedInstance != null);
+        CreateShortcutCommand = new RelayCommand(async () => await CreateShortcutAsync(), () => SelectedInstance != null);
+        UndoTrashCommand = new RelayCommand(async () => await UndoTrashAsync());
+        ChangeGroupCommand = new RelayCommand(async () => await ChangeGroupAsync(), () => SelectedInstance != null);
+        OpenLauncherFolderCommand = new RelayCommand(() => OpenFolder(_launcherConfig.BaseDataPath));
+        OpenInstancesFolderCommand = new RelayCommand(() => OpenFolder(_launcherConfig.InstancesRootDir));
+        OpenLogsFolderCommand = new RelayCommand(() => OpenFolder(_launcherConfig.LogsDir));
+        OpenDiscordCommand = new RelayCommand(() => OpenUrl("https://discord.gg/obsidian-launcher"));
+        OpenRedditCommand = new RelayCommand(() => OpenUrl("https://reddit.com/r/feedthebeast"));
+        OpenMoreNewsCommand = new RelayCommand(() => OpenUrl("https://www.minecraft.net/en-us/articles"));
+        ToggleNewsBarCommand = new RelayCommand(() => IsNewsBarVisible = !IsNewsBarVisible);
 
         // Load initial data
         _ = LoadInstancesAsync();
         _ = LoadGroupsAsync();
         _ = CheckForUpdatesAsync();
+        _ = LoadNewsAsync();
     }
 
     public event EventHandler<ConfirmDeleteEventArgs>? ConfirmDeleteRequested;
@@ -123,6 +148,11 @@ public class MainWindowViewModel : ViewModelBase
                 ((RelayCommand)DeleteInstanceCommand).RaiseCanExecuteChanged();
                 ((RelayCommand)CreateBackupCommand).RaiseCanExecuteChanged();
                 ((RelayCommand)OpenModBrowserCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)ViewInstanceFolderCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)ExportInstanceCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)CopyInstanceCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)CreateShortcutCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)ChangeGroupCommand).RaiseCanExecuteChanged();
             }
         }
     }
@@ -141,6 +171,7 @@ public class MainWindowViewModel : ViewModelBase
             if (SetProperty(ref _isLaunching, value))
             {
                 ((RelayCommand)LaunchInstanceCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)KillInstanceCommand).RaiseCanExecuteChanged();
             }
         }
     }
@@ -157,7 +188,66 @@ public class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref _progressText, value);
     }
 
+    public bool IsToolbarVisible
+    {
+        get => _isToolbarVisible;
+        set => SetProperty(ref _isToolbarVisible, value);
+    }
+
+    public bool IsStatusBarVisible
+    {
+        get => _isStatusBarVisible;
+        set => SetProperty(ref _isStatusBarVisible, value);
+    }
+
+    public bool IsNewsBarVisible
+    {
+        get => _isNewsBarVisible;
+        set => SetProperty(ref _isNewsBarVisible, value);
+    }
+
+    public string LatestNewsHeadline
+    {
+        get => _latestNewsHeadline;
+        set => SetProperty(ref _latestNewsHeadline, value);
+    }
+
+    public string SearchFilter
+    {
+        get => _searchFilter;
+        set
+        {
+            if (SetProperty(ref _searchFilter, value))
+                ApplySearchFilter();
+        }
+    }
+
+    private void ApplySearchFilter()
+    {
+        var filter = _searchFilter.Trim().ToLowerInvariant();
+        foreach (var instance in Instances)
+        {
+            // Used by the ListBox filtering — requires a FilteredInstances collection
+        }
+        OnPropertyChanged(nameof(FilteredInstances));
+    }
+
+    public System.Collections.Generic.IEnumerable<Instance> FilteredInstances
+    {
+        get
+        {
+            var filter = _searchFilter.Trim().ToLowerInvariant();
+            if (string.IsNullOrEmpty(filter))
+                return Instances;
+            return Instances.Where(i =>
+                i.Name.ToLowerInvariant().Contains(filter) ||
+                (i.Notes?.ToLowerInvariant().Contains(filter) ?? false) ||
+                (i.MinecraftVersionDisplay.ToLowerInvariant().Contains(filter)));
+        }
+    }
+
     public ICommand LaunchInstanceCommand { get; }
+    public ICommand KillInstanceCommand { get; }
     public ICommand CreateInstanceCommand { get; }
     public ICommand EditInstanceCommand { get; }
     public ICommand DeleteInstanceCommand { get; }
@@ -175,6 +265,24 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand OpenJavaManagerCommand { get; }
     public ICommand CheckForUpdatesCommand { get; }
     public ICommand OpenModBrowserCommand { get; }
+    public ICommand OpenAboutCommand { get; }
+    public ICommand OpenDocumentationCommand { get; }
+    public ICommand OpenReportBugCommand { get; }
+    public ICommand ToggleToolbarCommand { get; }
+    public ICommand ToggleStatusBarCommand { get; }
+    public ICommand ViewInstanceFolderCommand { get; }
+    public ICommand ExportInstanceCommand { get; }
+    public ICommand CopyInstanceCommand { get; }
+    public ICommand CreateShortcutCommand { get; }
+    public ICommand UndoTrashCommand { get; }
+    public ICommand ChangeGroupCommand { get; }
+    public ICommand OpenLauncherFolderCommand { get; }
+    public ICommand OpenInstancesFolderCommand { get; }
+    public ICommand OpenLogsFolderCommand { get; }
+    public ICommand OpenDiscordCommand { get; }
+    public ICommand OpenRedditCommand { get; }
+    public ICommand OpenMoreNewsCommand { get; }
+    public ICommand ToggleNewsBarCommand { get; }
 
     private async Task LoadInstancesAsync()
     {
@@ -183,13 +291,21 @@ public class MainWindowViewModel : ViewModelBase
             StatusText = "Loading instances...";
             var instances = await _instanceManager.GetAllInstancesAsync();
 
+            // Build a lookup of group ID → group name for display
+            var groupById = Groups.ToDictionary(g => g.Id, g => g);
+
             Instances.Clear();
             foreach (var instance in instances.OrderBy(i => i.SortOrder).ThenBy(i => i.Name))
             {
+                // Populate the display-only GroupDisplayName property
+                instance.GroupDisplayName = instance.GroupId != null && groupById.TryGetValue(instance.GroupId, out var grp)
+                    ? grp.Name
+                    : null;
                 Instances.Add(instance);
             }
 
             StatusText = $"Loaded {Instances.Count} instance(s)";
+            OnPropertyChanged(nameof(FilteredInstances));
             _logger.Information("Loaded {Count} instances", Instances.Count);
         }
         catch (Exception ex)
@@ -436,6 +552,8 @@ public class MainWindowViewModel : ViewModelBase
                 if (result)
                 {
                     var instanceName = SelectedInstance.Name;
+                    // Persist the in-memory changes to instance.json before reloading
+                    await _instanceManager.SaveInstanceAsync(SelectedInstance);
                     await LoadInstancesAsync();
                     StatusText = $"Instance '{instanceName}' updated";
                 }
@@ -569,6 +687,495 @@ public class MainWindowViewModel : ViewModelBase
         {
             _logger.Error(ex, "Failed to open screenshot viewer");
             StatusText = "Failed to open screenshot viewer";
+        }
+    }
+
+    private async Task OpenAboutAsync()
+    {
+        if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+
+        var closeBtn = new Avalonia.Controls.Button
+        {
+            Content = "Close",
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+            Padding = new Avalonia.Thickness(20, 6)
+        };
+
+        var dlg = new Avalonia.Controls.Window
+        {
+            Title = "About Obsidian Launcher",
+            Width = 380,
+            Height = 200,
+            WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            Content = new Avalonia.Controls.StackPanel
+            {
+                Margin = new Avalonia.Thickness(24),
+                Spacing = 8,
+                Children =
+                {
+                    new Avalonia.Controls.TextBlock
+                    {
+                        Text = "Obsidian Launcher",
+                        FontSize = 20,
+                        FontWeight = Avalonia.Media.FontWeight.Bold
+                    },
+                    new Avalonia.Controls.TextBlock
+                    {
+                        Text = $"Version {LauncherConfig.VERSION}",
+                        Opacity = 0.7
+                    },
+                    new Avalonia.Controls.TextBlock
+                    {
+                        Text = "A Minecraft launcher built with Avalonia and .NET 10.",
+                        TextWrapping = Avalonia.Media.TextWrapping.Wrap
+                    },
+                    closeBtn
+                }
+            }
+        };
+
+        closeBtn.Click += (_, _) => dlg.Close();
+        await dlg.ShowDialog(desktop.MainWindow!);
+    }
+
+    private void OpenDocumentation()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://github.com/Advik-B/obsidian-launcher#readme",
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open documentation URL");
+        }
+    }
+
+    private void OpenReportBug()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://github.com/Advik-B/Obsidian-Launcher/issues/new",
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open bug report URL");
+        }
+    }
+
+    private void OpenFolder(string path)
+    {
+        try
+        {
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open folder: {Path}", path);
+            StatusText = $"Could not open folder: {path}";
+        }
+    }
+
+    private void OpenUrl(string url)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open URL: {Url}", url);
+        }
+    }
+
+    private void ViewInstanceFolder()
+    {
+        if (SelectedInstance == null) return;
+        OpenFolder(SelectedInstance.InstancePath);
+    }
+
+    private async Task ExportInstanceAsync()
+    {
+        if (SelectedInstance == null) return;
+        try
+        {
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+
+            var file = await desktop.MainWindow!.StorageProvider.SaveFilePickerAsync(
+                new Avalonia.Platform.Storage.FilePickerSaveOptions
+                {
+                    Title = "Export Instance",
+                    SuggestedFileName = $"{SelectedInstance.Name}.zip",
+                    DefaultExtension = "zip",
+                    FileTypeChoices = new[]
+                    {
+                        new Avalonia.Platform.Storage.FilePickerFileType("Zip Archive") { Patterns = new[] { "*.zip" } }
+                    }
+                });
+
+            if (file == null) return;
+            var outputPath = file.Path.LocalPath;
+            if (string.IsNullOrEmpty(outputPath)) return;
+
+            StatusText = $"Exporting '{SelectedInstance.Name}'...";
+            var result = await _instanceManager.ExportInstanceToZipAsync(SelectedInstance, outputPath);
+            StatusText = result != null
+                ? $"Exported '{SelectedInstance.Name}' to {System.IO.Path.GetFileName(outputPath)}"
+                : "Export failed — check log for details";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Export instance failed");
+            StatusText = "Export failed";
+        }
+    }
+
+    private async Task CopyInstanceAsync()
+    {
+        if (SelectedInstance == null) return;
+        try
+        {
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+
+            var nameBox = new Avalonia.Controls.TextBox
+            {
+                Watermark = "New instance name",
+                Width = 260,
+                Text = $"{SelectedInstance.Name} (Copy)"
+            };
+            var okBtn = new Avalonia.Controls.Button
+            {
+                Content = "Copy",
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+            };
+            var cancelBtn = new Avalonia.Controls.Button
+            {
+                Content = "Cancel",
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+            };
+
+            var dlg = new Avalonia.Controls.Window
+            {
+                Title = "Copy Instance",
+                Width = 360,
+                Height = 180,
+                WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
+                CanResize = false,
+                Content = new Avalonia.Controls.StackPanel
+                {
+                    Margin = new Avalonia.Thickness(20),
+                    Spacing = 12,
+                    Children =
+                    {
+                        new Avalonia.Controls.TextBlock
+                        {
+                            Text = $"Enter a name for the copy of '{SelectedInstance.Name}':",
+                            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+                        },
+                        nameBox,
+                        new Avalonia.Controls.StackPanel
+                        {
+                            Orientation = Avalonia.Layout.Orientation.Horizontal,
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                            Spacing = 8,
+                            Children = { cancelBtn, okBtn }
+                        }
+                    }
+                }
+            };
+
+            string? newName = null;
+            okBtn.Click += (_, _) => { newName = nameBox.Text; dlg.Close(true); };
+            cancelBtn.Click += (_, _) => dlg.Close(false);
+
+            var ok = await dlg.ShowDialog<bool>(desktop.MainWindow!);
+            if (!ok || string.IsNullOrWhiteSpace(newName)) return;
+
+            StatusText = $"Copying '{SelectedInstance.Name}'...";
+            var copy = await _instanceManager.CopyInstanceAsync(SelectedInstance, newName.Trim());
+            if (copy != null)
+            {
+                await LoadInstancesAsync();
+                SelectedInstance = copy;
+                StatusText = $"Copied as '{copy.Name}'";
+            }
+            else
+            {
+                StatusText = "Copy failed — check log for details";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Copy instance failed");
+            StatusText = "Copy failed";
+        }
+    }
+
+    private async Task CreateShortcutAsync()
+    {
+        if (SelectedInstance == null) return;
+        try
+        {
+            var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+            if (string.IsNullOrEmpty(exePath))
+            {
+                StatusText = "Could not determine launcher executable path";
+                return;
+            }
+
+            var instanceName = SelectedInstance.Name;
+            var desktopDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop);
+
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                // Create .lnk via PowerShell
+                var lnkPath = System.IO.Path.Combine(desktopDir, $"{instanceName}.lnk");
+                var psScript = $"$WshShell = New-Object -comObject WScript.Shell; " +
+                               $"$Shortcut = $WshShell.CreateShortcut('{lnkPath.Replace("'", "''")}'); " +
+                               $"$Shortcut.TargetPath = '{exePath.Replace("'", "''")}'; " +
+                               $"$Shortcut.Arguments = '--instance \"{instanceName}\"'; " +
+                               $"$Shortcut.Description = 'Launch Obsidian Launcher - {instanceName}'; " +
+                               $"$Shortcut.Save()";
+
+                using var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = $"-NoProfile -Command \"{psScript.Replace("\"", "\\\"")}\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+                if (proc != null) await proc.WaitForExitAsync();
+                StatusText = $"Shortcut created on desktop: {instanceName}.lnk";
+            }
+            else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+            {
+                var desktopFilePath = System.IO.Path.Combine(desktopDir, $"{instanceName}.desktop");
+                var desktopFileContent =
+                    $"[Desktop Entry]\n" +
+                    $"Type=Application\n" +
+                    $"Name=Obsidian Launcher - {instanceName}\n" +
+                    $"Exec=\"{exePath}\" --instance \"{instanceName}\"\n" +
+                    $"Terminal=false\n" +
+                    $"Comment=Launch Minecraft instance: {instanceName}\n";
+                await System.IO.File.WriteAllTextAsync(desktopFilePath, desktopFileContent);
+                // Make executable
+                using var chmod = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "chmod",
+                    Arguments = $"+x \"{desktopFilePath}\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+                if (chmod != null) await chmod.WaitForExitAsync();
+                StatusText = $"Shortcut created on desktop: {instanceName}.desktop";
+            }
+            else
+            {
+                StatusText = "Desktop shortcut creation is not supported on this platform";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Create shortcut failed");
+            StatusText = "Shortcut creation failed";
+        }
+    }
+
+    private async Task UndoTrashAsync()
+    {
+        try
+        {
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+
+            var nameBox = new Avalonia.Controls.TextBox
+            {
+                Watermark = "Instance name to restore",
+                Width = 260
+            };
+            var okBtn = new Avalonia.Controls.Button
+            {
+                Content = "Restore",
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+            };
+            var cancelBtn = new Avalonia.Controls.Button
+            {
+                Content = "Cancel",
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+            };
+
+            var dlg = new Avalonia.Controls.Window
+            {
+                Title = "Undo Trash Instance",
+                Width = 360,
+                Height = 180,
+                WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
+                CanResize = false,
+                Content = new Avalonia.Controls.StackPanel
+                {
+                    Margin = new Avalonia.Thickness(20),
+                    Spacing = 12,
+                    Children =
+                    {
+                        new Avalonia.Controls.TextBlock
+                        {
+                            Text = "Enter the name of the deleted instance to restore from backup:",
+                            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+                        },
+                        nameBox,
+                        new Avalonia.Controls.StackPanel
+                        {
+                            Orientation = Avalonia.Layout.Orientation.Horizontal,
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                            Spacing = 8,
+                            Children = { cancelBtn, okBtn }
+                        }
+                    }
+                }
+            };
+
+            string? instanceName = null;
+            okBtn.Click += (_, _) => { instanceName = nameBox.Text; dlg.Close(true); };
+            cancelBtn.Click += (_, _) => dlg.Close(false);
+
+            var ok = await dlg.ShowDialog<bool>(desktop.MainWindow!);
+            if (!ok || string.IsNullOrWhiteSpace(instanceName)) return;
+
+            StatusText = $"Restoring '{instanceName.Trim()}'...";
+            var restored = await _instanceManager.UndoTrashAsync(instanceName.Trim());
+            if (restored != null)
+            {
+                await LoadInstancesAsync();
+                SelectedInstance = restored;
+                StatusText = $"Restored instance '{restored.Name}'";
+            }
+            else
+            {
+                StatusText = $"Could not restore '{instanceName.Trim()}' — no backup found or restore failed";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Undo trash failed");
+            StatusText = "Restore failed";
+        }
+    }
+
+    private async Task ChangeGroupAsync()
+    {
+        if (SelectedInstance == null) return;
+        try
+        {
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+
+            var nameBox = new Avalonia.Controls.TextBox
+            {
+                Watermark = "Group name (empty or 'ungrouped' to remove)",
+                Width = 280,
+                Text = SelectedInstance.GroupDisplayName ?? ""
+            };
+            var okBtn = new Avalonia.Controls.Button
+            {
+                Content = "OK",
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+            };
+            var cancelBtn = new Avalonia.Controls.Button
+            {
+                Content = "Cancel",
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+            };
+
+            var dlg = new Avalonia.Controls.Window
+            {
+                Title = "Change Group",
+                Width = 380,
+                Height = 200,
+                WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
+                CanResize = false,
+                Content = new Avalonia.Controls.StackPanel
+                {
+                    Margin = new Avalonia.Thickness(20),
+                    Spacing = 12,
+                    Children =
+                    {
+                        new Avalonia.Controls.TextBlock
+                        {
+                            Text = $"Enter group name for instance '{SelectedInstance.Name}':",
+                            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+                        },
+                        nameBox,
+                        new Avalonia.Controls.StackPanel
+                        {
+                            Orientation = Avalonia.Layout.Orientation.Horizontal,
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                            Spacing = 8,
+                            Children = { cancelBtn, okBtn }
+                        }
+                    }
+                }
+            };
+
+            string? enteredName = null;
+            okBtn.Click += (_, _) => { enteredName = nameBox.Text; dlg.Close(true); };
+            cancelBtn.Click += (_, _) => dlg.Close(false);
+
+            var ok = await dlg.ShowDialog<bool>(desktop.MainWindow!);
+            if (!ok) return;
+
+            var instance = SelectedInstance;
+
+            if (string.IsNullOrWhiteSpace(enteredName) ||
+                enteredName.Trim().Equals("ungrouped", StringComparison.OrdinalIgnoreCase))
+            {
+                // Remove from group
+                instance.GroupId = null;
+            }
+            else
+            {
+                var groupName = enteredName.Trim();
+                var existing = Groups.FirstOrDefault(g => g.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase));
+                if (existing != null)
+                {
+                    instance.GroupId = existing.Id;
+                }
+                else
+                {
+                    // Create a new group
+                    var newGroup = _groupManager.CreateGroup(groupName);
+                    Groups.Add(newGroup);
+                    instance.GroupId = newGroup.Id;
+                }
+            }
+
+            await _instanceManager.SaveInstanceAsync(instance);
+            await LoadInstancesAsync();
+            StatusText = $"Group updated for '{instance.Name}'";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Change group failed");
+            StatusText = "Failed to change group";
         }
     }
 
@@ -966,6 +1573,35 @@ public class MainWindowViewModel : ViewModelBase
         {
             _logger.Warning(ex, "Update check failed");
             StatusText = "Update check failed";
+        }
+    }
+
+    private async Task LoadNewsAsync()
+    {
+        try
+        {
+            using var client = new System.Net.Http.HttpClient();
+            client.DefaultRequestHeaders.Add("User-Agent", "ObsidianLauncher/1.0");
+            client.Timeout = TimeSpan.FromSeconds(10);
+            var json = await client.GetStringAsync("https://launchercontent.mojang.com/v2/javaPatchNotes.json");
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("entries", out var entries) && entries.GetArrayLength() > 0)
+            {
+                var first = entries[0];
+                var title = first.TryGetProperty("title", out var t) ? t.GetString() : null;
+                if (!string.IsNullOrEmpty(title))
+                    LatestNewsHeadline = title;
+                else
+                    LatestNewsHeadline = "Minecraft Java Edition — latest patch notes";
+            }
+            else
+            {
+                LatestNewsHeadline = "Minecraft Java Edition news";
+            }
+        }
+        catch
+        {
+            LatestNewsHeadline = "Minecraft Java Edition news — click More News";
         }
     }
 
