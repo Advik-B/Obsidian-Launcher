@@ -37,7 +37,8 @@
         </Border>
 
         <!-- Body: grid of screenshot cards -->
-        <ScrollViewer Grid.Row="1" Padding="28,20">
+        <ScrollViewer Grid.Row="1" Padding="28,20"
+                      HorizontalScrollBarVisibility="Disabled">
             <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left">
 
                 <!-- Card 1 -->

@@ -51,7 +51,8 @@
                     </Border>
 
                     <!-- Body -->
-                    <ScrollViewer Grid.Row="1" Padding="22">
+                    <ScrollViewer Grid.Row="1" Padding="22"
+                                  HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Spacing="18">
 
                             <!-- Name input -->

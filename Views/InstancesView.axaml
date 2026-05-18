@@ -85,6 +85,7 @@
                            Foreground="{DynamicResource Fg3Brush}"
                            HorizontalAlignment="Center"
                            TextAlignment="Center"
+                           TextWrapping="Wrap"
                            MaxWidth="320"/>
                 <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" Margin="0,8,0,0">
                     <Button Classes="primary"
@@ -101,7 +102,8 @@
             </StackPanel>
 
             <!-- Instance grid (scroll) -->
-            <ScrollViewer x:Name="InstanceGridScroll" Padding="32,28">
+            <ScrollViewer x:Name="InstanceGridScroll" Padding="32,28"
+                          HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl x:Name="InstanceGrid"
                               ItemsSource="{Binding FilteredInstances}">
                     <ItemsControl.ItemsPanel>
