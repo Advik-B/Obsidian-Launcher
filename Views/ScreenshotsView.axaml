@@ -47,7 +47,7 @@
                         Cursor="Hand">
                     <Grid>
                         <controls:BlockArtControl Width="220" Height="160"
-                                                  Palette="sunset"/>
+                                                  Palette="cherry"/>
                         <Border Background="{DynamicResource ScrimBrush}"
                                 VerticalAlignment="Bottom"
                                 Padding="10,6">
@@ -71,7 +71,7 @@
                         Cursor="Hand">
                     <Grid>
                         <controls:BlockArtControl Width="220" Height="160"
-                                                  Palette="forest"/>
+                                                  Palette="grass"/>
                         <Border Background="{DynamicResource ScrimBrush}"
                                 VerticalAlignment="Bottom"
                                 Padding="10,6">
@@ -95,7 +95,7 @@
                         Cursor="Hand">
                     <Grid>
                         <controls:BlockArtControl Width="220" Height="160"
-                                                  Palette="ocean"/>
+                                                  Palette="diamond"/>
                         <Border Background="{DynamicResource ScrimBrush}"
                                 VerticalAlignment="Bottom"
                                 Padding="10,6">
@@ -119,7 +119,7 @@
                         Cursor="Hand">
                     <Grid>
                         <controls:BlockArtControl Width="220" Height="160"
-                                                  Palette="dusk"/>
+                                                  Palette="lapis"/>
                         <Border Background="{DynamicResource ScrimBrush}"
                                 VerticalAlignment="Bottom"
                                 Padding="10,6">
@@ -167,7 +167,7 @@
                         Cursor="Hand">
                     <Grid>
                         <controls:BlockArtControl Width="220" Height="160"
-                                                  Palette="end"/>
+                                                  Palette="endstone"/>
                         <Border Background="{DynamicResource ScrimBrush}"
                                 VerticalAlignment="Bottom"
                                 Padding="10,6">

@@ -19,7 +19,7 @@
                     CornerRadius="24"
                     Width="680"
                     MaxHeight="660"
-                    BoxShadow="0 18px 40px rgba(0,0,0,0.3)">
+                    BoxShadow="0 18 40 #4D000000">
                 <Grid RowDefinitions="Auto,*,Auto">
 
                     <!-- Header -->
