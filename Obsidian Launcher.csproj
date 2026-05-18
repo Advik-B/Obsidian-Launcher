@@ -29,6 +29,7 @@
 
     <ItemGroup>
         <AvaloniaResource Include="Images\**" />
+        <AvaloniaResource Include="Styles\**" />
         <AvaloniaResource Include="Fonts\**" />
     </ItemGroup>
 

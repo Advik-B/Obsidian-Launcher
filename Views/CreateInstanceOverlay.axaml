@@ -20,10 +20,6 @@
                     Width="680"
                     MaxHeight="660"
                     BoxShadow="0 18px 40px rgba(0,0,0,0.3)">
-                <Border.InputBindings>
-                    <!-- Consume click so it doesn't close via scrim -->
-                </Border.InputBindings>
-
                 <Grid RowDefinitions="Auto,*,Auto">
 
                     <!-- Header -->

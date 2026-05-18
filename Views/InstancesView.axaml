@@ -124,7 +124,7 @@
                                                               HorizontalAlignment="Stretch"
                                                               VerticalAlignment="Stretch"/>
                                     <!-- Info -->
-                                    <StackPanel Grid.Row="1" Padding="16,14" Spacing="8">
+                                    <StackPanel Grid.Row="1" Margin="16,14" Spacing="8">
                                         <TextBlock Text="{Binding Name}"
                                                    FontSize="15"
                                                    FontWeight="SemiBold"
