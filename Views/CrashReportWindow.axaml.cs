@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using ObsidianLauncher.ViewModels;
 
 namespace ObsidianLauncher.Views;

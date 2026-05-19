@@ -2,6 +2,7 @@
 
 using System.IO;
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using ObsidianLauncher.Utils;

@@ -305,9 +305,10 @@
       </ResourceDictionary.ThemeDictionaries>
 
       <!-- Font families (theme-independent, placed in outer ResourceDictionary) -->
-      <FontFamily x:Key="QuicksandFont">avares://Obsidian Launcher/Fonts#Quicksand</FontFamily>
-      <FontFamily x:Key="CauseFont">avares://Obsidian Launcher/Fonts#Cause</FontFamily>
-      <FontFamily x:Key="PlaywriteFont">avares://Obsidian Launcher/Fonts#Playwrite GB S</FontFamily>
+      <FontFamily x:Key="QuicksandFont">avares://SleepyCat/Fonts#Quicksand</FontFamily>
+      <FontFamily x:Key="CauseFont">avares://SleepyCat/Fonts#Cause</FontFamily>
+      <FontFamily x:Key="PlaywriteFont">avares://SleepyCat/Fonts#Playwrite GB S</FontFamily>
+      <FontFamily x:Key="JetBrainsMonoFont">avares://SleepyCat/Fonts#JetBrains Mono</FontFamily>
 
   <!-- ═══════════════════════════════════════════════════════════════
        BUTTON
@@ -337,7 +338,6 @@
           <Border.Transitions>
             <Transitions>
               <BrushTransition Property="Background" Duration="0:0:0.22"/>
-              <BoxShadowTransition Property="BoxShadow" Duration="0:0:0.22"/>
             </Transitions>
           </Border.Transitions>
           <ContentPresenter Name="PART_ContentPresenter"
@@ -458,7 +458,6 @@
               <Transitions>
                 <BrushTransition Property="Background" Duration="0:0:0.22"/>
                 <BrushTransition Property="BorderBrush" Duration="0:0:0.22"/>
-                <BoxShadowTransition Property="BoxShadow" Duration="0:0:0.22"/>
               </Transitions>
             </Border.Transitions>
             <Grid ColumnDefinitions="Auto,*,Auto">
@@ -474,7 +473,7 @@
                               IsScrollChainingEnabled="False">
                   <Panel>
                     <TextBlock Name="PART_Watermark"
-                               Text="{TemplateBinding Watermark}"
+                               Text="{TemplateBinding PlaceholderText}"
                                TextAlignment="{TemplateBinding TextAlignment}"
                                Foreground="{DynamicResource SubtleForegroundBrush}"
                                Padding="{TemplateBinding Padding}"
@@ -1204,7 +1203,7 @@
                          Background="Transparent"
                          BorderThickness="0"
                          Text="{TemplateBinding Text}"
-                         Watermark="{TemplateBinding Watermark}"
+                         PlaceholderText="{TemplateBinding PlaceholderText}"
                          Padding="{TemplateBinding Padding}"
                          Foreground="{TemplateBinding Foreground}"
                          FontSize="{TemplateBinding FontSize}"

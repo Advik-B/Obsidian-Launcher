@@ -189,7 +189,7 @@
                                                      TextWrapping="Wrap"
                                                      MinHeight="70"
                                                      VerticalAlignment="Center"
-                                                     Watermark="-XX:+UseG1GC -Xms512m"/>
+                                                     PlaceholderText="-XX:+UseG1GC -Xms512m"/>
                                         </Grid>
                                     </Border>
 
@@ -237,7 +237,7 @@
                                                      FontFamily="Monospace"
                                                      FontSize="12"
                                                      VerticalAlignment="Center"
-                                                     Watermark="/usr/lib/jvm/…"/>
+                                                     PlaceholderText="/usr/lib/jvm/…"/>
                                             <Button Grid.Column="2"
                                                     Classes="ghost"
                                                     Margin="8,0,0,0"
@@ -333,7 +333,7 @@
                                                            Value="{Binding CurrentInstanceSettingsVm.WindowWidth, FallbackValue=1280}"
                                                            Minimum="320" Maximum="7680"
                                                            Increment="10"
-                                                           Watermark="Width"
+                                                           PlaceholderText="Width"
                                                            VerticalAlignment="Center"/>
                                             <TextBlock Grid.Column="2"
                                                        Text="×"
@@ -344,7 +344,7 @@
                                                            Value="{Binding CurrentInstanceSettingsVm.WindowHeight, FallbackValue=720}"
                                                            Minimum="240" Maximum="4320"
                                                            Increment="10"
-                                                           Watermark="Height"
+                                                           PlaceholderText="Height"
                                                            VerticalAlignment="Center"/>
                                         </Grid>
                                     </Border>
@@ -534,7 +534,7 @@
                                                      Text="{Binding CurrentInstanceSettingsVm.QuickPlayServer, FallbackValue=''}"
                                                      FontFamily="Monospace" FontSize="12"
                                                      VerticalAlignment="Center"
-                                                     Watermark="play.hypixel.net:25565"/>
+                                                     PlaceholderText="play.hypixel.net:25565"/>
                                         </Grid>
                                     </Border>
 

@@ -42,7 +42,7 @@
 
                 <TextBox Grid.Column="4"
                          Text="{Binding SearchQuery}"
-                         Watermark="Search Modrinth..."
+                         PlaceholderText="Search Modrinth..."
                          Width="300"
                          VerticalContentAlignment="Center"/>
 

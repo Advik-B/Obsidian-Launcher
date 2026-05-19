@@ -65,7 +65,7 @@
                                                FontSize="13.5"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource Fg1Brush}"/>
-                                    <TextBox Watermark="Cozy expedition"
+                                    <TextBox PlaceholderText="Cozy expedition"
                                              FontSize="15"
                                              Text="{Binding NewInstanceName}"
                                              x:Name="NameBox"/>

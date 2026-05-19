@@ -44,7 +44,7 @@
                             <TextBlock Grid.Column="0" Text="🔍" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" Opacity="0.5"/>
                             <TextBox Grid.Column="1"
                                      Text="{Binding SearchFilter}"
-                                     Watermark="Find an instance…"
+                                     PlaceholderText="Find an instance…"
                                      BorderThickness="0"
                                      Background="Transparent"
                                      Padding="0"

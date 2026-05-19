@@ -290,7 +290,7 @@
                                          FontFamily="Monospace"
                                          FontSize="12"
                                          VerticalAlignment="Center"
-                                         Watermark="/usr/lib/jvm/…"/>
+                                         PlaceholderText="/usr/lib/jvm/…"/>
                                 <Button Grid.Column="2"
                                         Classes="ghost"
                                         Margin="8,0,0,0"
@@ -361,7 +361,7 @@
                                          FontFamily="Monospace"
                                          FontSize="12"
                                          VerticalAlignment="Center"
-                                         Watermark="-XX:+UseG1GC"/>
+                                         PlaceholderText="-XX:+UseG1GC"/>
                             </Grid>
                         </Border>
 

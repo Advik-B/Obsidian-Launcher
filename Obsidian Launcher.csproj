@@ -14,7 +14,7 @@
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="12.0.3" />
-        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.0.3" />
+        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.0.0" />
         <PackageReference Include="Avalonia.Desktop" Version="12.0.3" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />
         <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.1" Condition="'$(Configuration)' == 'Debug'" />
@@ -23,18 +23,21 @@
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.1-dev-00953" />
         <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
         <PackageReference Include="System.Management" Version="10.0.0" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
-        <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
+        <PackageReference Include="Tmds.DBus.Protocol" Version="0.93.0" />
         <PackageReference Include="Tomlyn" Version="0.20.0" />
     </ItemGroup>
 
     <ItemGroup>
         <AvaloniaResource Include="Images\**" />
-        <AvaloniaResource Include="Styles\**" />
-        <AvaloniaResource Include="Fonts\**" />
     </ItemGroup>
 
     <ItemGroup>
         <Compile Remove="Tests\**" />
+        <Compile Remove="SleepyCat\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="SleepyCat\SleepyCat.csproj" />
     </ItemGroup>
 
 </Project>

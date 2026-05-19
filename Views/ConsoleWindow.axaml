@@ -16,7 +16,7 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="10">
             <!-- Filter TextBox -->
             <TextBox Text="{Binding Filter}"
-                     Watermark="Filter console output..."
+                     PlaceholderText="Filter console output..."
                      Width="250" />
 
             <!-- Log Level Filter -->

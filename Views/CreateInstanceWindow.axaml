@@ -42,7 +42,7 @@
         <StackPanel Grid.Row="2" Spacing="8">
             <TextBlock Text="Instance Name:" FontWeight="SemiBold"/>
             <TextBox Text="{Binding InstanceName}"
-                     Watermark="Enter instance name (e.g., My Minecraft World)"
+                     PlaceholderText="Enter instance name (e.g., My Minecraft World)"
                      IsEnabled="{Binding !IsCreating}"/>
         </StackPanel>
 
@@ -58,7 +58,7 @@
 
                 <TextBox Grid.Column="0"
                          Text="{Binding SelectedVersionId}"
-                         Watermark="Select a Minecraft version"
+                         PlaceholderText="Select a Minecraft version"
                          IsReadOnly="True"
                          IsEnabled="{Binding !IsCreating}"/>
 

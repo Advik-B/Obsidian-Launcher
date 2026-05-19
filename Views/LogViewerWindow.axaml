@@ -42,7 +42,7 @@
             <!-- Filter TextBox -->
             <TextBox Grid.Column="2"
                      Text="{Binding FilterText}"
-                     Watermark="Filter log content..."/>
+                     PlaceholderText="Filter log content..."/>
 
             <!-- Toolbar Buttons -->
             <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="5">
