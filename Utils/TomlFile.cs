@@ -7,6 +7,7 @@ using System.Linq;
 using Serilog;
 using Tomlyn;
 using Tomlyn.Model;
+using Tomlyn.Serialization;
 
 namespace ObsidianLauncher.Utils;
 
@@ -51,12 +52,15 @@ public class TomlFile
             }
 
             var tomlContent = File.ReadAllText(_filePath);
-            var loadedTable = Toml.ToModel(tomlContent);
+            var loadedTable = TomlSerializer.Deserialize<TomlTable>(tomlContent, TomlSerializerOptions.Default);
 
             // Copy all items from loaded table to our root
-            foreach (var kvp in loadedTable)
+            if (loadedTable != null)
             {
-                _root[kvp.Key] = kvp.Value;
+                foreach (var kvp in loadedTable)
+                {
+                    _root[kvp.Key] = kvp.Value;
+                }
             }
 
             _logger.Information("Loaded TOML file: {FilePath} with {SectionCount} top-level entries",
@@ -75,7 +79,7 @@ public class TomlFile
     {
         try
         {
-            var tomlString = Toml.FromModel(_root);
+            var tomlString = TomlSerializer.Serialize<TomlTable>(_root, TomlSerializerOptions.Default);
 
             // Ensure directory exists
             var directory = Path.GetDirectoryName(_filePath);
