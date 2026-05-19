@@ -14,6 +14,7 @@
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="12.0.3" />
+        <!-- DataGrid is pinned to 12.0.0 — Avalonia.Controls.DataGrid does not publish a 12.0.3 release; 12.0.0 is the latest available and is runtime-compatible with Avalonia 12.0.3 -->
         <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.0.0" />
         <PackageReference Include="Avalonia.Desktop" Version="12.0.3" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />

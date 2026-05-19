@@ -19,7 +19,7 @@ public class SleepyCatTheme : Styles
     private static readonly Uri ThemeUri =
         new Uri("avares://SleepyCat/Styles/SleepyCatTheme.axaml");
 
-    public SleepyCatTheme(IServiceProvider? serviceProvider = null)
+    public SleepyCatTheme()
     {
         Add(new StyleInclude(baseUri: null) { Source = ThemeUri });
     }

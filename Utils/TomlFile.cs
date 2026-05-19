@@ -62,6 +62,10 @@ public class TomlFile
                     _root[kvp.Key] = kvp.Value;
                 }
             }
+            else
+            {
+                _logger.Warning("TOML deserialization returned null for file: {FilePath} — configuration will be empty", _filePath);
+            }
 
             _logger.Information("Loaded TOML file: {FilePath} with {SectionCount} top-level entries",
                 _filePath, _root.Count);
