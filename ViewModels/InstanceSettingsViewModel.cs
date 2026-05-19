@@ -285,8 +285,10 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
     public ICommand RemoveEnvVarCommand { get; }
     public ICommand LoadModsCommand { get; }
     public ICommand ToggleModCommand { get; }
+    public ICommand ToggleModByItemCommand { get; }
     public ICommand OpenModsFolderCommand { get; }
     public ICommand DeleteModCommand { get; }
+    public ICommand DeleteModByItemCommand { get; }
     public ICommand LoadResourcePacksCommand { get; }
     public ICommand OpenResourcePacksFolderCommand { get; }
     public ICommand LoadShaderPacksCommand { get; }
@@ -315,8 +317,10 @@ public class InstanceSettingsViewModel : INotifyPropertyChanged
 
         LoadModsCommand = new RelayCommand(LoadMods);
         ToggleModCommand = new RelayCommand(ToggleMod, () => SelectedMod != null);
+        ToggleModByItemCommand = new ParamRelayCommand(obj => { if (obj is ResourceItem i) { SelectedMod = i; ToggleMod(); } });
         OpenModsFolderCommand = new RelayCommand(OpenModsFolder);
         DeleteModCommand = new RelayCommand(DeleteMod, () => SelectedMod != null);
+        DeleteModByItemCommand = new ParamRelayCommand(obj => { if (obj is ResourceItem i) { SelectedMod = i; DeleteMod(); } });
 
         LoadResourcePacksCommand = new RelayCommand(LoadResourcePacks);
         OpenResourcePacksFolderCommand = new RelayCommand(OpenResourcePacksFolder);

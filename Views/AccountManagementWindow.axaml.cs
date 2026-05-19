@@ -1,9 +1,11 @@
 // Views/AccountManagementWindow.axaml.cs
 
 using System;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using FluentAvalonia.UI.Controls;
+using Avalonia.Layout;
+using Avalonia.Media;
 using ObsidianLauncher.Services;
 using ObsidianLauncher.ViewModels;
 
@@ -37,35 +39,73 @@ public partial class AccountManagementWindow : Window
 
     private async void OnMicrosoftAccountRequested(object? sender, EventArgs e)
     {
-        var dialog = new ContentDialog
+        var okBtn = new Button { Content = "OK", Padding = new Thickness(16, 8), HorizontalAlignment = HorizontalAlignment.Right };
+        var dlg = new Window
         {
             Title = "Not Implemented",
-            Content = "Microsoft Account authentication is not yet implemented.\n\nThis feature will be added in a future update.",
-            PrimaryButtonText = "OK"
+            Width = 380,
+            Height = 180,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Spacing = 12,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "Microsoft Account authentication is not yet implemented.\n\nThis feature will be added in a future update.",
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    okBtn
+                }
+            }
         };
-        await dialog.ShowAsync();
+        okBtn.Click += (_, _) => dlg.Close();
+        await dlg.ShowDialog(this);
     }
 
     private async void OnOfflineUsernameRequested(object? sender, Action<string?> callback)
     {
-        var textBox = new TextBox
-        {
-            Watermark = "Enter username...",
-            MaxLength = 16
-        };
+        var textBox = new TextBox { Watermark = "Enter username...", MaxLength = 16 };
+        var okBtn     = new Button { Content = "Add",    Padding = new Thickness(16, 8) };
+        var cancelBtn = new Button { Content = "Cancel", Padding = new Thickness(16, 8) };
 
-        var dialog = new ContentDialog
+        string? result = null;
+        var dlg = new Window
         {
             Title = "Add Offline Account",
-            Content = textBox,
-            PrimaryButtonText = "Add",
-            CloseButtonText = "Cancel"
+            Width = 360,
+            Height = 200,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Spacing = 12,
+                Children =
+                {
+                    new TextBlock { Text = "Enter a username for the offline account:", FontWeight = FontWeight.SemiBold },
+                    textBox,
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        Spacing = 8,
+                        Children = { cancelBtn, okBtn }
+                    }
+                }
+            }
         };
 
-        var result = await dialog.ShowAsync();
+        okBtn.Click     += (_, _) => { result = textBox.Text; dlg.Close(); };
+        cancelBtn.Click += (_, _) => dlg.Close();
 
-        if (result == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(textBox.Text))
-            callback(textBox.Text.Trim());
+        await dlg.ShowDialog(this);
+
+        if (!string.IsNullOrWhiteSpace(result))
+            callback(result.Trim());
         else
             callback(null);
     }

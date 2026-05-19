@@ -90,6 +90,7 @@ public class CreateInstanceViewModel : ViewModelBase
             if (SetProperty(ref _selectedModLoader, value))
             {
                 OnPropertyChanged(nameof(ShowModLoaderVersion));
+                OnPropertyChanged(nameof(SelectedModLoaderIndex));
                 ((RelayCommand)LoadModLoaderVersionsCommand).RaiseCanExecuteChanged();
                 ModLoaderVersions.Clear();
                 ModLoaderVersion = "";
@@ -108,6 +109,12 @@ public class CreateInstanceViewModel : ViewModelBase
     }
 
     public bool ShowModLoaderVersion => SelectedModLoader != ModLoaderType.None;
+
+    public int SelectedModLoaderIndex
+    {
+        get => (int)_selectedModLoader;
+        set => SelectedModLoader = (ModLoaderType)value;
+    }
 
     public ObservableCollection<string> ModLoaderVersions { get; }
 

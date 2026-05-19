@@ -1,0 +1,116 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ObsidianLauncher.ViewModels"
+             xmlns:utils="using:ObsidianLauncher.Utils"
+             xmlns:controls="using:ObsidianLauncher.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1040" d:DesignHeight="776"
+             x:Class="ObsidianLauncher.Views.ScreenshotsView"
+             x:DataType="vm:MainWindowViewModel">
+
+    <Grid RowDefinitions="64,*">
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource BaseBrush}"
+                BorderBrush="{DynamicResource BorderSoftBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="28,0">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="Screenshots"
+                               FontSize="22" FontWeight="SemiBold"
+                               Foreground="{DynamicResource Fg1Brush}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="· your captured moments"
+                               FontSize="13"
+                               Foreground="{DynamicResource Fg3Brush}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Classes="secondary" Padding="14,8"
+                        VerticalAlignment="Center"
+                        Command="{Binding OpenScreenshotsFolderCommand}">
+                    <TextBlock Text="Open folder"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Body -->
+        <Grid Grid.Row="1">
+
+            <!-- Empty state -->
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="14"
+                        IsVisible="{Binding HasScreenshots, Converter={x:Static utils:NotBoolConverter.Instance}}">
+                <TextBlock Text="No screenshots yet"
+                           FontSize="18" FontWeight="SemiBold"
+                           Foreground="{DynamicResource Fg1Brush}"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Screenshots taken in-game (F2) appear here."
+                           FontSize="13"
+                           Foreground="{DynamicResource Fg3Brush}"
+                           HorizontalAlignment="Center"
+                           TextWrapping="Wrap"
+                           MaxWidth="320" TextAlignment="Center"/>
+                <Button Classes="secondary"
+                        HorizontalAlignment="Center"
+                        Padding="14,8"
+                        Command="{Binding OpenScreenshotsFolderCommand}">
+                    <TextBlock Text="Open screenshots folder"/>
+                </Button>
+            </StackPanel>
+
+            <!-- Screenshot grid -->
+            <ScrollViewer Padding="28,20"
+                          HorizontalScrollBarVisibility="Disabled"
+                          IsVisible="{Binding HasScreenshots}">
+                <ItemsControl ItemsSource="{Binding ScreenshotFiles}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ScreenshotItem">
+                            <Border Width="220" Height="160" Margin="0,0,16,16"
+                                    CornerRadius="{DynamicResource CardCornerRadius}"
+                                    ClipToBounds="True"
+                                    Cursor="Hand">
+                                <Grid>
+                                    <!-- Actual screenshot image -->
+                                    <Image Source="{Binding Thumbnail}"
+                                           Stretch="UniformToFill"
+                                           IsVisible="{Binding Thumbnail, Converter={x:Static utils:NotNullToBoolConverter.Instance}}"/>
+                                    <!-- Placeholder when no image loaded -->
+                                    <controls:BlockArtControl Palette="cobble"
+                                                              HorizontalAlignment="Stretch"
+                                                              VerticalAlignment="Stretch"
+                                                              IsVisible="{Binding Thumbnail, Converter={x:Static utils:NullToBoolConverter.Instance}}"/>
+                                    <Border Background="{DynamicResource ScrimBrush}"
+                                            VerticalAlignment="Bottom"
+                                            Padding="10,6">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding FileName}"
+                                                       FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="White"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding DateTaken, StringFormat='{}{0:d}'}"
+                                                       FontSize="10"
+                                                       Foreground="#CCFFFFFF"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+        </Grid>
+
+    </Grid>
+
+</UserControl>

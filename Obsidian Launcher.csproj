@@ -14,11 +14,12 @@
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="11.3.0" />
+        <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.0" />
         <PackageReference Include="Avalonia.Desktop" Version="11.3.0" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.0" />
         <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.0" />
         <PackageReference Include="Avalonia.Diagnostics" Version="11.3.0" Condition="'$(Configuration)' == 'Debug'" />
-        <PackageReference Include="FluentAvaloniaUI" Version="2.1.0" />
+        <!-- FluentAvaloniaUI removed in favour of SleepyCat theme -->
         <PackageReference Include="Serilog" Version="4.3.0" />
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.1-dev-00953" />
         <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
@@ -29,6 +30,8 @@
 
     <ItemGroup>
         <AvaloniaResource Include="Images\**" />
+        <AvaloniaResource Include="Styles\**" />
+        <AvaloniaResource Include="Fonts\**" />
     </ItemGroup>
 
     <ItemGroup>

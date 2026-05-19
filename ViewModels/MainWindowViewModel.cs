@@ -42,6 +42,7 @@ public class MainWindowViewModel : ViewModelBase
     private readonly ModrinthClient _modrinthClient;
     private readonly ModManager _modManager;
     private readonly UpdateChecker _updateChecker;
+    private readonly AccountService _accountService;
 
     private Instance? _selectedInstance;
     private string _statusText;
@@ -50,9 +51,33 @@ public class MainWindowViewModel : ViewModelBase
     private string _progressText;
     private bool _isToolbarVisible = true;
     private bool _isStatusBarVisible = true;
-    private bool _isNewsBarVisible = true;
     private string _latestNewsHeadline = "Loading news...";
     private string _searchFilter = "";
+    private AccountInfo? _activeAccount;
+    private string _mojangStatusText = "Checking...";
+
+    // --- Routing ---
+    private string _currentRoute = "instances";
+    private bool _isDarkMode = false;
+    private bool _isCreateInstanceOpen = false;
+    private bool _isInstanceSettingsOpen = false;
+
+    // --- Sub-ViewModels ---
+    private InstanceSettingsViewModel? _currentInstanceSettingsVm;
+    private CreateInstanceViewModel? _currentCreateVm;
+
+    // --- Tab routing ---
+    private string _instanceSettingsTab = "general";
+    private string _settingsTab = "general";
+
+    // --- Create instance wizard ---
+    private int _createStep = 1;
+    private string _newInstanceName = "";
+    private string _newInstancePalette = "grass";
+
+    // --- Console ---
+    private bool _isConsolePaused = false;
+    private string _javaVersionText = "Java";
 
     public MainWindowViewModel()
     {
@@ -77,9 +102,13 @@ public class MainWindowViewModel : ViewModelBase
         _modrinthClient = new ModrinthClient(_httpManager);
         _modManager = new ModManager(_modrinthClient);
         _updateChecker = new UpdateChecker(_httpManager);
+        _accountService = new AccountService(_launcherConfig);
 
         Instances = new ObservableCollection<Instance>();
         Groups = new ObservableCollection<InstanceGroup>();
+        Accounts = new ObservableCollection<AccountInfo>();
+        Accounts.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasAccounts));
+        ScreenshotFiles.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasScreenshots));
 
         _statusText = "Ready";
         _progressText = "";
@@ -122,19 +151,62 @@ public class MainWindowViewModel : ViewModelBase
         OpenDiscordCommand = new RelayCommand(() => OpenUrl("https://discord.gg/obsidian-launcher"));
         OpenRedditCommand = new RelayCommand(() => OpenUrl("https://reddit.com/r/feedthebeast"));
         OpenMoreNewsCommand = new RelayCommand(() => OpenUrl("https://www.minecraft.net/en-us/articles"));
-        ToggleNewsBarCommand = new RelayCommand(() => IsNewsBarVisible = !IsNewsBarVisible);
+        // Overlay close commands
+        CloseCreateInstanceCommand = new RelayCommand(() =>
+        {
+            IsCreateInstanceOpen = false;
+            CreateStep = 1;
+            NewInstanceName = "";
+            NewInstancePalette = "grass";
+            CurrentCreateVm = null;
+        });
+        CloseInstanceSettingsCommand = new RelayCommand(() =>
+        {
+            IsInstanceSettingsOpen = false;
+            CurrentInstanceSettingsVm = null;
+            InstanceSettingsTab = "general";
+        });
+        SaveSelectedInstanceCommand = new RelayCommand(async () => await SaveSelectedInstanceAsync(), () => SelectedInstance != null);
+
+        // New: tab navigation and wizard
+        NavigateInstanceSettingsTabCommand = new ParamRelayCommand(obj => { if (obj is string t) InstanceSettingsTab = t; });
+        NavigateSettingsTabCommand         = new ParamRelayCommand(obj => { if (obj is string t) SettingsTab = t; });
+        AdvanceCreateStepCommand = new RelayCommand(async () => await AdvanceCreateStepAsync(), CanAdvanceCreateStep);
+        RewindCreateStepCommand  = new RelayCommand(() => { if (CreateStep > 1) CreateStep--; });
+        SetPaletteCommand        = new ParamRelayCommand(obj => { if (obj is string p) NewInstancePalette = p; });
+        ToggleLightModeCommand   = new RelayCommand(() => SetTheme(false));
+        ToggleDarkModeCommand    = new RelayCommand(() => SetTheme(true));
+        OpenScreenshotsFolderCommand = new RelayCommand(OpenScreenshotsFolder);
+
+        // Routing commands
+        NavigateToInstancesCommand   = new RelayCommand(() => CurrentRoute = "instances");
+        NavigateToModsCommand        = new RelayCommand(() => CurrentRoute = "mods");
+        NavigateToWorldsCommand      = new RelayCommand(() => CurrentRoute = "worlds");
+        NavigateToScreenshotsCommand = new RelayCommand(() => CurrentRoute = "screenshots");
+        NavigateToConsoleCommand     = new RelayCommand(() => CurrentRoute = "console");
+        NavigateToAccountsCommand    = new RelayCommand(() => CurrentRoute = "accounts");
+        NavigateToSettingsCommand    = new RelayCommand(() => CurrentRoute = "settings");
+
+        AddOfflineAccountCommand  = new RelayCommand(async () => await AddOfflineAccountAsync());
+        RemoveAccountCommand      = new RelayCommand(async () => await RemoveAccountAsync(), () => _activeAccount != null);
+        SetActiveAccountCommand   = new ParamRelayCommand(obj => { if (obj is AccountInfo a) _ = SetAccountActiveByItemAsync(a); });
 
         // Load initial data
         _ = LoadInstancesAsync();
         _ = LoadGroupsAsync();
         _ = CheckForUpdatesAsync();
         _ = LoadNewsAsync();
+        _ = LoadUserAccountsAsync();
+        _ = CheckMojangStatusAsync();
     }
 
     public event EventHandler<ConfirmDeleteEventArgs>? ConfirmDeleteRequested;
 
     public ObservableCollection<Instance> Instances { get; }
     public ObservableCollection<InstanceGroup> Groups { get; }
+    public ObservableCollection<AccountInfo> Accounts { get; }
+    public ObservableCollection<ScreenshotItem> ScreenshotFiles { get; } = new();
+    public bool HasScreenshots => ScreenshotFiles.Count > 0;
 
     public Instance? SelectedInstance
     {
@@ -153,7 +225,46 @@ public class MainWindowViewModel : ViewModelBase
                 ((RelayCommand)CopyInstanceCommand).RaiseCanExecuteChanged();
                 ((RelayCommand)CreateShortcutCommand).RaiseCanExecuteChanged();
                 ((RelayCommand)ChangeGroupCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)SaveSelectedInstanceCommand).RaiseCanExecuteChanged();
+                OnPropertyChanged(nameof(SelectedInstanceJvmArgs));
             }
+        }
+    }
+
+    public AccountInfo? ActiveAccount
+    {
+        get => _activeAccount;
+        set
+        {
+            if (SetProperty(ref _activeAccount, value))
+            {
+                OnPropertyChanged(nameof(ActivePlayerName));
+                OnPropertyChanged(nameof(ActivePlayerInitial));
+                ((RelayCommand)RemoveAccountCommand).RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string ActivePlayerName => _activeAccount?.Username ?? "Player";
+    public string ActivePlayerInitial => string.IsNullOrEmpty(ActivePlayerName) ? "P" : ActivePlayerName[0].ToString().ToUpperInvariant();
+    public bool HasAccounts => Accounts.Count > 0;
+
+    public string MojangStatusText
+    {
+        get => _mojangStatusText;
+        set => SetProperty(ref _mojangStatusText, value);
+    }
+
+    public string SelectedInstanceJvmArgs
+    {
+        get => string.Join(" ", SelectedInstance?.CustomJvmArguments ?? new List<string>());
+        set
+        {
+            if (SelectedInstance == null) return;
+            SelectedInstance.CustomJvmArguments = string.IsNullOrWhiteSpace(value)
+                ? new List<string>()
+                : value.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+            OnPropertyChanged();
         }
     }
 
@@ -198,12 +309,6 @@ public class MainWindowViewModel : ViewModelBase
     {
         get => _isStatusBarVisible;
         set => SetProperty(ref _isStatusBarVisible, value);
-    }
-
-    public bool IsNewsBarVisible
-    {
-        get => _isNewsBarVisible;
-        set => SetProperty(ref _isNewsBarVisible, value);
     }
 
     public string LatestNewsHeadline
@@ -282,7 +387,254 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand OpenDiscordCommand { get; }
     public ICommand OpenRedditCommand { get; }
     public ICommand OpenMoreNewsCommand { get; }
-    public ICommand ToggleNewsBarCommand { get; }
+    // --- Overlay close commands ---
+    public ICommand CloseCreateInstanceCommand { get; }
+    public ICommand CloseInstanceSettingsCommand { get; }
+    public ICommand SaveSelectedInstanceCommand { get; }
+
+    // --- New: tab navigation, wizard, theme, screenshots ---
+    public ICommand NavigateInstanceSettingsTabCommand { get; }
+    public ICommand NavigateSettingsTabCommand { get; }
+    public ICommand AdvanceCreateStepCommand { get; }
+    public ICommand RewindCreateStepCommand { get; }
+    public ICommand SetPaletteCommand { get; }
+    public ICommand ToggleLightModeCommand { get; }
+    public ICommand ToggleDarkModeCommand { get; }
+    public ICommand OpenScreenshotsFolderCommand { get; }
+
+    // --- Account commands ---
+    public ICommand AddOfflineAccountCommand { get; }
+    public ICommand RemoveAccountCommand { get; }
+    public ICommand SetActiveAccountCommand { get; }
+
+    // --- Routing commands ---
+    public ICommand NavigateToInstancesCommand { get; }
+    public ICommand NavigateToModsCommand { get; }
+    public ICommand NavigateToWorldsCommand { get; }
+    public ICommand NavigateToScreenshotsCommand { get; }
+    public ICommand NavigateToConsoleCommand { get; }
+    public ICommand NavigateToAccountsCommand { get; }
+    public ICommand NavigateToSettingsCommand { get; }
+
+    public string CurrentRoute
+    {
+        get => _currentRoute;
+        set
+        {
+            if (SetProperty(ref _currentRoute, value))
+            {
+                OnPropertyChanged(nameof(IsInstancesScreen));
+                OnPropertyChanged(nameof(IsModsScreen));
+                OnPropertyChanged(nameof(IsWorldsScreen));
+                OnPropertyChanged(nameof(IsScreenshotsScreen));
+                OnPropertyChanged(nameof(IsConsoleScreen));
+                OnPropertyChanged(nameof(IsAccountsScreen));
+                OnPropertyChanged(nameof(IsSettingsScreen));
+                if (value == "screenshots") _ = LoadScreenshotsAsync();
+            }
+        }
+    }
+
+    public bool IsInstancesScreen  => CurrentRoute == "instances";
+    public bool IsModsScreen       => CurrentRoute == "mods";
+    public bool IsWorldsScreen     => CurrentRoute == "worlds";
+    public bool IsScreenshotsScreen => CurrentRoute == "screenshots";
+    public bool IsConsoleScreen    => CurrentRoute == "console";
+    public bool IsAccountsScreen   => CurrentRoute == "accounts";
+    public bool IsSettingsScreen   => CurrentRoute == "settings";
+
+    public bool IsDarkMode
+    {
+        get => _isDarkMode;
+        set => SetProperty(ref _isDarkMode, value);
+    }
+
+    public bool IsCreateInstanceOpen
+    {
+        get => _isCreateInstanceOpen;
+        set => SetProperty(ref _isCreateInstanceOpen, value);
+    }
+
+    public bool IsInstanceSettingsOpen
+    {
+        get => _isInstanceSettingsOpen;
+        set => SetProperty(ref _isInstanceSettingsOpen, value);
+    }
+
+    // --- Sub-ViewModels ---
+    public InstanceSettingsViewModel? CurrentInstanceSettingsVm
+    {
+        get => _currentInstanceSettingsVm;
+        set => SetProperty(ref _currentInstanceSettingsVm, value);
+    }
+
+    public CreateInstanceViewModel? CurrentCreateVm
+    {
+        get => _currentCreateVm;
+        set => SetProperty(ref _currentCreateVm, value);
+    }
+
+    // --- Instance settings tab routing ---
+    public string InstanceSettingsTab
+    {
+        get => _instanceSettingsTab;
+        set
+        {
+            if (SetProperty(ref _instanceSettingsTab, value))
+            {
+                OnPropertyChanged(nameof(IsInstanceSettingsGeneralTab));
+                OnPropertyChanged(nameof(IsInstanceSettingsJavaTab));
+                OnPropertyChanged(nameof(IsInstanceSettingsGameTab));
+                OnPropertyChanged(nameof(IsInstanceSettingsModLoaderTab));
+                OnPropertyChanged(nameof(IsInstanceSettingsCommandsTab));
+            }
+        }
+    }
+
+    public bool IsInstanceSettingsGeneralTab   => _instanceSettingsTab == "general";
+    public bool IsInstanceSettingsJavaTab      => _instanceSettingsTab == "java";
+    public bool IsInstanceSettingsGameTab      => _instanceSettingsTab == "game";
+    public bool IsInstanceSettingsModLoaderTab => _instanceSettingsTab == "modloader";
+    public bool IsInstanceSettingsCommandsTab  => _instanceSettingsTab == "commands";
+
+    // --- Settings screen tab routing ---
+    public string SettingsTab
+    {
+        get => _settingsTab;
+        set
+        {
+            if (SetProperty(ref _settingsTab, value))
+            {
+                OnPropertyChanged(nameof(IsSettingsGeneralTab));
+                OnPropertyChanged(nameof(IsSettingsAppearanceTab));
+                OnPropertyChanged(nameof(IsSettingsDownloadsTab));
+                OnPropertyChanged(nameof(IsSettingsJavaTab));
+                OnPropertyChanged(nameof(IsSettingsAboutTab));
+            }
+        }
+    }
+
+    public bool IsSettingsGeneralTab    => _settingsTab == "general";
+    public bool IsSettingsAppearanceTab => _settingsTab == "appearance";
+    public bool IsSettingsDownloadsTab  => _settingsTab == "downloads";
+    public bool IsSettingsJavaTab       => _settingsTab == "java";
+    public bool IsSettingsAboutTab      => _settingsTab == "about";
+
+    // --- Create instance wizard ---
+    public int CreateStep
+    {
+        get => _createStep;
+        set
+        {
+            if (SetProperty(ref _createStep, value))
+            {
+                OnPropertyChanged(nameof(IsCreateStep1));
+                OnPropertyChanged(nameof(IsCreateStep2));
+                OnPropertyChanged(nameof(IsCreateStep3));
+                OnPropertyChanged(nameof(CreateStepLabel));
+                OnPropertyChanged(nameof(CreateStepTitle));
+                ((RelayCommand)AdvanceCreateStepCommand).RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool IsCreateStep1     => _createStep == 1;
+    public bool IsCreateStep2     => _createStep == 2;
+    public bool IsCreateStep3     => _createStep == 3;
+    public string CreateStepLabel => $"Step {_createStep} of 3";
+    public string CreateStepTitle => _createStep switch
+    {
+        1 => "A new instance, then?",
+        2 => "Pick a version",
+        3 => "Looks good!",
+        _ => ""
+    };
+
+    public string NewInstanceName
+    {
+        get => _newInstanceName;
+        set => SetProperty(ref _newInstanceName, value);
+    }
+
+    public string NewInstancePalette
+    {
+        get => _newInstancePalette;
+        set => SetProperty(ref _newInstancePalette, value);
+    }
+
+    // --- Console ---
+    public bool IsConsolePaused
+    {
+        get => _isConsolePaused;
+        set
+        {
+            if (SetProperty(ref _isConsolePaused, value))
+                OnPropertyChanged(nameof(ConsolePauseButtonLabel));
+        }
+    }
+
+    public string ConsolePauseButtonLabel => _isConsolePaused ? "Resume" : "Pause";
+
+    public string JavaVersionText
+    {
+        get => _javaVersionText;
+        set => SetProperty(ref _javaVersionText, value);
+    }
+
+    // --- Settings passthrough properties ---
+    public bool ShowConsoleOnLaunch
+    {
+        get => _launcherSettings.ShowConsoleOnLaunch.Value;
+        set { _launcherSettings.ShowConsoleOnLaunch.Value = value; _launcherSettings.Save(); OnPropertyChanged(); }
+    }
+
+    public bool CloseAfterLaunch
+    {
+        get => _launcherSettings.CloseAfterLaunch.Value;
+        set { _launcherSettings.CloseAfterLaunch.Value = value; _launcherSettings.Save(); OnPropertyChanged(); }
+    }
+
+    public bool CheckForUpdatesOnStartup
+    {
+        get => _launcherSettings.CheckForUpdates.Value;
+        set { _launcherSettings.CheckForUpdates.Value = value; _launcherSettings.Save(); OnPropertyChanged(); }
+    }
+
+    public string GlobalJavaPath
+    {
+        get => _launcherSettings.JavaPath.Value;
+        set { _launcherSettings.JavaPath.Value = value; _launcherSettings.Save(); OnPropertyChanged(); }
+    }
+
+    public int GlobalMinMemoryMB
+    {
+        get => _launcherSettings.MinMemoryMB.Value;
+        set { _launcherSettings.MinMemoryMB.Value = value; _launcherSettings.Save(); OnPropertyChanged(); }
+    }
+
+    public int GlobalMaxMemoryMB
+    {
+        get => _launcherSettings.MaxMemoryMB.Value;
+        set { _launcherSettings.MaxMemoryMB.Value = value; _launcherSettings.Save(); OnPropertyChanged(); }
+    }
+
+    public string GlobalJavaArgs
+    {
+        get => _launcherSettings.JavaArgs.Value;
+        set { _launcherSettings.JavaArgs.Value = value; _launcherSettings.Save(); OnPropertyChanged(); }
+    }
+
+    public int MaxConcurrentDownloads
+    {
+        get => _launcherSettings.MaxConcurrentDownloads.Value;
+        set { _launcherSettings.MaxConcurrentDownloads.Value = value; _launcherSettings.Save(); OnPropertyChanged(); }
+    }
+
+    public bool GlobalFullscreen
+    {
+        get => _launcherSettings.Fullscreen.Value;
+        set { _launcherSettings.Fullscreen.Value = value; _launcherSettings.Save(); OnPropertyChanged(); }
+    }
 
     private async Task LoadInstancesAsync()
     {
@@ -348,6 +700,7 @@ public class MainWindowViewModel : ViewModelBase
         try
         {
             IsLaunching = true;
+            CurrentRoute = "console";
             StatusText = $"Launching {SelectedInstance.Name}...";
             ProgressValue = 0;
             ProgressText = "Preparing...";
@@ -510,22 +863,11 @@ public class MainWindowViewModel : ViewModelBase
         try
         {
             _logger.Information("Create instance requested");
-            
-            var createViewModel = new CreateInstanceViewModel(_httpManager, _instanceManager, _launcherSettings);
-            var createWindow = new Views.CreateInstanceWindow(createViewModel);
-
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                var result = await createWindow.ShowDialog<CreateInstanceViewModel?>(desktop.MainWindow!);
-
-                if (result?.CreatedInstance != null)
-                {
-                    Instances.Add(result.CreatedInstance);
-                    SelectedInstance = result.CreatedInstance;
-                    StatusText = $"Instance '{result.CreatedInstance.Name}' created successfully";
-                    _logger.Information("Instance created successfully: {InstanceName}", result.CreatedInstance.Name);
-                }
-            }
+            CreateStep = 1;
+            NewInstanceName = "";
+            NewInstancePalette = "grass";
+            CurrentCreateVm = null;
+            IsCreateInstanceOpen = true;
         }
         catch (Exception ex)
         {
@@ -542,22 +884,9 @@ public class MainWindowViewModel : ViewModelBase
         try
         {
             _logger.Information("Edit instance requested: {InstanceName}", SelectedInstance.Name);
-            
-            var settingsWindow = new Views.InstanceSettingsWindow(SelectedInstance, _launcherSettings);
-            
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                var result = await settingsWindow.ShowDialog<bool>(desktop.MainWindow!);
-                
-                if (result)
-                {
-                    var instanceName = SelectedInstance.Name;
-                    // Persist the in-memory changes to instance.json before reloading
-                    await _instanceManager.SaveInstanceAsync(SelectedInstance);
-                    await LoadInstancesAsync();
-                    StatusText = $"Instance '{instanceName}' updated";
-                }
-            }
+            InstanceSettingsTab = "general";
+            CurrentInstanceSettingsVm = new InstanceSettingsViewModel(SelectedInstance, _launcherSettings);
+            IsInstanceSettingsOpen = true;
         }
         catch (Exception ex)
         {
@@ -597,50 +926,16 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private async void OpenSettings()
+    private void OpenSettings()
     {
-        try
-        {
-            _logger.Information("Opening settings dialog");
-
-            var settingsViewModel = new SettingsViewModel(_launcherSettings);
-            var settingsWindow = new Views.SettingsWindow(settingsViewModel);
-
-            // Get the main window to show the dialog as modal
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                await settingsWindow.ShowDialog(desktop.MainWindow!);
-            }
-
-            StatusText = "Settings updated";
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Failed to open settings dialog");
-            StatusText = "Failed to open settings dialog";
-        }
+        CurrentRoute = "settings";
+        StatusText = "Settings";
     }
 
-    private async void OpenAccountManagement()
+    private void OpenAccountManagement()
     {
-        try
-        {
-            _logger.Information("Opening account management");
-
-            var accountWindow = new Views.AccountManagementWindow(_launcherConfig);
-
-            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                await accountWindow.ShowDialog(desktop.MainWindow!);
-            }
-
-            StatusText = "Account management closed";
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Failed to open account management");
-            StatusText = "Failed to open account management";
-        }
+        CurrentRoute = "accounts";
+        StatusText = "Accounts";
     }
 
     private async void OpenLogViewer()
@@ -1179,6 +1474,172 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
+    private async Task SaveSelectedInstanceAsync()
+    {
+        if (SelectedInstance == null) return;
+        try
+        {
+            CurrentInstanceSettingsVm?.SaveCommand.Execute(null);
+            await _instanceManager.SaveInstanceAsync(SelectedInstance);
+            StatusText = $"Saved '{SelectedInstance.Name}'";
+            _logger.Information("Instance settings saved: {Name}", SelectedInstance.Name);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to save instance settings");
+            StatusText = "Failed to save settings";
+        }
+        finally
+        {
+            IsInstanceSettingsOpen = false;
+            CurrentInstanceSettingsVm = null;
+            InstanceSettingsTab = "general";
+        }
+    }
+
+    public CreateInstanceViewModel CreateNewInstanceVM()
+    {
+        var vm = new CreateInstanceViewModel(_httpManager, _instanceManager, _launcherSettings);
+        vm.CreationCompleted += (_, _) =>
+        {
+            _ = LoadInstancesAsync();
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                IsCreateInstanceOpen = false;
+                CreateStep = 1;
+                NewInstanceName = "";
+                NewInstancePalette = "grass";
+                CurrentCreateVm = null;
+            });
+        };
+        return vm;
+    }
+
+    private async Task LoadUserAccountsAsync()
+    {
+        try
+        {
+            var accounts = await _accountService.LoadAccountsAsync();
+            Accounts.Clear();
+            foreach (var a in accounts) Accounts.Add(a);
+            ActiveAccount = accounts.FirstOrDefault(a => a.IsActive) ?? accounts.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            _logger.Warning(ex, "Failed to load accounts");
+        }
+    }
+
+    private async Task AddOfflineAccountAsync()
+    {
+        if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+
+        var nameBox = new Avalonia.Controls.TextBox
+        {
+            Watermark = "Player name",
+            Width = 240
+        };
+        var okBtn    = new Avalonia.Controls.Button { Content = "Add",    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right, Padding = new Avalonia.Thickness(16, 8) };
+        var cancelBtn = new Avalonia.Controls.Button { Content = "Cancel", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right, Padding = new Avalonia.Thickness(16, 8) };
+
+        var dlg = new Avalonia.Controls.Window
+        {
+            Title = "Add Offline Account",
+            Width = 340,
+            Height = 170,
+            WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            Content = new Avalonia.Controls.StackPanel
+            {
+                Margin = new Avalonia.Thickness(20),
+                Spacing = 14,
+                Children =
+                {
+                    new Avalonia.Controls.TextBlock { Text = "Enter a player name:", FontWeight = Avalonia.Media.FontWeight.SemiBold },
+                    nameBox,
+                    new Avalonia.Controls.StackPanel
+                    {
+                        Orientation = Avalonia.Layout.Orientation.Horizontal,
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                        Spacing = 8,
+                        Children = { cancelBtn, okBtn }
+                    }
+                }
+            }
+        };
+
+        string? name = null;
+        okBtn.Click    += (_, _) => { name = nameBox.Text; dlg.Close(); };
+        cancelBtn.Click += (_, _) => dlg.Close();
+
+        await dlg.ShowDialog(desktop.MainWindow!);
+        if (string.IsNullOrWhiteSpace(name)) return;
+
+        try
+        {
+            var account = await _accountService.AddOfflineAccountAsync(name.Trim());
+            Accounts.Add(account);
+            if (Accounts.Count == 1)
+            {
+                await _accountService.SetActiveAccountAsync(account.Id);
+                account.IsActive = true;
+                ActiveAccount = account;
+            }
+            StatusText = $"Added offline account: {account.Username}";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to add offline account");
+            StatusText = "Failed to add account";
+        }
+    }
+
+    private async Task RemoveAccountAsync()
+    {
+        if (_activeAccount == null) return;
+        try
+        {
+            await _accountService.RemoveAccountAsync(_activeAccount.Id);
+            Accounts.Remove(_activeAccount);
+            ActiveAccount = Accounts.FirstOrDefault(a => a.IsActive) ?? Accounts.FirstOrDefault();
+            StatusText = "Account removed";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to remove account");
+        }
+    }
+
+    private async Task SetAccountActiveByItemAsync(AccountInfo account)
+    {
+        try
+        {
+            await _accountService.SetActiveAccountAsync(account.Id);
+            foreach (var a in Accounts) a.IsActive = a.Id == account.Id;
+            ActiveAccount = account;
+            StatusText = $"Active account: {account.Username}";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to set active account");
+        }
+    }
+
+    private async Task CheckMojangStatusAsync()
+    {
+        try
+        {
+            using var client = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+            client.DefaultRequestHeaders.Add("User-Agent", "ObsidianLauncher/1.0");
+            var resp = await client.GetAsync("https://sessionserver.mojang.com/");
+            MojangStatusText = resp.IsSuccessStatusCode ? "Mojang OK" : "Mojang degraded";
+        }
+        catch
+        {
+            MojangStatusText = "Mojang offline";
+        }
+    }
+
     private void Exit()
     {
         System.Environment.Exit(0);
@@ -1635,6 +2096,109 @@ public class MainWindowViewModel : ViewModelBase
             _logger.Error(ex, "Failed to open Java Manager");
         }
     }
+
+    // --- Create instance wizard helpers ---
+
+    private bool CanAdvanceCreateStep()
+    {
+        if (CreateStep == 1) return true;
+        if (CreateStep == 2) return !string.IsNullOrEmpty(CurrentCreateVm?.SelectedVersionId);
+        return false;
+    }
+
+    private async Task AdvanceCreateStepAsync()
+    {
+        if (CreateStep == 1)
+        {
+            CurrentCreateVm = CreateNewInstanceVM();
+            if (!string.IsNullOrWhiteSpace(NewInstanceName))
+                CurrentCreateVm.InstanceName = NewInstanceName;
+            CurrentCreateVm.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(CreateInstanceViewModel.SelectedVersionId))
+                    ((RelayCommand)AdvanceCreateStepCommand).RaiseCanExecuteChanged();
+            };
+            CreateStep = 2;
+        }
+        else if (CreateStep == 2 && !string.IsNullOrEmpty(CurrentCreateVm?.SelectedVersionId))
+        {
+            CreateStep = 3;
+        }
+        await Task.CompletedTask;
+    }
+
+    // --- Theme ---
+
+    private void SetTheme(bool dark)
+    {
+        IsDarkMode = dark;
+        _launcherSettings.Theme.Value = dark ? "dark" : "light";
+        _launcherSettings.Save();
+    }
+
+    // --- Screenshots ---
+
+    private async Task LoadScreenshotsAsync()
+    {
+        ScreenshotFiles.Clear();
+        try
+        {
+            var instancesDir = _launcherConfig.InstancesRootDir;
+            if (!Directory.Exists(instancesDir)) return;
+
+            foreach (var instanceDir in Directory.GetDirectories(instancesDir))
+            {
+                var screenshotsDir = Path.Combine(instanceDir, ".minecraft", "screenshots");
+                if (!Directory.Exists(screenshotsDir))
+                {
+                    screenshotsDir = Path.Combine(instanceDir, "screenshots");
+                    if (!Directory.Exists(screenshotsDir)) continue;
+                }
+
+                foreach (var file in Directory.GetFiles(screenshotsDir, "*.png").OrderByDescending(f => f))
+                {
+                    var info = new FileInfo(file);
+                    ScreenshotFiles.Add(new ScreenshotItem
+                    {
+                        FilePath = file,
+                        FileName = Path.GetFileNameWithoutExtension(file),
+                        DateTaken = info.LastWriteTime,
+                        FileSizeBytes = info.Length
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Warning(ex, "Failed to load screenshots");
+        }
+    }
+
+    private void OpenScreenshotsFolder()
+    {
+        string path;
+        if (SelectedInstance != null)
+        {
+            var dir = Path.Combine(SelectedInstance.GameDataPath, "screenshots");
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            path = dir;
+        }
+        else
+        {
+            path = _launcherConfig.InstancesRootDir;
+        }
+        OpenFolder(path);
+    }
+}
+
+// Command that forwards the Execute parameter to an action
+public class ParamRelayCommand : ICommand
+{
+    private readonly Action<object?> _execute;
+    public ParamRelayCommand(Action<object?> execute) => _execute = execute;
+    public event EventHandler? CanExecuteChanged { add { } remove { } }
+    public bool CanExecute(object? parameter) => true;
+    public void Execute(object? parameter) => _execute(parameter);
 }
 
 // Simple RelayCommand implementation

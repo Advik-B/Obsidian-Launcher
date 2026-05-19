@@ -21,7 +21,11 @@
       "Bash(Select-Object Name)",
       "Bash(Get-ChildItem *)",
       "Bash(findstr /S /R \"Copy.*\\\\.\\\\.\\\\.\" Views\\\\*.axaml)",
-      "Bash(dotnet test *)"
+      "Bash(dotnet test *)",
+      "Bash(dotnet run *)",
+      "Bash(dotnet add *)",
+      "Bash(kill %1)",
+      "Bash(wait)"
     ]
   }
 }

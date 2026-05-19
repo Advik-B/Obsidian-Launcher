@@ -1,0 +1,466 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ObsidianLauncher.ViewModels"
+             xmlns:utils="using:ObsidianLauncher.Utils"
+             xmlns:controls="using:ObsidianLauncher.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1040" d:DesignHeight="776"
+             x:Class="ObsidianLauncher.Views.SettingsView"
+             x:DataType="vm:MainWindowViewModel">
+
+    <Grid RowDefinitions="64,*">
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource BaseBrush}"
+                BorderBrush="{DynamicResource BorderSoftBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="28,0">
+            <TextBlock Text="Settings"
+                       FontSize="22"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource Fg1Brush}"
+                       VerticalAlignment="Center"/>
+        </Border>
+
+        <!-- Body -->
+        <ScrollViewer Grid.Row="1" Padding="32,28">
+            <Grid ColumnDefinitions="200,*" MaxWidth="960">
+
+                <!-- Left nav -->
+                <StackPanel Grid.Column="0" Spacing="2">
+                    <Button Classes="nav-item"
+                            Classes.active="{Binding IsSettingsGeneralTab}"
+                            Padding="12,9"
+                            Command="{Binding NavigateSettingsTabCommand}"
+                            CommandParameter="general">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="⚙" VerticalAlignment="Center"/>
+                            <TextBlock Text="General" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-item"
+                            Classes.active="{Binding IsSettingsAppearanceTab}"
+                            Padding="12,9"
+                            Command="{Binding NavigateSettingsTabCommand}"
+                            CommandParameter="appearance">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="🌙" VerticalAlignment="Center"/>
+                            <TextBlock Text="Appearance" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-item"
+                            Classes.active="{Binding IsSettingsDownloadsTab}"
+                            Padding="12,9"
+                            Command="{Binding NavigateSettingsTabCommand}"
+                            CommandParameter="downloads">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="⬇" VerticalAlignment="Center"/>
+                            <TextBlock Text="Downloads" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-item"
+                            Classes.active="{Binding IsSettingsJavaTab}"
+                            Padding="12,9"
+                            Command="{Binding NavigateSettingsTabCommand}"
+                            CommandParameter="java">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="☕" VerticalAlignment="Center"/>
+                            <TextBlock Text="Java" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-item"
+                            Classes.active="{Binding IsSettingsAboutTab}"
+                            Padding="12,9"
+                            Command="{Binding NavigateSettingsTabCommand}"
+                            CommandParameter="about">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="ℹ" VerticalAlignment="Center"/>
+                            <TextBlock Text="About" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Right content panels -->
+                <Panel Grid.Column="1" Margin="32,0,0,0">
+
+                    <!-- ── General ── -->
+                    <StackPanel Spacing="0" IsVisible="{Binding IsSettingsGeneralTab}">
+
+                        <TextBlock Text="General"
+                                   FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource Fg1Brush}"
+                                   Margin="0,0,0,4"/>
+                        <TextBlock Text="The basics. Nothing scary."
+                                   FontSize="13"
+                                   Foreground="{DynamicResource Fg3Brush}"
+                                   Margin="0,0,0,16"/>
+
+                        <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,16">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Show console on launch"
+                                               FontSize="13.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg1Brush}"/>
+                                    <TextBlock Text="Opens the output window when the game starts."
+                                               FontSize="12"
+                                               Foreground="{DynamicResource Fg3Brush}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <CheckBox Grid.Column="1"
+                                          IsChecked="{Binding ShowConsoleOnLaunch}"
+                                          VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,16">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Close launcher after game starts"
+                                               FontSize="13.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg1Brush}"/>
+                                    <TextBlock Text="The launcher will hide when the game launches."
+                                               FontSize="12"
+                                               Foreground="{DynamicResource Fg3Brush}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <CheckBox Grid.Column="1"
+                                          IsChecked="{Binding CloseAfterLaunch}"
+                                          VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,16">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Check for updates on startup"
+                                               FontSize="13.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg1Brush}"/>
+                                    <TextBlock Text="Stable channel only."
+                                               FontSize="12"
+                                               Foreground="{DynamicResource Fg3Brush}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <CheckBox Grid.Column="1"
+                                          IsChecked="{Binding CheckForUpdatesOnStartup}"
+                                          VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                    </StackPanel>
+
+                    <!-- ── Appearance ── -->
+                    <StackPanel Spacing="0" IsVisible="{Binding IsSettingsAppearanceTab}">
+
+                        <TextBlock Text="Appearance"
+                                   FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource Fg1Brush}"
+                                   Margin="0,0,0,4"/>
+                        <TextBlock Text="Make it yours."
+                                   FontSize="13"
+                                   Foreground="{DynamicResource Fg3Brush}"
+                                   Margin="0,0,0,16"/>
+
+                        <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,16">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Theme"
+                                               FontSize="13.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg1Brush}"/>
+                                    <TextBlock Text="Light is a sunbeam. Dark is a windowsill at night."
+                                               FontSize="12"
+                                               Foreground="{DynamicResource Fg3Brush}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                                    <Button Classes="secondary"
+                                            Padding="14,8"
+                                            Command="{Binding ToggleLightModeCommand}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock Text="☀" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Light" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Classes="secondary"
+                                            Padding="14,8"
+                                            Command="{Binding ToggleDarkModeCommand}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock Text="🌙" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Dark" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,16">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Language"
+                                               FontSize="13.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg1Brush}"/>
+                                    <TextBlock Text="More languages coming in a future update."
+                                               FontSize="12"
+                                               Foreground="{DynamicResource Fg3Brush}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1"
+                                           Text="English (en-US)"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource Fg2Brush}"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                    </StackPanel>
+
+                    <!-- ── Downloads ── -->
+                    <StackPanel Spacing="0" IsVisible="{Binding IsSettingsDownloadsTab}">
+
+                        <TextBlock Text="Downloads"
+                                   FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource Fg1Brush}"
+                                   Margin="0,0,0,4"/>
+                        <TextBlock Text="Speed and limits."
+                                   FontSize="13"
+                                   Foreground="{DynamicResource Fg3Brush}"
+                                   Margin="0,0,0,16"/>
+
+                        <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,16">
+                            <Grid ColumnDefinitions="*,180">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Concurrent downloads"
+                                               FontSize="13.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg1Brush}"/>
+                                    <TextBlock Text="{Binding MaxConcurrentDownloads, StringFormat='Currently {0} at a time.'}"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource Fg3Brush}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <Slider Grid.Column="1"
+                                        Minimum="1" Maximum="20"
+                                        Value="{Binding MaxConcurrentDownloads}"
+                                        VerticalAlignment="Center"
+                                        TickFrequency="1"/>
+                            </Grid>
+                        </Border>
+
+                    </StackPanel>
+
+                    <!-- ── Java ── -->
+                    <StackPanel Spacing="0" IsVisible="{Binding IsSettingsJavaTab}">
+
+                        <TextBlock Text="Java"
+                                   FontSize="18" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource Fg1Brush}"
+                                   Margin="0,0,0,4"/>
+                        <TextBlock Text="Global defaults. Per-instance overrides in instance settings."
+                                   FontSize="13"
+                                   Foreground="{DynamicResource Fg3Brush}"
+                                   Margin="0,0,0,16"/>
+
+                        <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,16">
+                            <Grid ColumnDefinitions="200,*,Auto">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Java executable"
+                                               FontSize="13.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg1Brush}"/>
+                                    <TextBlock Text="Leave empty for auto-detect."
+                                               FontSize="12"
+                                               Foreground="{DynamicResource Fg3Brush}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding GlobalJavaPath}"
+                                         FontFamily="Monospace"
+                                         FontSize="12"
+                                         VerticalAlignment="Center"
+                                         Watermark="/usr/lib/jvm/…"/>
+                                <Button Grid.Column="2"
+                                        Classes="ghost"
+                                        Margin="8,0,0,0"
+                                        Padding="10,7"
+                                        x:Name="BrowseGlobalJavaBtn">
+                                    <TextBlock Text="Browse…" FontSize="12"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,16">
+                            <Grid ColumnDefinitions="200,*">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Minimum memory"
+                                               FontSize="13.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg1Brush}"/>
+                                    <TextBlock Text="{Binding GlobalMinMemoryMB, StringFormat='{}{0} MB'}"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource Fg3Brush}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <Slider Grid.Column="1"
+                                        Minimum="256" Maximum="32768"
+                                        Value="{Binding GlobalMinMemoryMB}"
+                                        VerticalAlignment="Center"
+                                        TickFrequency="256"/>
+                            </Grid>
+                        </Border>
+
+                        <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,16">
+                            <Grid ColumnDefinitions="200,*">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Maximum memory"
+                                               FontSize="13.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg1Brush}"/>
+                                    <TextBlock Text="{Binding GlobalMaxMemoryMB, StringFormat='{}{0} MB'}"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource Fg3Brush}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <Slider Grid.Column="1"
+                                        Minimum="256" Maximum="32768"
+                                        Value="{Binding GlobalMaxMemoryMB}"
+                                        VerticalAlignment="Center"
+                                        TickFrequency="256"/>
+                            </Grid>
+                        </Border>
+
+                        <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,16">
+                            <Grid ColumnDefinitions="200,*">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="JVM arguments"
+                                               FontSize="13.5" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Fg1Brush}"/>
+                                    <TextBlock Text="Applied to every instance (unless overridden)."
+                                               FontSize="12"
+                                               Foreground="{DynamicResource Fg3Brush}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding GlobalJavaArgs}"
+                                         FontFamily="Monospace"
+                                         FontSize="12"
+                                         VerticalAlignment="Center"
+                                         Watermark="-XX:+UseG1GC"/>
+                            </Grid>
+                        </Border>
+
+                        <Border Padding="0,16">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Button Classes="secondary"
+                                        Padding="14,8"
+                                        Command="{Binding OpenJavaManagerCommand}">
+                                    <TextBlock Text="Open Java Manager"/>
+                                </Button>
+                                <Button Classes="ghost"
+                                        Padding="14,8"
+                                        Command="{Binding CheckForUpdatesCommand}">
+                                    <TextBlock Text="Check for updates"/>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+
+                    <!-- ── About ── -->
+                    <StackPanel Spacing="16" IsVisible="{Binding IsSettingsAboutTab}">
+
+                        <StackPanel Orientation="Horizontal" Spacing="18">
+                            <controls:PixelCatControl CatSize="84"/>
+                            <StackPanel VerticalAlignment="Center" Spacing="4">
+                                <TextBlock Text="Obsidian Launcher"
+                                           FontSize="22" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                <TextBlock Text="a sleepy launcher for cozy gamers"
+                                           FontFamily="{StaticResource PlaywriteFont}"
+                                           FontSize="16"
+                                           Foreground="{DynamicResource SecondaryBrush}"/>
+                                <TextBlock Text="Version 0.1.0 · .NET 10 · Avalonia"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource Fg3Brush}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock Text="A custom Minecraft launcher built with .NET 10 and Avalonia. Cozy by design."
+                                   FontSize="14"
+                                   Foreground="{DynamicResource Fg2Brush}"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="540"/>
+
+                        <!-- Community buttons -->
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button Classes="secondary"
+                                    Command="{Binding OpenDocumentationCommand}"
+                                    Padding="14,8">
+                                <TextBlock Text="View on GitHub"/>
+                            </Button>
+                            <Button Classes="ghost"
+                                    Command="{Binding OpenDiscordCommand}"
+                                    Padding="14,8">
+                                <TextBlock Text="Discord"/>
+                            </Button>
+                            <Button Classes="ghost"
+                                    Command="{Binding OpenReportBugCommand}"
+                                    Padding="14,8">
+                                <TextBlock Text="Report a bug"/>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Folder navigation -->
+                        <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,16">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Data folders"
+                                           FontSize="14" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Fg1Brush}"/>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button Classes="ghost"
+                                            Padding="14,8"
+                                            Command="{Binding OpenLauncherFolderCommand}">
+                                        <TextBlock Text="Launcher folder"/>
+                                    </Button>
+                                    <Button Classes="ghost"
+                                            Padding="14,8"
+                                            Command="{Binding OpenInstancesFolderCommand}">
+                                        <TextBlock Text="Instances folder"/>
+                                    </Button>
+                                    <Button Classes="ghost"
+                                            Padding="14,8"
+                                            Command="{Binding OpenLogsFolderCommand}">
+                                        <TextBlock Text="Logs folder"/>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+
+                </Panel>
+
+            </Grid>
+        </ScrollViewer>
+
+    </Grid>
+
+</UserControl>

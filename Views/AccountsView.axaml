@@ -1,0 +1,143 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ObsidianLauncher.ViewModels"
+             xmlns:models="using:ObsidianLauncher.Models"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1040" d:DesignHeight="776"
+             x:Class="ObsidianLauncher.Views.AccountsView"
+             x:DataType="vm:MainWindowViewModel">
+
+    <Grid RowDefinitions="64,*">
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource BaseBrush}"
+                BorderBrush="{DynamicResource BorderSoftBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="28,0">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="Accounts"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource Fg1Brush}"
+                           VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button Classes="secondary" Padding="14,8"
+                            Command="{Binding AddOfflineAccountCommand}">
+                        <TextBlock Text="Add offline"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Body -->
+        <ScrollViewer Grid.Row="1" Padding="32,28">
+            <StackPanel MaxWidth="720" Spacing="12">
+
+                <!-- Account list -->
+                <ItemsControl ItemsSource="{Binding Accounts}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:AccountInfo" x:CompileBindings="False">
+                            <Border Background="{DynamicResource Surface0Brush}"
+                                    CornerRadius="16"
+                                    Padding="18"
+                                    Margin="0,0,0,8">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <!-- Avatar -->
+                                    <Border Grid.Column="0"
+                                            Width="56" Height="56"
+                                            CornerRadius="14"
+                                            Background="{DynamicResource Surface1Brush}">
+                                        <TextBlock Text="👤"
+                                                   FontSize="28"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                    <!-- Info -->
+                                    <StackPanel Grid.Column="1" Margin="16,0" VerticalAlignment="Center" Spacing="4">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{Binding Username}"
+                                                       FontSize="16"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Fg1Brush}"/>
+                                            <Border Background="{DynamicResource SuccessSoftBrush}"
+                                                    CornerRadius="999"
+                                                    Padding="8,2"
+                                                    IsVisible="{Binding IsActive}">
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <Border Width="6" Height="6" CornerRadius="3"
+                                                            Background="{DynamicResource SuccessBrush}"
+                                                            VerticalAlignment="Center"/>
+                                                    <TextBlock Text="active"
+                                                               FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource SuccessBrush}"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding TypeDisplay}"
+                                                   FontSize="12.5"
+                                                   Foreground="{DynamicResource Fg3Brush}"/>
+                                    </StackPanel>
+                                    <!-- Actions -->
+                                    <Button Grid.Column="2"
+                                            Classes="soft"
+                                            Padding="12,6"
+                                            IsVisible="{Binding !IsActive}"
+                                            Command="{Binding DataContext.SetActiveAccountCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                                        <TextBlock Text="Use"/>
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Empty state - shown when account list is empty -->
+                <StackPanel IsVisible="{Binding !HasAccounts}"
+                            HorizontalAlignment="Center"
+                            Spacing="12"
+                            Margin="0,32,0,0">
+                    <TextBlock Text="No accounts yet"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource Fg1Brush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Add an offline account to get started."
+                               FontSize="13"
+                               Foreground="{DynamicResource Fg3Brush}"
+                               HorizontalAlignment="Center"/>
+                    <Button Classes="primary"
+                            HorizontalAlignment="Center"
+                            Padding="16,10"
+                            Command="{Binding AddOfflineAccountCommand}">
+                        <TextBlock Text="Add offline account"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- Sign in card -->
+                <Border Background="{DynamicResource MantleBrush}"
+                        CornerRadius="20"
+                        BorderBrush="{DynamicResource Border1Brush}"
+                        BorderThickness="1.5"
+                        Padding="24">
+                    <StackPanel Spacing="12" HorizontalAlignment="Center">
+                        <TextBlock Text="Microsoft authentication is not yet supported."
+                                   FontSize="13"
+                                   Foreground="{DynamicResource Fg3Brush}"
+                                   TextAlignment="Center"/>
+                        <TextBlock Text="Use an offline account to play in offline mode."
+                                   FontSize="12"
+                                   Foreground="{DynamicResource Fg3Brush}"
+                                   TextAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
+
+</UserControl>

@@ -20,7 +20,7 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        // Log unhandled exceptions on background threads so crashes always produce a log entry
+        // Log unhandled exceptions on background threads
         TaskScheduler.UnobservedTaskException += (_, e) =>
         {
             Log.Fatal(e.Exception, "Unobserved task exception");
@@ -39,9 +39,9 @@ public partial class App : Application
             // Apply theme from settings
             RequestedThemeVariant = settings.Theme.Value?.ToLowerInvariant() switch
             {
-                "light" => ThemeVariant.Light,
                 "dark"  => ThemeVariant.Dark,
-                _       => ThemeVariant.Default
+                "light" => ThemeVariant.Light,
+                _       => ThemeVariant.Light
             };
 
             var mainWindow = new MainWindow
