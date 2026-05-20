@@ -1153,7 +1153,7 @@ public class MainWindowViewModel : ViewModelBase
 
             var nameBox = new Avalonia.Controls.TextBox
             {
-                Watermark = "New instance name",
+                PlaceholderText = "New instance name",
                 Width = 260,
                 Text = $"{SelectedInstance.Name} (Copy)"
             };
@@ -1304,7 +1304,7 @@ public class MainWindowViewModel : ViewModelBase
 
             var nameBox = new Avalonia.Controls.TextBox
             {
-                Watermark = "Instance name to restore",
+                PlaceholderText = "Instance name to restore",
                 Width = 260
             };
             var okBtn = new Avalonia.Controls.Button
@@ -1385,7 +1385,7 @@ public class MainWindowViewModel : ViewModelBase
 
             var nameBox = new Avalonia.Controls.TextBox
             {
-                Watermark = "Group name (empty or 'ungrouped' to remove)",
+                PlaceholderText = "Group name (empty or 'ungrouped' to remove)",
                 Width = 280,
                 Text = SelectedInstance.GroupDisplayName ?? ""
             };
@@ -1536,7 +1536,7 @@ public class MainWindowViewModel : ViewModelBase
 
         var nameBox = new Avalonia.Controls.TextBox
         {
-            Watermark = "Player name",
+            PlaceholderText = "Player name",
             Width = 240
         };
         var okBtn    = new Avalonia.Controls.Button { Content = "Add",    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right, Padding = new Avalonia.Thickness(16, 8) };
@@ -1896,8 +1896,8 @@ public class MainWindowViewModel : ViewModelBase
             string? packIdStr = null;
             string? versionIdStr = null;
 
-            var packIdBox = new Avalonia.Controls.TextBox { Watermark = "Pack ID (e.g. 81)", Width = 200 };
-            var versionIdBox = new Avalonia.Controls.TextBox { Watermark = "Version ID (leave empty for latest)", Width = 200 };
+            var packIdBox = new Avalonia.Controls.TextBox { PlaceholderText = "Pack ID (e.g. 81)", Width = 200 };
+            var versionIdBox = new Avalonia.Controls.TextBox { PlaceholderText = "Version ID (leave empty for latest)", Width = 200 };
             var confirmBtn = new Avalonia.Controls.Button { Content = "Import", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
             var cancelBtn = new Avalonia.Controls.Button { Content = "Cancel", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
 

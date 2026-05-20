@@ -1,10 +1,11 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sleepycat="clr-namespace:SleepyCat;assembly=SleepyCat"
              x:Class="ObsidianLauncher.App"
              RequestedThemeVariant="Default">
 
     <Application.Styles>
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
-        <StyleInclude Source="avares://Obsidian Launcher/Styles/SleepyCatTheme.axaml"/>
+        <sleepycat:SleepyCatTheme/>
     </Application.Styles>
 </Application>

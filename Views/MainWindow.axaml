@@ -90,8 +90,10 @@
                                         </StackPanel>
                                     </StackPanel>
                                     <TextBlock Grid.Column="2"
-                                               Text="⌄"
-                                               FontSize="14"
+                                               FontFamily="{StaticResource FontAwesomeSolidFont}"
+                                               FontWeight="Black"
+                                               Text="&#xF078;"
+                                               FontSize="12"
                                                Foreground="{DynamicResource Fg3Brush}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
@@ -109,7 +111,7 @@
                                     Classes.active="{Binding IsInstancesScreen}"
                                     Command="{Binding NavigateToInstancesCommand}">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="▶" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF04B;" FontSize="12" VerticalAlignment="Center"/>
                                     <TextBlock Text="Instances" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -118,7 +120,7 @@
                                     Classes.active="{Binding IsModsScreen}"
                                     Command="{Binding NavigateToModsCommand}">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="⬡" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF1B2;" FontSize="12" VerticalAlignment="Center"/>
                                     <TextBlock Text="Mod browser" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -127,7 +129,7 @@
                                     Classes.active="{Binding IsWorldsScreen}"
                                     Command="{Binding NavigateToWorldsCommand}">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="◉" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF0AC;" FontSize="12" VerticalAlignment="Center"/>
                                     <TextBlock Text="Worlds" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -136,7 +138,7 @@
                                     Classes.active="{Binding IsScreenshotsScreen}"
                                     Command="{Binding NavigateToScreenshotsCommand}">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="⬛" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF03E;" FontSize="12" VerticalAlignment="Center"/>
                                     <TextBlock Text="Screenshots" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -153,7 +155,7 @@
                                     Classes.active="{Binding IsConsoleScreen}"
                                     Command="{Binding NavigateToConsoleCommand}">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text=">" FontSize="14" VerticalAlignment="Center" FontFamily="Monospace"/>
+                                    <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF120;" FontSize="12" VerticalAlignment="Center"/>
                                     <TextBlock Text="Console" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -162,7 +164,7 @@
                                     Classes.active="{Binding IsAccountsScreen}"
                                     Command="{Binding NavigateToAccountsCommand}">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="👤" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF007;" FontSize="12" VerticalAlignment="Center"/>
                                     <TextBlock Text="Accounts" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -171,7 +173,7 @@
                                     Classes.active="{Binding IsSettingsScreen}"
                                     Command="{Binding NavigateToSettingsCommand}">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="⚙" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF013;" FontSize="12" VerticalAlignment="Center"/>
                                     <TextBlock Text="Settings" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>

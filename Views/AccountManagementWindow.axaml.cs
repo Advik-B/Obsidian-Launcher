@@ -68,7 +68,7 @@ public partial class AccountManagementWindow : Window
 
     private async void OnOfflineUsernameRequested(object? sender, Action<string?> callback)
     {
-        var textBox = new TextBox { Watermark = "Enter username...", MaxLength = 16 };
+        var textBox = new TextBox { PlaceholderText = "Enter username...", MaxLength = 16 };
         var okBtn     = new Button { Content = "Add",    Padding = new Thickness(16, 8) };
         var cancelBtn = new Button { Content = "Cancel", Padding = new Thickness(16, 8) };
 

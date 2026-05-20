@@ -70,7 +70,7 @@
                             <Grid ColumnDefinitions="*,Auto">
                                 <TextBox Grid.Column="0"
                                          Text="{Binding JavaPath}"
-                                         Watermark="Leave empty for auto-detection" />
+                                         PlaceholderText="Leave empty for auto-detection" />
                                 <Button Grid.Column="1"
                                         Content="Browse..."
                                         Command="{Binding BrowseJavaPathCommand}"
@@ -124,7 +124,7 @@
                         <StackPanel Spacing="5" Margin="0,10,0,0">
                             <TextBlock Text="Additional JVM Arguments:" />
                             <TextBox Text="{Binding JavaArgs}"
-                                     Watermark="-XX:+UseG1GC -Dsun.rmi.dgc.server.gcInterval=2147483646"
+                                     PlaceholderText="-XX:+UseG1GC -Dsun.rmi.dgc.server.gcInterval=2147483646"
                                      AcceptsReturn="True"
                                      TextWrapping="Wrap"
                                      MinHeight="80" />
@@ -174,7 +174,7 @@
                             <Grid ColumnDefinitions="*,Auto">
                                 <TextBox Grid.Column="0"
                                          Text="{Binding GameDirectory}"
-                                         Watermark="Leave empty for default" />
+                                         PlaceholderText="Leave empty for default" />
                                 <Button Grid.Column="1"
                                         Content="Browse..."
                                         Command="{Binding BrowseGameDirectoryCommand}"
@@ -225,7 +225,7 @@
                             <StackPanel Spacing="5">
                                 <TextBlock Text="Proxy Host:" />
                                 <TextBox Text="{Binding ProxyHost}"
-                                         Watermark="proxy.example.com"
+                                         PlaceholderText="proxy.example.com"
                                          Width="300"
                                          HorizontalAlignment="Left" />
                             </StackPanel>
@@ -263,7 +263,7 @@
                         <StackPanel Spacing="5" Margin="0,15,0,0">
                             <TextBlock Text="Default Instance Group:" />
                             <TextBox Text="{Binding DefaultInstanceGroup}"
-                                     Watermark="Default"
+                                     PlaceholderText="Default"
                                      Width="200"
                                      HorizontalAlignment="Left" />
                             <TextBlock Text="New instances will be added to this group by default"
@@ -293,7 +293,7 @@
                             <TextBlock Text="External Browser:"/>
                             <Grid ColumnDefinitions="*,Auto">
                                 <TextBox Grid.Column="0" Text="{Binding ExternalBrowser}"
-                                         Watermark="Leave empty for system default"/>
+                                         PlaceholderText="Leave empty for system default"/>
                                 <Button Grid.Column="1" Content="Browse..."
                                         Command="{Binding BrowseExternalBrowserCommand}" Margin="5,0,0,0"/>
                             </Grid>
@@ -304,7 +304,7 @@
                             <TextBlock Text="External Text Editor:"/>
                             <Grid ColumnDefinitions="*,Auto">
                                 <TextBox Grid.Column="0" Text="{Binding ExternalTextEditor}"
-                                         Watermark="Leave empty for system default (notepad)"/>
+                                         PlaceholderText="Leave empty for system default (notepad)"/>
                                 <Button Grid.Column="1" Content="Browse..."
                                         Command="{Binding BrowseExternalEditorCommand}" Margin="5,0,0,0"/>
                             </Grid>

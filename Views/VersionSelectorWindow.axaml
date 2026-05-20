@@ -34,7 +34,7 @@
             <!-- Search Box -->
             <TextBox Grid.Column="0"
                      Text="{Binding SearchText}"
-                     Watermark="Search versions..."
+                     PlaceholderText="Search versions..."
                      VerticalContentAlignment="Center"/>
 
             <!-- Refresh Button -->

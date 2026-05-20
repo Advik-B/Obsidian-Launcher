@@ -36,7 +36,7 @@
                     <Button Classes="secondary" Padding="12,6"
                             x:Name="PauseBtn">
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="⏸" VerticalAlignment="Center"/>
+                            <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF04C;" FontSize="12" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding ConsolePauseButtonLabel}"
                                        VerticalAlignment="Center"/>
                         </StackPanel>

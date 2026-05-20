@@ -31,7 +31,7 @@
                            TextWrapping="Wrap" Opacity="0.7"/>
                 <StackPanel Spacing="6">
                     <TextBlock Text="Java executable path (optional):"/>
-                    <TextBox Text="{Binding JavaPath}" Watermark="Leave empty to auto-detect"/>
+                    <TextBox Text="{Binding JavaPath}" PlaceholderText="Leave empty to auto-detect"/>
                 </StackPanel>
             </StackPanel>
 

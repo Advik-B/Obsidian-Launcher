@@ -50,8 +50,9 @@
                                             Width="56" Height="56"
                                             CornerRadius="14"
                                             Background="{DynamicResource Surface1Brush}">
-                                        <TextBlock Text="👤"
-                                                   FontSize="28"
+                                        <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black"
+                                                   Text="&#xF007;"
+                                                   FontSize="22"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"/>
                                     </Border>

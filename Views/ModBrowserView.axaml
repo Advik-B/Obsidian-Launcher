@@ -36,9 +36,9 @@
                         Width="260"
                         Height="38">
                     <Grid ColumnDefinitions="Auto,*">
-                        <TextBlock Grid.Column="0" Text="🔍" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" Opacity="0.5"/>
+                        <TextBlock Grid.Column="0" FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF002;" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0" Opacity="0.5"/>
                         <TextBox Grid.Column="1"
-                                 Watermark="Search Modrinth…"
+                                 PlaceholderText="Search Modrinth…"
                                  BorderThickness="0"
                                  Background="Transparent"
                                  Padding="0"
@@ -54,8 +54,9 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Spacing="14">
-            <TextBlock Text="⬡"
-                       FontSize="64"
+            <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black"
+                       Text="&#xF1B2;"
+                       FontSize="56"
                        Foreground="{DynamicResource PrimaryBrush}"
                        HorizontalAlignment="Center"
                        Opacity="0.4"/>
