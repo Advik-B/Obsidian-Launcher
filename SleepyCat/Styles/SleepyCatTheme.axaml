@@ -1523,6 +1523,7 @@
     <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}"/>
     <Setter Property="FontSize" Value="{DynamicResource BodyFontSize}"/>
     <Setter Property="FontFamily" Value="{StaticResource QuicksandFont}"/>
+    <Setter Property="FontWeight" Value="Medium"/>
   </Style>
 
   <!-- ═══════════════════════════════════════════════════════════════
@@ -1532,6 +1533,7 @@
     <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}"/>
     <Setter Property="FontSize" Value="{DynamicResource BodyFontSize}"/>
     <Setter Property="FontFamily" Value="{StaticResource QuicksandFont}"/>
+    <Setter Property="FontWeight" Value="Medium"/>
     <Setter Property="TextWrapping" Value="NoWrap"/>
   </Style>
 
