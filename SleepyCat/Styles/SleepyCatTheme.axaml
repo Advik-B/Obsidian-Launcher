@@ -152,11 +152,11 @@
           <x:Double x:Key="TitleFontSize">20</x:Double>
 
           <!-- Shadows — mauve-tinted in light mode -->
-          <BoxShadow x:Key="ShadowXs">0 1 2 0 #0D4C4F69</BoxShadow>
-          <BoxShadow x:Key="ShadowSm">0 2 8 0 #0F8839EF</BoxShadow>
-          <BoxShadow x:Key="ShadowMd">0 8 20 0 #1A8839EF</BoxShadow>
-          <BoxShadow x:Key="ShadowLg">0 18 40 0 #248839EF</BoxShadow>
-          <BoxShadow x:Key="ShadowFocus">0 0 0 4 #4DEA76CB</BoxShadow>
+          <BoxShadows x:Key="ShadowXs">0 1 2 0 #0D4C4F69</BoxShadows>
+          <BoxShadows x:Key="ShadowSm">0 2 8 0 #0F8839EF</BoxShadows>
+          <BoxShadows x:Key="ShadowMd">0 8 20 0 #1A8839EF</BoxShadows>
+          <BoxShadows x:Key="ShadowLg">0 18 40 0 #248839EF</BoxShadows>
+          <BoxShadows x:Key="ShadowFocus">0 0 0 4 #4DEA76CB</BoxShadows>
         </ResourceDictionary>
 
         <!-- ──────────── DARK (Catppuccin Mocha) ──────────── -->
@@ -295,11 +295,11 @@
           <x:Double x:Key="TitleFontSize">20</x:Double>
 
           <!-- Shadows — depth-only in dark mode -->
-          <BoxShadow x:Key="ShadowXs">0 1 2 0 #40000000</BoxShadow>
-          <BoxShadow x:Key="ShadowSm">0 2 8 0 #4D000000</BoxShadow>
-          <BoxShadow x:Key="ShadowMd">0 8 20 0 #66000000</BoxShadow>
-          <BoxShadow x:Key="ShadowLg">0 18 40 0 #8C000000</BoxShadow>
-          <BoxShadow x:Key="ShadowFocus">0 0 0 4 #4DF5C2E7</BoxShadow>
+          <BoxShadows x:Key="ShadowXs">0 1 2 0 #40000000</BoxShadows>
+          <BoxShadows x:Key="ShadowSm">0 2 8 0 #4D000000</BoxShadows>
+          <BoxShadows x:Key="ShadowMd">0 8 20 0 #66000000</BoxShadows>
+          <BoxShadows x:Key="ShadowLg">0 18 40 0 #8C000000</BoxShadows>
+          <BoxShadows x:Key="ShadowFocus">0 0 0 4 #4DF5C2E7</BoxShadows>
         </ResourceDictionary>
 
       </ResourceDictionary.ThemeDictionaries>
@@ -470,13 +470,14 @@
                 <ScrollViewer Name="PART_ContentPresenter"
                               HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
                               VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
-                              IsScrollChainingEnabled="False">
+                              IsScrollChainingEnabled="False"
+                              Margin="{TemplateBinding Padding}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
                   <Panel>
                     <TextBlock Name="PART_Watermark"
                                Text="{TemplateBinding PlaceholderText}"
                                TextAlignment="{TemplateBinding TextAlignment}"
                                Foreground="{DynamicResource SubtleForegroundBrush}"
-                               Padding="{TemplateBinding Padding}"
                                IsVisible="{TemplateBinding Text, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
                     <TextPresenter Name="PART_TextPresenter"
                                    Text="{TemplateBinding Text, Mode=TwoWay}"
@@ -1176,7 +1177,7 @@
     <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}"/>
     <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}"/>
     <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}"/>
-    <Setter Property="BorderThickness" Value="1.5"/>
+    <Setter Property="BorderThickness" Value="1"/>
     <Setter Property="CornerRadius" Value="{DynamicResource InputCornerRadius}"/>
     <Setter Property="Padding" Value="8,6"/>
     <Setter Property="FontSize" Value="{DynamicResource BodyFontSize}"/>
@@ -1188,6 +1189,12 @@
                   BorderBrush="{TemplateBinding BorderBrush}"
                   BorderThickness="{TemplateBinding BorderThickness}"
                   CornerRadius="{TemplateBinding CornerRadius}">
+            <Border.Transitions>
+              <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.22"/>
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.22"/>
+              </Transitions>
+            </Border.Transitions>
             <Grid ColumnDefinitions="*,Auto">
               <ButtonSpinner Name="PART_Spinner"
                              Grid.Column="0"
@@ -1216,8 +1223,12 @@
         </DataValidationErrors>
       </ControlTemplate>
     </Setter>
-    <Style Selector="^:focus-within">
+    <Style Selector="^:focus-within /template/ Border">
       <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource ShadowFocus}"/>
+    </Style>
+    <Style Selector="^:pointerover /template/ Border">
+      <Setter Property="BorderBrush" Value="{DynamicResource Border1Brush}"/>
     </Style>
     <Style Selector="^:disabled">
       <Setter Property="Opacity" Value="0.5"/>

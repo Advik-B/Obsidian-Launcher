@@ -23,7 +23,8 @@
         <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
         <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
         <PackageReference Include="System.Management" Version="10.0.0" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
-        <PackageReference Include="Tmds.DBus.Protocol" Version="0.93.0" />
+        <!-- Pinned to 0.92.0 — Avalonia.Desktop 12.0.3 depends on this exact version; 0.93.0 removed the Connection type causing a runtime TypeLoadException -->
+        <PackageReference Include="Tmds.DBus.Protocol" Version="0.92.0" />
         <PackageReference Include="Tomlyn" Version="2.4.0" />
     </ItemGroup>
 
