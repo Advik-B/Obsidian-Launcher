@@ -41,7 +41,7 @@
                             Width="240"
                             Height="38">
                         <Grid ColumnDefinitions="Auto,*">
-                            <TextBlock Grid.Column="0" Text="🔍" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" Opacity="0.5"/>
+                            <TextBlock Grid.Column="0" FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF002;" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0" Opacity="0.5"/>
                             <TextBox Grid.Column="1"
                                      Text="{Binding SearchFilter}"
                                      PlaceholderText="Find an instance…"
@@ -201,7 +201,7 @@
                                                 CornerRadius="8"
                                                 Background="#88000000"
                                                 Command="{Binding DataContext.EditInstanceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}">
-                                            <TextBlock Text="⚙" FontSize="13" Foreground="White"/>
+                                            <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF013;" FontSize="12" Foreground="White"/>
                                         </Button>
                                     </Panel>
                                     <!-- Info -->
@@ -247,7 +247,7 @@
                                             HorizontalContentAlignment="Center"
                                             Command="{Binding DataContext.LaunchInstanceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}">
                                         <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                                            <TextBlock Text="▶" FontSize="11" VerticalAlignment="Center"/>
+                                            <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF04B;" FontSize="10" VerticalAlignment="Center"/>
                                             <TextBlock Text="Launch" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>

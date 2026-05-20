@@ -87,8 +87,14 @@
                                                TextTrimming="CharacterEllipsis"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                TextWrapping="Wrap"/>
-                                    <TextBlock Text="{Binding Downloads, StringFormat='⬇ {0:N0}'}" FontSize="10"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black"
+                                            Text="&#xF019;" FontSize="9"
+                                            VerticalAlignment="Center"
+                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                        <TextBlock Text="{Binding Downloads, StringFormat='{}{0:N0}'}" FontSize="10"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -136,9 +142,14 @@
                                     <TextBlock Grid.Column="1" Text="{Binding VersionType}" Margin="8,0" FontSize="11"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="2" Text="{Binding Downloads, StringFormat='⬇ {0:N0}'}" FontSize="11"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                               VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center">
+                                        <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black"
+                                            Text="&#xF019;" FontSize="10"
+                                            VerticalAlignment="Center"
+                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                        <TextBlock Text="{Binding Downloads, StringFormat='{}{0:N0}'}" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                    </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>

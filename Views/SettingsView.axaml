@@ -36,7 +36,7 @@
                             Command="{Binding NavigateSettingsTabCommand}"
                             CommandParameter="general">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="⚙" VerticalAlignment="Center"/>
+                            <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF013;" FontSize="12" VerticalAlignment="Center"/>
                             <TextBlock Text="General" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -46,7 +46,7 @@
                             Command="{Binding NavigateSettingsTabCommand}"
                             CommandParameter="appearance">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="🌙" VerticalAlignment="Center"/>
+                            <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF186;" FontSize="12" VerticalAlignment="Center"/>
                             <TextBlock Text="Appearance" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -56,7 +56,7 @@
                             Command="{Binding NavigateSettingsTabCommand}"
                             CommandParameter="downloads">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="⬇" VerticalAlignment="Center"/>
+                            <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF019;" FontSize="12" VerticalAlignment="Center"/>
                             <TextBlock Text="Downloads" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -66,7 +66,7 @@
                             Command="{Binding NavigateSettingsTabCommand}"
                             CommandParameter="java">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="☕" VerticalAlignment="Center"/>
+                            <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF7B6;" FontSize="12" VerticalAlignment="Center"/>
                             <TextBlock Text="Java" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -76,7 +76,7 @@
                             Command="{Binding NavigateSettingsTabCommand}"
                             CommandParameter="about">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="ℹ" VerticalAlignment="Center"/>
+                            <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF05A;" FontSize="12" VerticalAlignment="Center"/>
                             <TextBlock Text="About" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -186,7 +186,7 @@
                                             Padding="14,8"
                                             Command="{Binding ToggleLightModeCommand}">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <TextBlock Text="☀" VerticalAlignment="Center"/>
+                                            <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF185;" FontSize="12" VerticalAlignment="Center"/>
                                             <TextBlock Text="Light" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
@@ -194,7 +194,7 @@
                                             Padding="14,8"
                                             Command="{Binding ToggleDarkModeCommand}">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <TextBlock Text="🌙" VerticalAlignment="Center"/>
+                                            <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF186;" FontSize="12" VerticalAlignment="Center"/>
                                             <TextBlock Text="Dark" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>

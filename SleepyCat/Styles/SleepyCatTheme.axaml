@@ -309,6 +309,7 @@
       <FontFamily x:Key="CauseFont">avares://SleepyCat/Fonts#Cause</FontFamily>
       <FontFamily x:Key="PlaywriteFont">avares://SleepyCat/Fonts#Playwrite GB S</FontFamily>
       <FontFamily x:Key="JetBrainsMonoFont">avares://SleepyCat/Fonts#JetBrains Mono</FontFamily>
+      <FontFamily x:Key="FontAwesomeSolidFont">avares://SleepyCat/Fonts#Font Awesome 6 Free</FontFamily>
 
   <!-- ═══════════════════════════════════════════════════════════════
        BUTTON

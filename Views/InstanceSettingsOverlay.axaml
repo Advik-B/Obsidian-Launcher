@@ -116,7 +116,7 @@
                                         Padding="8"
                                         CornerRadius="12"
                                         Command="{Binding CloseInstanceSettingsCommand}">
-                                    <TextBlock Text="✕" FontSize="14"/>
+                                    <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF00D;" FontSize="13"/>
                                 </Button>
                             </Grid>
                         </Border>
@@ -440,7 +440,7 @@
                                                                         Padding="8,5"
                                                                         Command="{Binding DataContext.CurrentInstanceSettingsVm.DeleteModByItemCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                         CommandParameter="{Binding}">
-                                                                    <TextBlock Text="✕" FontSize="11"/>
+                                                                    <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF00D;" FontSize="10"/>
                                                                 </Button>
                                                             </Grid>
                                                         </Border>

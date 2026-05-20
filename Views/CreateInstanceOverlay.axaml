@@ -46,7 +46,7 @@
                                     Padding="8"
                                     CornerRadius="12"
                                     Command="{Binding CloseCreateInstanceCommand}">
-                                <TextBlock Text="✕" FontSize="14"/>
+                                <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF00D;" FontSize="13"/>
                             </Button>
                         </Grid>
                     </Border>
@@ -149,7 +149,7 @@
                                         CornerRadius="16"
                                         Padding="14">
                                     <StackPanel Orientation="Horizontal" Spacing="10">
-                                        <TextBlock Text="🫖" FontSize="22" VerticalAlignment="Center"/>
+                                        <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF0EB;" FontSize="18" VerticalAlignment="Center"/>
                                         <TextBlock Text="Tip. Naming an instance is like naming a houseplant — you'll talk to it."
                                                    FontSize="13"
                                                    Foreground="{DynamicResource Fg1Brush}"
@@ -361,7 +361,7 @@
                                     Command="{Binding RewindCreateStepCommand}"
                                     IsVisible="{Binding IsCreateStep1, Converter={x:Static utils:NotBoolConverter.Instance}}">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock Text="←" VerticalAlignment="Center"/>
+                                    <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF060;" FontSize="12" VerticalAlignment="Center"/>
                                     <TextBlock Text="Back" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -376,7 +376,7 @@
                                         IsVisible="{Binding IsCreateStep3, Converter={x:Static utils:NotBoolConverter.Instance}}">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <TextBlock Text="Next" VerticalAlignment="Center"/>
-                                        <TextBlock Text="→" VerticalAlignment="Center"/>
+                                        <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF061;" FontSize="12" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
 
@@ -387,7 +387,7 @@
                                         IsVisible="{Binding IsCreateStep3}"
                                         IsEnabled="{Binding CurrentCreateVm.IsCreating, Converter={x:Static utils:NotBoolConverter.Instance}, FallbackValue=True}">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <TextBlock Text="✓" VerticalAlignment="Center"/>
+                                        <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF00C;" FontSize="12" VerticalAlignment="Center"/>
                                         <TextBlock Text="Create instance" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
