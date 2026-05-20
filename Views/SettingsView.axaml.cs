@@ -11,8 +11,7 @@ public partial class SettingsView : UserControl
     {
         InitializeComponent();
 
-        if (this.FindControl<Button>("BrowseGlobalJavaBtn") is { } btn)
-            btn.Click += async (_, _) => await BrowseJavaAsync();
+        BrowseGlobalJavaBtn.Click += async (_, _) => await BrowseJavaAsync();
     }
 
     private async Task BrowseJavaAsync()

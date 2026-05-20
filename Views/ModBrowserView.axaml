@@ -15,41 +15,20 @@
                 BorderBrush="{DynamicResource BorderSoftBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="28,0">
-            <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="Mod browser"
-                               FontSize="22"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource Fg1Brush}"
-                               VerticalAlignment="Center"/>
-                    <TextBlock Text="· powered by Modrinth"
-                               FontSize="13"
-                               Foreground="{DynamicResource Fg3Brush}"
-                               VerticalAlignment="Center"/>
-                </StackPanel>
-                <Border Grid.Column="1"
-                        Background="{DynamicResource Surface0Brush}"
-                        BorderBrush="{DynamicResource BorderSoftBrush}"
-                        BorderThickness="1"
-                        CornerRadius="14"
-                        Padding="14,0"
-                        Width="260"
-                        Height="38">
-                    <Grid ColumnDefinitions="Auto,*">
-                        <TextBlock Grid.Column="0" FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF002;" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0" Opacity="0.5"/>
-                        <TextBox Grid.Column="1"
-                                 PlaceholderText="Search Modrinth…"
-                                 BorderThickness="0"
-                                 Background="Transparent"
-                                 Padding="0"
-                                 VerticalContentAlignment="Center"
-                                 FontSize="13.5"/>
-                    </Grid>
-                </Border>
-            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBlock Text="Mod browser"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource Fg1Brush}"
+                           VerticalAlignment="Center"/>
+                <TextBlock Text="· powered by Modrinth"
+                           FontSize="13"
+                           Foreground="{DynamicResource Fg3Brush}"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
         </Border>
 
-        <!-- Coming soon placeholder -->
+        <!-- Per-instance guidance -->
         <StackPanel Grid.Row="1"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
@@ -60,17 +39,17 @@
                        Foreground="{DynamicResource PrimaryBrush}"
                        HorizontalAlignment="Center"
                        Opacity="0.4"/>
-            <TextBlock Text="Mod browser coming soon"
+            <TextBlock Text="Mod browser is per-instance"
                        FontSize="20"
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource Fg1Brush}"
                        HorizontalAlignment="Center"/>
-            <TextBlock Text="Powered by Modrinth. Browse, install, and update mods right here."
+            <TextBlock Text="Right-click an instance card and choose Browse Mods to search and install mods from Modrinth."
                        FontSize="14"
                        Foreground="{DynamicResource Fg3Brush}"
                        HorizontalAlignment="Center"
                        TextAlignment="Center"
-                       MaxWidth="360"/>
+                       MaxWidth="380"/>
         </StackPanel>
 
     </Grid>

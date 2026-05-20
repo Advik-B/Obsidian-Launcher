@@ -151,6 +151,8 @@ public class CreateInstanceViewModel : ViewModelBase
     /// <summary>The created instance — set on successful creation, null on failure.</summary>
     public Instance? CreatedInstance { get; private set; }
 
+    public string Palette { get; set; } = "grass";
+
     public ICommand SelectVersionCommand { get; }
     public ICommand LoadModLoaderVersionsCommand { get; }
     public ICommand CreateCommand { get; }
@@ -352,6 +354,9 @@ public class CreateInstanceViewModel : ViewModelBase
                 _logger.Error("Instance creation returned null for {Name}", InstanceName);
                 return;
             }
+
+            CreatedInstance.Palette = Palette;
+            await _instanceManager.SaveInstanceAsync(CreatedInstance);
 
             ProgressValue = 100;
             ProgressText = "Done!";

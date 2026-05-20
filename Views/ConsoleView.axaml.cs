@@ -1,58 +1,32 @@
-using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
-using ObsidianLauncher.Utils;
 using ObsidianLauncher.ViewModels;
 
 namespace ObsidianLauncher.Views;
 
 public partial class ConsoleView : UserControl
 {
-    private readonly ObservableCollection<string> _logLines = new();
     private bool _isPaused;
 
     public ConsoleView()
     {
         InitializeComponent();
 
-        if (this.FindControl<ItemsControl>("LogLines") is { } lc)
-            lc.ItemsSource = _logLines;
-
-        foreach (var entry in InMemoryLogSink.Instance.GetEntries())
-            _logLines.Add(entry);
-
-        InMemoryLogSink.Instance.EntryAdded += OnEntryAdded;
-
-        if (this.FindControl<Button>("PauseBtn") is { } pauseBtn)
-            pauseBtn.Click += (_, _) =>
-            {
-                _isPaused = !_isPaused;
-                if (DataContext is MainWindowViewModel vm)
-                    vm.IsConsolePaused = _isPaused;
-            };
-
-        if (this.FindControl<Button>("ExportLogBtn") is { } exportBtn)
-            exportBtn.Click += async (_, _) => await ExportLogAsync();
-    }
-
-    private void OnEntryAdded(string line)
-    {
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        PauseBtn.Click += (_, _) =>
         {
-            if (_isPaused) return;
+            _isPaused = !_isPaused;
+            if (DataContext is MainWindowViewModel vm)
+                vm.IsConsolePaused = _isPaused;
+        };
 
-            _logLines.Add(line);
-            if (_logLines.Count > 2000)
-                _logLines.RemoveAt(0);
-
-            if (this.FindControl<ScrollViewer>("LogScroller") is { } sv)
-                sv.ScrollToEnd();
-        });
+        ExportLogBtn.Click += async (_, _) => await ExportLogAsync();
     }
 
     private async System.Threading.Tasks.Task ExportLogAsync()
     {
+        if (DataContext is not MainWindowViewModel vm) return;
         var topLevel = TopLevel.GetTopLevel(this);
         if (topLevel == null) return;
 
@@ -69,9 +43,10 @@ public partial class ConsoleView : UserControl
 
         if (file == null) return;
 
+        var lines = vm.GameOutputLines.ToList();
         await using var stream = await file.OpenWriteAsync();
         await using var writer = new StreamWriter(stream);
-        foreach (var line in _logLines)
+        foreach (var line in lines)
             await writer.WriteLineAsync(line);
     }
 }

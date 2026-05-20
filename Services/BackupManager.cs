@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ObsidianLauncher.Models;
 using ObsidianLauncher.Utils;
 using Serilog;
+using SharpCompress.Archives;
+using SharpCompress.Common;
+using SharpCompress.Readers;
+using SharpCompress.Writers.SevenZip;
 
 namespace ObsidianLauncher.Services;
 
@@ -38,13 +41,15 @@ public class BackupManager
         Directory.CreateDirectory(backupDir);
 
         var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-        var backupFile = System.IO.Path.Combine(backupDir, $"{InstanceManager.SanitizeName(instance.Name)}_{stamp}.zip");
+        var backupFile = System.IO.Path.Combine(backupDir, $"{InstanceManager.SanitizeName(instance.Name)}_{stamp}.7z");
 
         try
         {
             await Task.Run(() =>
             {
-                ZipFile.CreateFromDirectory(instance.InstancePath, backupFile, CompressionLevel.Optimal, false);
+                using var archive = ArchiveFactory.CreateArchive<SevenZipWriterOptions>();
+                archive.AddAllFromDirectory(instance.InstancePath, "*", SearchOption.AllDirectories);
+                archive.SaveTo(backupFile, new SevenZipWriterOptions { CompressionType = CompressionType.LZMA });
             }, ct);
 
             var info = new FileInfo(backupFile);
@@ -54,6 +59,7 @@ public class BackupManager
         catch (Exception ex)
         {
             _logger.Error(ex, "Failed to create backup for '{InstanceName}'", instance.Name);
+            if (File.Exists(backupFile)) try { File.Delete(backupFile); } catch { }
             return null;
         }
     }
@@ -63,7 +69,7 @@ public class BackupManager
         var backupDir = System.IO.Path.Combine(BackupsRoot, instance.Id);
         if (!Directory.Exists(backupDir)) return new List<BackupInfo>();
 
-        return Directory.GetFiles(backupDir, "*.zip")
+        return Directory.GetFiles(backupDir, "*.7z")
             .Select(f =>
             {
                 var fi = new FileInfo(f);
@@ -77,6 +83,29 @@ public class BackupManager
             })
             .OrderByDescending(b => b.CreatedAt)
             .ToList();
+    }
+
+    public List<(string InstanceId, BackupInfo Backup)> ListAllBackups()
+    {
+        if (!Directory.Exists(BackupsRoot)) return new();
+
+        var result = new List<(string InstanceId, BackupInfo Backup)>();
+        foreach (var instanceDir in Directory.GetDirectories(BackupsRoot))
+        {
+            var instanceId = System.IO.Path.GetFileName(instanceDir);
+            foreach (var f in Directory.GetFiles(instanceDir, "*.7z"))
+            {
+                var fi = new FileInfo(f);
+                result.Add((instanceId, new BackupInfo
+                {
+                    Name = fi.Name,
+                    Path = f,
+                    CreatedAt = fi.CreationTimeUtc,
+                    SizeBytes = fi.Length
+                }));
+            }
+        }
+        return result.OrderByDescending(x => x.Backup.CreatedAt).ToList();
     }
 
     public async Task<bool> RestoreBackupAsync(Instance instance, BackupInfo backup, CancellationToken ct = default)
@@ -94,7 +123,10 @@ public class BackupManager
             {
                 if (Directory.Exists(instance.InstancePath))
                     Directory.Move(instance.InstancePath, tempRestore);
-                ZipFile.ExtractToDirectory(backup.Path, instance.InstancePath, overwriteFiles: true);
+
+                Directory.CreateDirectory(instance.InstancePath);
+                using var archive = ArchiveFactory.OpenArchive(backup.Path, new ReaderOptions());
+                archive.WriteToDirectory(instance.InstancePath, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
             }, ct);
 
             if (Directory.Exists(tempRestore))

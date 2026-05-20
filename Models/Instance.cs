@@ -79,6 +79,11 @@ public class Instance
     /// </summary>
     public int SortOrder { get; set; }
 
+    /// <summary>
+    ///     Block art palette used for the instance thumbnail card.
+    /// </summary>
+    public string Palette { get; set; } = "grass";
+
     // Launch pipeline enhancements
     public string? PreLaunchCommand { get; set; }
     public string? PostLaunchCommand { get; set; }

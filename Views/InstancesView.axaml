@@ -63,8 +63,10 @@
                                           Command="{Binding ImportMultiMcCommand}"/>
                                 <MenuItem Header="CurseForge (.zip)"
                                           Command="{Binding ImportCurseForgeCommand}"/>
-                                <MenuItem Header="FTB (by ID)"
+                                <MenuItem Header="FTB modpacks"
                                           Command="{Binding ImportFtbCommand}"/>
+                                <MenuItem Header="Packwiz pack (URL)"
+                                          Command="{Binding ImportPackwizCommand}"/>
                             </MenuFlyout>
                         </Button.Flyout>
                         <TextBlock Text="Import ▾"/>
@@ -122,8 +124,10 @@
                                           Command="{Binding ImportMultiMcCommand}"/>
                                 <MenuItem Header="CurseForge (.zip)"
                                           Command="{Binding ImportCurseForgeCommand}"/>
-                                <MenuItem Header="FTB (by ID)"
+                                <MenuItem Header="FTB modpacks"
                                           Command="{Binding ImportFtbCommand}"/>
+                                <MenuItem Header="Packwiz pack (URL)"
+                                          Command="{Binding ImportPackwizCommand}"/>
                             </MenuFlyout>
                         </Button.Flyout>
                         <TextBlock Text="Import modpack ▾"/>
@@ -178,6 +182,8 @@
                                                   Command="{Binding DataContext.ViewInstanceFolderCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
                                         <MenuItem Header="Create backup"
                                                   Command="{Binding DataContext.CreateBackupCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
+                                        <MenuItem Header="Manage backups…"
+                                                  Command="{Binding DataContext.OpenBackupManagerCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
                                         <MenuItem Header="Create shortcut"
                                                   Command="{Binding DataContext.CreateShortcutCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"/>
                                         <Separator/>
@@ -189,7 +195,7 @@
                                 <Grid RowDefinitions="156,Auto,Auto">
                                     <!-- Block art thumbnail with gear overlay -->
                                     <Panel Grid.Row="0">
-                                        <controls:BlockArtControl Palette="grass"
+                                        <controls:BlockArtControl Palette="{Binding Palette}"
                                                                   HorizontalAlignment="Stretch"
                                                                   VerticalAlignment="Stretch"/>
                                         <!-- Gear button (top-right) -->

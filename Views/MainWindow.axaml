@@ -84,7 +84,7 @@
                                             <Border Width="6" Height="6" CornerRadius="3"
                                                     Background="{DynamicResource SuccessBrush}"
                                                     VerticalAlignment="Center"/>
-                                            <TextBlock Text="offline"
+                                            <TextBlock Text="{Binding ActiveAccountTypeDisplay}"
                                                        FontSize="11"
                                                        Foreground="{DynamicResource Fg3Brush}"/>
                                         </StackPanel>
@@ -122,15 +122,6 @@
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF1B2;" FontSize="12" VerticalAlignment="Center"/>
                                     <TextBlock Text="Mod browser" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Button>
-
-                            <Button Classes="nav-item"
-                                    Classes.active="{Binding IsWorldsScreen}"
-                                    Command="{Binding NavigateToWorldsCommand}">
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock FontFamily="{StaticResource FontAwesomeSolidFont}" FontWeight="Black" Text="&#xF0AC;" FontSize="12" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Worlds" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
 
@@ -194,9 +185,6 @@
 
                         <!-- Mod browser screen -->
                         <views:ModBrowserView IsVisible="{Binding IsModsScreen}"/>
-
-                        <!-- Worlds screen -->
-                        <views:WorldsView IsVisible="{Binding IsWorldsScreen}"/>
 
                         <!-- Screenshots screen -->
                         <views:ScreenshotsView IsVisible="{Binding IsScreenshotsScreen}"/>

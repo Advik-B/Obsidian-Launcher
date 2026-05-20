@@ -204,7 +204,10 @@
 
                         <Border BorderBrush="{DynamicResource BorderSoftBrush}"
                                 BorderThickness="0,1,0,0"
-                                Padding="0,16">
+                                Padding="0,16"
+                                IsEnabled="False"
+                                Opacity="0.5"
+                                ToolTip.Tip="Language selection coming soon">
                             <Grid ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Language"

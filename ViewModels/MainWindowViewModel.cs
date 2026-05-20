@@ -109,6 +109,7 @@ public class MainWindowViewModel : ViewModelBase
         Accounts = new ObservableCollection<AccountInfo>();
         Accounts.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasAccounts));
         ScreenshotFiles.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasScreenshots));
+        GameOutputLines = new ObservableCollection<string>();
 
         _statusText = "Ready";
         _progressText = "";
@@ -130,7 +131,9 @@ public class MainWindowViewModel : ViewModelBase
         ImportModrinthCommand = new RelayCommand(async () => await ImportModrinthAsync());
         ImportCurseForgeCommand = new RelayCommand(async () => await ImportCurseForgeAsync());
         ImportFtbCommand = new RelayCommand(async () => await ImportFtbAsync());
+        ImportPackwizCommand = new RelayCommand(async () => await ImportPackwizAsync());
         CreateBackupCommand = new RelayCommand(async () => await CreateBackupAsync(), () => SelectedInstance != null);
+        OpenBackupManagerCommand = new RelayCommand(OpenBackupManager);
         OpenJavaManagerCommand = new RelayCommand(OpenJavaManager);
         CheckForUpdatesCommand = new RelayCommand(async () => await CheckForUpdatesAsync());
         OpenModBrowserCommand = new RelayCommand(async () => await OpenModBrowserAsync(), () => SelectedInstance != null);
@@ -181,7 +184,6 @@ public class MainWindowViewModel : ViewModelBase
         // Routing commands
         NavigateToInstancesCommand   = new RelayCommand(() => CurrentRoute = "instances");
         NavigateToModsCommand        = new RelayCommand(() => CurrentRoute = "mods");
-        NavigateToWorldsCommand      = new RelayCommand(() => CurrentRoute = "worlds");
         NavigateToScreenshotsCommand = new RelayCommand(() => CurrentRoute = "screenshots");
         NavigateToConsoleCommand     = new RelayCommand(() => CurrentRoute = "console");
         NavigateToAccountsCommand    = new RelayCommand(() => CurrentRoute = "accounts");
@@ -206,6 +208,7 @@ public class MainWindowViewModel : ViewModelBase
     public ObservableCollection<InstanceGroup> Groups { get; }
     public ObservableCollection<AccountInfo> Accounts { get; }
     public ObservableCollection<ScreenshotItem> ScreenshotFiles { get; } = new();
+    public ObservableCollection<string> GameOutputLines { get; }
     public bool HasScreenshots => ScreenshotFiles.Count > 0;
 
     public Instance? SelectedInstance
@@ -240,6 +243,7 @@ public class MainWindowViewModel : ViewModelBase
             {
                 OnPropertyChanged(nameof(ActivePlayerName));
                 OnPropertyChanged(nameof(ActivePlayerInitial));
+                OnPropertyChanged(nameof(ActiveAccountTypeDisplay));
                 ((RelayCommand)RemoveAccountCommand).RaiseCanExecuteChanged();
             }
         }
@@ -247,6 +251,7 @@ public class MainWindowViewModel : ViewModelBase
 
     public string ActivePlayerName => _activeAccount?.Username ?? "Player";
     public string ActivePlayerInitial => string.IsNullOrEmpty(ActivePlayerName) ? "P" : ActivePlayerName[0].ToString().ToUpperInvariant();
+    public string ActiveAccountTypeDisplay => _activeAccount?.TypeDisplay.ToLower() ?? "offline";
     public bool HasAccounts => Accounts.Count > 0;
 
     public string MojangStatusText
@@ -366,7 +371,9 @@ public class MainWindowViewModel : ViewModelBase
     public ICommand ImportModrinthCommand { get; }
     public ICommand ImportCurseForgeCommand { get; }
     public ICommand ImportFtbCommand { get; }
+    public ICommand ImportPackwizCommand { get; }
     public ICommand CreateBackupCommand { get; }
+    public ICommand OpenBackupManagerCommand { get; }
     public ICommand OpenJavaManagerCommand { get; }
     public ICommand CheckForUpdatesCommand { get; }
     public ICommand OpenModBrowserCommand { get; }
@@ -410,7 +417,6 @@ public class MainWindowViewModel : ViewModelBase
     // --- Routing commands ---
     public ICommand NavigateToInstancesCommand { get; }
     public ICommand NavigateToModsCommand { get; }
-    public ICommand NavigateToWorldsCommand { get; }
     public ICommand NavigateToScreenshotsCommand { get; }
     public ICommand NavigateToConsoleCommand { get; }
     public ICommand NavigateToAccountsCommand { get; }
@@ -425,7 +431,6 @@ public class MainWindowViewModel : ViewModelBase
             {
                 OnPropertyChanged(nameof(IsInstancesScreen));
                 OnPropertyChanged(nameof(IsModsScreen));
-                OnPropertyChanged(nameof(IsWorldsScreen));
                 OnPropertyChanged(nameof(IsScreenshotsScreen));
                 OnPropertyChanged(nameof(IsConsoleScreen));
                 OnPropertyChanged(nameof(IsAccountsScreen));
@@ -437,7 +442,6 @@ public class MainWindowViewModel : ViewModelBase
 
     public bool IsInstancesScreen  => CurrentRoute == "instances";
     public bool IsModsScreen       => CurrentRoute == "mods";
-    public bool IsWorldsScreen     => CurrentRoute == "worlds";
     public bool IsScreenshotsScreen => CurrentRoute == "screenshots";
     public bool IsConsoleScreen    => CurrentRoute == "console";
     public bool IsAccountsScreen   => CurrentRoute == "accounts";
@@ -705,6 +709,12 @@ public class MainWindowViewModel : ViewModelBase
             ProgressValue = 0;
             ProgressText = "Preparing...";
 
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                GameOutputLines.Clear();
+                GameOutputLines.Add($"Launching {SelectedInstance.Name}...");
+            });
+
             _logger.Information("Launching instance: {InstanceName}", SelectedInstance.Name);
 
             // Create and show console window
@@ -748,6 +758,7 @@ public class MainWindowViewModel : ViewModelBase
             }
 
             consoleViewModel?.AddLogEntry($"Using Java: {javaRuntime.JavaExecutablePath}", "INFO");
+            JavaVersionText = $"Java {javaRuntime.MajorVersion}";
 
             // Build arguments
             _argumentBuilder.SetOfflinePlayerName($"Player{Random.Shared.Next(100, 999)}");
@@ -788,6 +799,13 @@ public class MainWindowViewModel : ViewModelBase
                     else if (line.Contains("[DEBUG]") || line.Contains("DEBUG")) logLevel = "DEBUG";
 
                     consoleViewModel?.AddLogEntry(line, logLevel);
+
+                    if (!IsConsolePaused)
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            GameOutputLines.Add(line);
+                            if (GameOutputLines.Count > 2000) GameOutputLines.RemoveAt(0);
+                        });
                 }
             };
 
@@ -1302,27 +1320,79 @@ public class MainWindowViewModel : ViewModelBase
         {
             if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
 
-            var nameBox = new Avalonia.Controls.TextBox
+            // Enumerate auto-trash-backup directories and extract unique instance names
+            var backupsDir = System.IO.Path.Combine(_launcherConfig.BaseDataPath, "backups", "instances");
+            var deletedNames = new System.Collections.Generic.List<string>();
+            if (System.IO.Directory.Exists(backupsDir))
             {
-                PlaceholderText = "Instance name to restore",
-                Width = 260
-            };
-            var okBtn = new Avalonia.Controls.Button
+                var seen = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var dir in System.IO.Directory.GetDirectories(backupsDir))
+                {
+                    var dirName = System.IO.Path.GetFileName(dir);
+                    // Strip trailing _yyyyMMdd_HHmmss suffix (17 chars: _YYYYMMDD_HHMMSS)
+                    var lastUnderscore = dirName.LastIndexOf('_');
+                    if (lastUnderscore > 0)
+                    {
+                        var secondLast = dirName.LastIndexOf('_', lastUnderscore - 1);
+                        if (secondLast > 0)
+                        {
+                            var name = dirName.Substring(0, secondLast);
+                            if (seen.Add(name))
+                                deletedNames.Add(name);
+                        }
+                    }
+                }
+            }
+
+            if (deletedNames.Count == 0)
             {
-                Content = "Restore",
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
-            };
-            var cancelBtn = new Avalonia.Controls.Button
+                var infoDlg = new Avalonia.Controls.Window
+                {
+                    Title = "Undo Trash",
+                    Width = 340,
+                    Height = 130,
+                    WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
+                    CanResize = false,
+                    Content = new Avalonia.Controls.StackPanel
+                    {
+                        Margin = new Avalonia.Thickness(20),
+                        Spacing = 12,
+                        Children =
+                        {
+                            new Avalonia.Controls.TextBlock
+                            {
+                                Text = "No deleted instances available to restore.",
+                                TextWrapping = Avalonia.Media.TextWrapping.Wrap
+                            },
+                            new Avalonia.Controls.Button
+                            {
+                                Content = "OK",
+                                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+                            }
+                        }
+                    }
+                };
+                var okInner = (Avalonia.Controls.Button)((Avalonia.Controls.StackPanel)infoDlg.Content!).Children[1];
+                okInner.Click += (_, _) => infoDlg.Close();
+                await infoDlg.ShowDialog(desktop.MainWindow!);
+                return;
+            }
+
+            var listBox = new Avalonia.Controls.ListBox
             {
-                Content = "Cancel",
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+                ItemsSource = deletedNames,
+                SelectedIndex = 0,
+                Width = 300,
+                Height = Math.Min(deletedNames.Count * 32 + 8, 200)
             };
+            var restoreBtn = new Avalonia.Controls.Button { Content = "Restore", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
+            var cancelBtn = new Avalonia.Controls.Button { Content = "Cancel", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
 
             var dlg = new Avalonia.Controls.Window
             {
                 Title = "Undo Trash Instance",
                 Width = 360,
-                Height = 180,
+                SizeToContent = Avalonia.Controls.SizeToContent.Height,
                 WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
                 CanResize = false,
                 Content = new Avalonia.Controls.StackPanel
@@ -1333,31 +1403,31 @@ public class MainWindowViewModel : ViewModelBase
                     {
                         new Avalonia.Controls.TextBlock
                         {
-                            Text = "Enter the name of the deleted instance to restore from backup:",
-                            FontWeight = Avalonia.Media.FontWeight.SemiBold,
-                            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+                            Text = "Select a deleted instance to restore:",
+                            FontWeight = Avalonia.Media.FontWeight.SemiBold
                         },
-                        nameBox,
+                        listBox,
                         new Avalonia.Controls.StackPanel
                         {
                             Orientation = Avalonia.Layout.Orientation.Horizontal,
                             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
                             Spacing = 8,
-                            Children = { cancelBtn, okBtn }
+                            Children = { cancelBtn, restoreBtn }
                         }
                     }
                 }
             };
 
             string? instanceName = null;
-            okBtn.Click += (_, _) => { instanceName = nameBox.Text; dlg.Close(true); };
+            restoreBtn.Click += (_, _) => { instanceName = listBox.SelectedItem as string; dlg.Close(true); };
             cancelBtn.Click += (_, _) => dlg.Close(false);
+            listBox.DoubleTapped += (_, _) => { instanceName = listBox.SelectedItem as string; dlg.Close(true); };
 
             var ok = await dlg.ShowDialog<bool>(desktop.MainWindow!);
             if (!ok || string.IsNullOrWhiteSpace(instanceName)) return;
 
-            StatusText = $"Restoring '{instanceName.Trim()}'...";
-            var restored = await _instanceManager.UndoTrashAsync(instanceName.Trim());
+            StatusText = $"Restoring '{instanceName}'...";
+            var restored = await _instanceManager.UndoTrashAsync(instanceName);
             if (restored != null)
             {
                 await LoadInstancesAsync();
@@ -1366,7 +1436,7 @@ public class MainWindowViewModel : ViewModelBase
             }
             else
             {
-                StatusText = $"Could not restore '{instanceName.Trim()}' — no backup found or restore failed";
+                StatusText = $"Could not restore '{instanceName}' — no backup found or restore failed";
             }
         }
         catch (Exception ex)
@@ -1383,28 +1453,43 @@ public class MainWindowViewModel : ViewModelBase
         {
             if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
 
-            var nameBox = new Avalonia.Controls.TextBox
+            const string Ungrouped = "(Ungrouped)";
+            const string NewGroup = "— New group —";
+
+            // Build items: (Ungrouped) + existing groups + New group sentinel
+            var groupItems = new System.Collections.Generic.List<string> { Ungrouped };
+            groupItems.AddRange(Groups.Select(g => g.Name));
+            groupItems.Add(NewGroup);
+
+            var currentGroupName = SelectedInstance.GroupDisplayName;
+            var initialSelection = string.IsNullOrEmpty(currentGroupName) ? Ungrouped : currentGroupName;
+
+            var groupCombo = new Avalonia.Controls.ComboBox
             {
-                PlaceholderText = "Group name (empty or 'ungrouped' to remove)",
+                ItemsSource = groupItems,
+                SelectedItem = groupItems.Contains(initialSelection) ? initialSelection : Ungrouped,
+                Width = 280
+            };
+            var newGroupBox = new Avalonia.Controls.TextBox
+            {
+                PlaceholderText = "New group name",
                 Width = 280,
-                Text = SelectedInstance.GroupDisplayName ?? ""
+                IsVisible = false
             };
-            var okBtn = new Avalonia.Controls.Button
+
+            groupCombo.SelectionChanged += (_, _) =>
             {
-                Content = "OK",
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+                newGroupBox.IsVisible = groupCombo.SelectedItem as string == NewGroup;
             };
-            var cancelBtn = new Avalonia.Controls.Button
-            {
-                Content = "Cancel",
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
-            };
+
+            var okBtn = new Avalonia.Controls.Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
+            var cancelBtn = new Avalonia.Controls.Button { Content = "Cancel", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
 
             var dlg = new Avalonia.Controls.Window
             {
                 Title = "Change Group",
                 Width = 380,
-                Height = 200,
+                SizeToContent = Avalonia.Controls.SizeToContent.Height,
                 WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
                 CanResize = false,
                 Content = new Avalonia.Controls.StackPanel
@@ -1415,11 +1500,12 @@ public class MainWindowViewModel : ViewModelBase
                     {
                         new Avalonia.Controls.TextBlock
                         {
-                            Text = $"Enter group name for instance '{SelectedInstance.Name}':",
+                            Text = $"Select group for '{SelectedInstance.Name}':",
                             FontWeight = Avalonia.Media.FontWeight.SemiBold,
                             TextWrapping = Avalonia.Media.TextWrapping.Wrap
                         },
-                        nameBox,
+                        groupCombo,
+                        newGroupBox,
                         new Avalonia.Controls.StackPanel
                         {
                             Orientation = Avalonia.Layout.Orientation.Horizontal,
@@ -1431,8 +1517,14 @@ public class MainWindowViewModel : ViewModelBase
                 }
             };
 
-            string? enteredName = null;
-            okBtn.Click += (_, _) => { enteredName = nameBox.Text; dlg.Close(true); };
+            string? resolvedSelection = null;
+            okBtn.Click += (_, _) =>
+            {
+                resolvedSelection = groupCombo.SelectedItem as string == NewGroup
+                    ? newGroupBox.Text
+                    : groupCombo.SelectedItem as string;
+                dlg.Close(true);
+            };
             cancelBtn.Click += (_, _) => dlg.Close(false);
 
             var ok = await dlg.ShowDialog<bool>(desktop.MainWindow!);
@@ -1440,15 +1532,13 @@ public class MainWindowViewModel : ViewModelBase
 
             var instance = SelectedInstance;
 
-            if (string.IsNullOrWhiteSpace(enteredName) ||
-                enteredName.Trim().Equals("ungrouped", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(resolvedSelection) || resolvedSelection == Ungrouped)
             {
-                // Remove from group
                 instance.GroupId = null;
             }
             else
             {
-                var groupName = enteredName.Trim();
+                var groupName = resolvedSelection.Trim();
                 var existing = Groups.FirstOrDefault(g => g.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase));
                 if (existing != null)
                 {
@@ -1456,7 +1546,6 @@ public class MainWindowViewModel : ViewModelBase
                 }
                 else
                 {
-                    // Create a new group
                     var newGroup = _groupManager.CreateGroup(groupName);
                     Groups.Add(newGroup);
                     instance.GroupId = newGroup.Id;
@@ -1891,21 +1980,37 @@ public class MainWindowViewModel : ViewModelBase
         try
         {
             if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            var win = new Views.FtbBrowserWindow(_instanceManager, _httpManager);
+            await win.ShowDialog(desktop.MainWindow!);
+            await LoadInstancesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "FTB import failed");
+            StatusText = "Import failed";
+        }
+    }
 
-            // Show a simple dialog to get the FTB pack ID and version ID
-            string? packIdStr = null;
-            string? versionIdStr = null;
+    private async Task ImportPackwizAsync()
+    {
+        try
+        {
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
 
-            var packIdBox = new Avalonia.Controls.TextBox { PlaceholderText = "Pack ID (e.g. 81)", Width = 200 };
-            var versionIdBox = new Avalonia.Controls.TextBox { PlaceholderText = "Version ID (leave empty for latest)", Width = 200 };
-            var confirmBtn = new Avalonia.Controls.Button { Content = "Import", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
+            var urlBox = new Avalonia.Controls.TextBox
+            {
+                PlaceholderText = "https://example.com/pack.toml",
+                Width = 360,
+                MinWidth = 300
+            };
+            var importBtn = new Avalonia.Controls.Button { Content = "Import", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
             var cancelBtn = new Avalonia.Controls.Button { Content = "Cancel", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
 
-            var inputDialog = new Avalonia.Controls.Window
+            var dlg = new Avalonia.Controls.Window
             {
-                Title = "Import FTB Modpack",
-                Width = 340,
-                Height = 220,
+                Title = "Import Packwiz Pack",
+                Width = 440,
+                Height = 160,
                 WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
                 CanResize = false,
                 Content = new Avalonia.Controls.StackPanel
@@ -1914,60 +2019,36 @@ public class MainWindowViewModel : ViewModelBase
                     Spacing = 12,
                     Children =
                     {
-                        new Avalonia.Controls.TextBlock { Text = "Enter FTB Pack ID and Version ID:", FontWeight = Avalonia.Media.FontWeight.SemiBold },
-                        packIdBox,
-                        versionIdBox,
+                        new Avalonia.Controls.TextBlock { Text = "Enter the pack.toml URL:", FontWeight = Avalonia.Media.FontWeight.SemiBold },
+                        urlBox,
                         new Avalonia.Controls.StackPanel
                         {
                             Orientation = Avalonia.Layout.Orientation.Horizontal,
                             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
                             Spacing = 8,
-                            Children = { cancelBtn, confirmBtn }
+                            Children = { cancelBtn, importBtn }
                         }
                     }
                 }
             };
 
-            confirmBtn.Click += (_, _) => { packIdStr = packIdBox.Text; versionIdStr = versionIdBox.Text; inputDialog.Close(true); };
-            cancelBtn.Click += (_, _) => inputDialog.Close(false);
+            string? url = null;
+            importBtn.Click += (_, _) => { url = urlBox.Text; dlg.Close(true); };
+            cancelBtn.Click += (_, _) => dlg.Close(false);
 
-            var ok = await inputDialog.ShowDialog<bool>(desktop.MainWindow!);
-            if (!ok || string.IsNullOrWhiteSpace(packIdStr)) return;
+            var ok = await dlg.ShowDialog<bool>(desktop.MainWindow!);
+            if (!ok || string.IsNullOrWhiteSpace(url)) return;
 
-            if (!long.TryParse(packIdStr.Trim(), out var packId))
-            {
-                StatusText = "Invalid FTB pack ID";
-                return;
-            }
-
-            var importer = new Services.Import.FtbImporter(_instanceManager, _httpManager);
-
-            long versionId = 0;
-            if (!string.IsNullOrWhiteSpace(versionIdStr) && long.TryParse(versionIdStr.Trim(), out var parsedVersionId))
-            {
-                versionId = parsedVersionId;
-            }
-            else
-            {
-                // Fetch pack info to get latest version
-                StatusText = "Fetching FTB pack info...";
-                var packInfo = await importer.GetPackInfoAsync(packId);
-                if (packInfo?.Versions == null || packInfo.Versions.Count == 0)
-                {
-                    StatusText = "Could not fetch FTB pack info";
-                    return;
-                }
-                versionId = packInfo.Versions[0].Id;
-            }
-
-            StatusText = $"Importing FTB pack {packId}...";
+            StatusText = "Importing Packwiz pack...";
             var progress = new Progress<(string Status, double Progress)>(r =>
             {
                 StatusText = r.Status;
                 ProgressValue = r.Progress * 100;
             });
 
-            var instance = await importer.ImportAsync(packId, versionId, progress);
+            using var cts = new System.Threading.CancellationTokenSource();
+            var importer = new Services.Import.PackwizImporter(_instanceManager, _httpManager);
+            var instance = await importer.ImportFromUrlAsync(url.Trim(), progress, cts.Token);
             ProgressValue = 0;
             if (instance != null)
             {
@@ -1976,12 +2057,12 @@ public class MainWindowViewModel : ViewModelBase
             }
             else
             {
-                StatusText = "FTB import failed — check log for details";
+                StatusText = "Packwiz import failed — check log for details";
             }
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "FTB import failed");
+            _logger.Error(ex, "Packwiz import failed");
             StatusText = "Import failed";
         }
     }
@@ -2001,6 +2082,7 @@ public class MainWindowViewModel : ViewModelBase
                 {
                     if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                     {
+                        var closeBtn = new Avalonia.Controls.Button { Content = "Close", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
                         var msgBox = new Avalonia.Controls.Window
                         {
                             Title = "Update Available",
@@ -2017,10 +2099,11 @@ public class MainWindowViewModel : ViewModelBase
                                     new Avalonia.Controls.TextBlock { Text = $"Obsidian Launcher v{update.LatestVersion} is available!", FontWeight = Avalonia.Media.FontWeight.Bold, FontSize = 16 },
                                     new Avalonia.Controls.TextBlock { Text = $"You are running v{update.CurrentVersion}.", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
                                     new Avalonia.Controls.TextBlock { Text = update.ReleaseNotes.Length > 200 ? update.ReleaseNotes.Substring(0, 200) + "..." : update.ReleaseNotes, TextWrapping = Avalonia.Media.TextWrapping.Wrap, FontSize = 12 },
-                                    new Avalonia.Controls.Button { Content = "Close", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right }
+                                    closeBtn
                                 }
                             }
                         };
+                        closeBtn.Click += (_, _) => msgBox.Close();
                         await msgBox.ShowDialog(desktop.MainWindow!);
                     }
                 });
@@ -2097,6 +2180,20 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
+    private async void OpenBackupManager()
+    {
+        try
+        {
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+            var win = new Views.BackupManagerWindow(Instances.ToList(), _backupManager, _instanceManager);
+            await win.ShowDialog(desktop.MainWindow!);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open Backup Manager");
+        }
+    }
+
     // --- Create instance wizard helpers ---
 
     private bool CanAdvanceCreateStep()
@@ -2113,6 +2210,7 @@ public class MainWindowViewModel : ViewModelBase
             CurrentCreateVm = CreateNewInstanceVM();
             if (!string.IsNullOrWhiteSpace(NewInstanceName))
                 CurrentCreateVm.InstanceName = NewInstanceName;
+            CurrentCreateVm.Palette = NewInstancePalette;
             CurrentCreateVm.PropertyChanged += (_, e) =>
             {
                 if (e.PropertyName == nameof(CreateInstanceViewModel.SelectedVersionId))

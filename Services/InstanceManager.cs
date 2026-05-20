@@ -108,6 +108,7 @@ public class InstanceManager
 
         // Track which MC versions we've already loaded to avoid duplicate fetches
         var loadedVersionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        string? resolvedMcVersion = null;
 
         foreach (var component in components.Where(c => c.IsEnabled))
         {
@@ -115,11 +116,15 @@ public class InstanceManager
             if (component.Uid == "net.minecraft")
             {
                 componentVersion = await GetMinecraftVersionDetailsAsync(component.Version, cancellationToken);
-                if (componentVersion != null) loadedVersionIds.Add(component.Version);
+                if (componentVersion != null)
+                {
+                    loadedVersionIds.Add(component.Version);
+                    resolvedMcVersion = component.Version;
+                }
             }
             else
             {
-                componentVersion = await _modLoaderService.GetModLoaderVersionAsync(component, cancellationToken);
+                componentVersion = await _modLoaderService.GetModLoaderVersionAsync(component, cancellationToken, resolvedMcVersion);
             }
 
             if (componentVersion == null)

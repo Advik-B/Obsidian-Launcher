@@ -87,7 +87,8 @@
                                             Classes="soft"
                                             Padding="12,6"
                                             IsVisible="{Binding !IsActive}"
-                                            Command="{Binding DataContext.SetActiveAccountCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                                            Command="{Binding DataContext.SetActiveAccountCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}">
                                         <TextBlock Text="Use"/>
                                     </Button>
                                 </Grid>

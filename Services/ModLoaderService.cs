@@ -29,51 +29,41 @@ public class ModLoaderService
     /// Fetches the version-specific launch profile JSON for a given mod loader component.
     /// Supports Fabric, Quilt, Forge, and NeoForge.
     /// </summary>
-    public async Task<MinecraftVersion?> GetModLoaderVersionAsync(Component component, CancellationToken cancellationToken = default)
+    /// <param name="mcVersionHint">The Minecraft game version, used to construct Fabric/Quilt profile URLs when not encoded in the component version string.</param>
+    public async Task<MinecraftVersion?> GetModLoaderVersionAsync(Component component, CancellationToken cancellationToken = default, string? mcVersionHint = null)
     {
         _logger.Information("Fetching version details for mod loader: {Uid} {Version}", component.Uid, component.Version);
 
         return component.Uid switch
         {
-            "net.fabricmc.fabric-loader" => await GetFabricProfileAsync(component, cancellationToken),
-            "org.quiltmc.quilt-loader" => await GetQuiltProfileAsync(component, cancellationToken),
+            "net.fabricmc.fabric-loader" => await GetFabricProfileAsync(component, cancellationToken, mcVersionHint),
+            "org.quiltmc.quilt-loader" => await GetQuiltProfileAsync(component, cancellationToken, mcVersionHint),
             "net.minecraftforge" => await GetForgeProfileAsync(component, cancellationToken),
             "net.neoforged.neoforge" => await GetNeoForgeProfileAsync(component, cancellationToken),
             _ => await GetGenericProfileAsync(component, cancellationToken)
         };
     }
 
-    private async Task<MinecraftVersion?> GetFabricProfileAsync(Component component, CancellationToken ct)
+    private async Task<MinecraftVersion?> GetFabricProfileAsync(Component component, CancellationToken ct, string? mcVersionHint = null)
     {
-        // Fabric needs both game version and loader version
-        // The component version here could be "loaderVersion" or "gameVersion-loaderVersion"
-        // We use the Fabric meta API which requires the game version too.
-        // When the game version is not encoded in the component, we fetch just the loader manifest.
         var loaderVersion = component.Version;
 
-        // Try fetching as a combined profile (Fabric meta v2 gives us game+loader combined JSON)
-        // But we need the game version — check if it's encoded as "gameVer-loaderVer"
+        // Combined "gameVer/loaderVer" encoding takes priority
         if (loaderVersion.Contains('/'))
         {
             var parts = loaderVersion.Split('/');
-            var gameVer = parts[0];
-            var loadVer = parts[1];
-            var url = $"https://meta.fabricmc.net/v2/versions/loader/{Uri.EscapeDataString(gameVer)}/{Uri.EscapeDataString(loadVer)}/profile/json";
-            return await FetchAndParseAsync(url, ct);
+            return await new FabricInstaller(_httpManager).GetProfileAsync(parts[0], parts[1], ct);
         }
 
-        // When only loader version is provided (typical in components), return a partial profile
-        // by fetching the loader metadata. The game version should be a separate component.
-        var profileUrl = $"https://meta.fabricmc.net/v2/versions/loader/{Uri.EscapeDataString(loaderVersion)}/profile/json";
-        var result = await FetchAndParseAsync(profileUrl, ct);
-        if (result != null) return result;
+        // Use the MC version hint when available (passed from BuildLaunchProfileAsync)
+        if (!string.IsNullOrEmpty(mcVersionHint))
+            return await new FabricInstaller(_httpManager).GetProfileAsync(mcVersionHint, loaderVersion, ct);
 
-        // Fallback: loader-only endpoint
-        _logger.Warning("Fabric profile with only loader version {Version} failed. Loader version may need game version context.", loaderVersion);
+        _logger.Warning("Fabric component version {Version} has no game version context. Provide mcVersionHint or encode as 'gameVer/loaderVer'.", loaderVersion);
         return null;
     }
 
-    private async Task<MinecraftVersion?> GetQuiltProfileAsync(Component component, CancellationToken ct)
+    private async Task<MinecraftVersion?> GetQuiltProfileAsync(Component component, CancellationToken ct, string? mcVersionHint = null)
     {
         var installer = new QuiltInstaller(_httpManager);
         var version = component.Version;
@@ -84,9 +74,11 @@ public class ModLoaderService
             return await installer.GetProfileAsync(parts[0], parts[1], ct);
         }
 
-        // Loader-only version: same approach as Fabric
-        var url = $"https://meta.quiltmc.org/v3/versions/loader/{Uri.EscapeDataString(version)}/profile/json";
-        return await FetchAndParseAsync(url, ct);
+        if (!string.IsNullOrEmpty(mcVersionHint))
+            return await installer.GetProfileAsync(mcVersionHint, version, ct);
+
+        _logger.Warning("Quilt component version {Version} has no game version context.", version);
+        return null;
     }
 
     private async Task<MinecraftVersion?> GetForgeProfileAsync(Component component, CancellationToken ct)
