@@ -1,3 +1,5 @@
+## ⚠️DO NOT USE. NO DEVELOPMENT/SUPPORT PROVIDED AT THE MOMENT. PLEASE USE PRISM LAUNCHER.
+
 ## Obsidian Launcher
 
 ![GitHub stars](https://img.shields.io/github/stars/Advik-B/Obsidian-Launcher?style=for-the-badge)
